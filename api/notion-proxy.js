@@ -2,7 +2,6 @@
 const { Client } = require('@notionhq/client');
 
 module.exports = async (req, res) => {
-  // CORS (safe default)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -10,10 +9,13 @@ module.exports = async (req, res) => {
 
   try {
     const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID } = process.env;
+
     const missing = [];
     if (!NOTION_TOKEN) missing.push('NOTION_TOKEN');
     if (!NOTION_DATABASE_ID) missing.push('NOTION_DATABASE_ID');
-    if (missing.length) return res.status(500).json({ error: 'Missing environment variables', missing });
+    if (missing.length) {
+      return res.status(500).json({ error: 'Missing environment variables', missing });
+    }
 
     const notion = new Client({ auth: NOTION_TOKEN });
 
