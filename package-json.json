@@ -7,7 +7,9 @@
     "build": "echo 'No build step required'",
     "start": "echo 'Deployed to Vercel'"
   },
-  "dependencies": { "@notionhq/client": "^2.2.15" }
+  "dependencies": {
+    "@notionhq/client": "^2.2.15"
+  },
   "engines": {
     "node": ">=18.0.0"
   }
