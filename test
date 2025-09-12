@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luthier Daily Scheduler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .schedule-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .milestone-item {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        
+        .milestone-item.complex {
+            border-left-color: #e74c3c;
+            background: #fdf2f2;
+        }
+        
+        .milestone-item.completed {
+            opacity: 0.6;
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        
+        .milestone-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .milestone-checkbox {
+            margin: 0;
+            transform: scale(1.4);
+            cursor: pointer;
+            margin-top: 3px;
+        }
+        
+        .milestone-content {
+            flex: 1;
+        }
+        
+        .milestone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .milestone-title {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .milestone-time {
+            background: #3498db;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .milestone-time.complex {
+            background: #e74c3c;
+        }
+        
+        .milestone-details {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .milestone-project {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .summary {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .priority-weights {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        .slider-group {
+            margin-bottom: 12px;
+        }
+        
+        .slider-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .slider-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .weight-total {
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            padding: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+        
+        .complexity-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .complexity-1 { background: #27ae60; }
+        .complexity-2 { background: #f39c12; }
+        .complexity-3 { background: #e67e22; }
+        .complexity-4 { background: #e74c3c; }
+        .complexity-5 { background: #8e44ad; }
+        
+        .profitability-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        .profitability-1 { background: #95a5a6; }
+        .profitability-2 { background: #f39c12; }
+        .profitability-3 { background: #3498db; }
+        .profitability-4 { background: #27ae60; }
+        .profitability-5 { background: #2ecc71; }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .input-group {
+            margin-bottom: 10px;
+        }
+        
+        .input-group label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+        
+        .input-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎸 Luthier Daily Scheduler</h1>
+        <p>Smart scheduling with complexity balancing</p>
+    </div>
+
+    <div class="controls">
+        <h3>⚙️ Scheduling Controls</h3>
+        
+        <div class="input-group">
+            <label>Available Hours Today:</label>
+            <input type="number" id="availableHours" value="8" min="1" max="16" step="0.5">
+        </div>
+
+        <div class="priority-weights">
+            <h4>Priority Weight Adjustments</h4>
+            <div class="slider-group">
+                <label>Due Date Urgency: <span id="dueDateWeight">40</span>%</label>
+                <input type="range" id="dueDateSlider" min="0" max="80" value="40" oninput="updateWeights()">
+            </div>
+            <div class="slider-group">
+                <label>Profitability: <span id="profitabilityWeight">30</span>%</label>
+                <input type="range" id="profitabilitySlider" min="0" max="80" value="30" oninput="updateWeights()">
+            </div>
+            <div class="slider-group">
+                <label>Complexity Priority: <span id="complexityWeight">20</span>%</label>
+                <input type="range" id="complexitySlider" min="0" max="80" value="20" oninput="updateWeights()">
+            </div>
+            <div class="slider-group">
+                <label>Days Since Worked: <span id="daysWorkedWeight">10</span>%</label>
+                <input type="range" id="daysWorkedSlider" min="0" max="50" value="10" oninput="updateWeights()">
+            </div>
+            <div class="weight-total">
+                Total Weight: <span id="totalWeight">100</span>%
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Minimum Complex Work:</label>
+            <input type="number" id="complexPercentage" value="30" min="0" max="100" step="5">%
+        </div>
+
+        <button class="btn" onclick="generateSchedule()">Generate Schedule</button>
+        <button class="btn" onclick="resetWeights()" style="background: #95a5a6;">Reset to Defaults</button>
+    </div>
+
+    <div class="schedule-container">
+        <h3>📅 Today's Recommended Schedule</h3>
+        <div id="scheduleOutput">
+            <p>Click "Generate Schedule" to see your optimized daily plan!</p>
+        </div>
+    </div>
+
+    <script>
+        // ========= API CONFIG =========
+        // If this HTML is served by the same Vercel project as your API, keep it relative:
+        const API_URL = '/api/notion-proxy';
+        // Otherwise, set the full URL:
+        // const API_URL = 'https://luthier-notion-proxy.vercel.app/api/notion-proxy';
+
+        // ========= DATA LOADING (API + FALLBACK) =========
+        async function loadDataFromVercel() {
+            try {
+                const res = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('Fetch failed: ' + res.status + ' ' + (await res.text()));
+                const data = await res.json();
+
+                // Expecting { projects: [...], milestones: [...] }
+                if (Array.isArray(data.projects) && Array.isArray(data.milestones)) {
+                    window.sampleProjects = data.projects;
+                    window.sampleMilestones = data.milestones;
+                    return;
+                }
+
+                // If you returned raw Notion results instead, do a light mapping for projects only:
+                if (Array.isArray(data.results)) {
+                    window.sampleProjects = data.results.map(page => ({
+                        id: page.id,
+                        name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
+                        instrumentMake: page.properties?.Make?.rich_text?.[0]?.plain_text ?? '',
+                        instrumentModel: page.properties?.Model?.rich_text?.[0]?.plain_text ?? '',
+                        complexity: Number(page.properties?.Complexity?.number ?? 3),
+                        profitability: Number(page.properties?.Profitability?.number ?? 3),
+                        status: page.properties?.Status?.status?.name ?? 'In Progress',
+                        dueDate: page.properties?.Due?.date?.start ?? null
+                    }));
+                    // No milestones in this fallback: keep local sampleMilestones below
+                    return;
+                }
+
+                console.warn('Unrecognized payload; using local samples.');
+            } catch (e) {
+                console.warn('API fetch failed; using local samples.', e);
+            }
+        }
+
+        // ========= YOUR ORIGINAL SAMPLE DATA (FALLBACK) =========
+        let sampleProjects = [
+            { id: 1, name: "John Smith", instrumentMake: "Martin", instrumentModel: "D-28", complexity: 4, profitability: 5, status: "In Progress", dueDate: "2025-09-15" },
+            { id: 2, name: "Sarah Johnson", instrumentMake: "Gibson", instrumentModel: "Les Paul", complexity: 2, profitability: 3, status: "In Progress", dueDate: "2025-09-20" },
+            { id: 3, name: "Mike Davis", instrumentMake: "Taylor", instrumentModel: "814ce", complexity: 5, profitability: 4, status: "In Progress", dueDate: "2025-09-18" },
+            { id: 4, name: "Lisa Brown", instrumentMake: "Fender", instrumentModel: "Stratocaster", complexity: 1, profitability: 2, status: "In Progress", dueDate: "2025-09-25" }
+        ];
+
+        let sampleMilestones = [
+            // Martin D-28 (Complex refret)
+            { id: 1, projectId: 1, name: "Remove strings and hardware", estimatedHours: 0.5, order: 1, status: "Completed" },
+            { id: 2, projectId: 1, name: "Remove old frets", estimatedHours: 1.5, order: 2, status: "Completed" },
+            { id: 3, projectId: 1, name: "Level fretboard", estimatedHours: 1.0, order: 3, status: "Ready" },
+            { id: 4, projectId: 1, name: "Install new frets", estimatedHours: 2.0, order: 4, status: "Not Started" },
+            { id: 5, projectId: 1, name: "Level and crown frets", estimatedHours: 2.0, order: 5, status: "Not Started" },
+            { id: 6, projectId: 1, name: "Final setup", estimatedHours: 1.0, order: 6, status: "Not Started" },
+
+            // Gibson Les Paul (Simple setup)
+            { id: 7, projectId: 2, name: "Adjust truss rod", estimatedHours: 0.5, order: 1, status: "Ready" },
+            { id: 8, projectId: 2, name: "Set action and intonation", estimatedHours: 1.0, order: 2, status: "Not Started" },
+
+            // Taylor 814ce (Complex neck reset)
+            { id: 9, projectId: 3, name: "Remove strings and assess", estimatedHours: 0.5, order: 1, status: "Completed" },
+            { id: 10, projectId: 3, name: "Steam neck joint", estimatedHours: 1.5, order: 2, status: "Ready" },
+            { id: 11, projectId: 3, name: "Remove neck", estimatedHours: 1.0, order: 3, status: "Not Started" },
+            { id: 12, projectId: 3, name: "Plane neck heel", estimatedHours: 2.0, order: 4, status: "Not Started" },
+            { id: 13, projectId: 3, name: "Reattach neck", estimatedHours: 1.5, order: 5, status: "Not Started" },
+            { id: 14, projectId: 3, name: "Final setup", estimatedHours: 1.0, order: 6, status: "Not Started" },
+
+            // Fender Strat (Basic work)
+            { id: 15, projectId: 4, name: "Replace strings", estimatedHours: 0.3, order: 1, status: "Ready" },
+            { id: 16, projectId: 4, name: "Basic setup", estimatedHours: 0.7, order: 2, status: "Not Started" }
+        ];
+
+        // ========= ORIGINAL UI HELPERS =========
+        function updateWeights() {
+            const dueDateWeight = document.getElementById('dueDateSlider').value;
+            const profitabilityWeight = document.getElementById('profitabilitySlider').value;
+            const complexityWeight = document.getElementById('complexitySlider').value;
+            const daysWorkedWeight = document.getElementById('daysWorkedSlider').value;
+            
+            document.getElementById('dueDateWeight').textContent = dueDateWeight;
+            document.getElementById('profitabilityWeight').textContent = profitabilityWeight;
+            document.getElementById('complexityWeight').textContent = complexityWeight;
+            document.getElementById('daysWorkedWeight').textContent = daysWorkedWeight;
+            
+            const total = parseInt(dueDateWeight) + parseInt(profitabilityWeight) + 
+                         parseInt(complexityWeight) + parseInt(daysWorkedWeight);
+            document.getElementById('totalWeight').textContent = total;
+            
+            // Auto-regenerate schedule when weights change
+            generateSchedule();
+        }
+
+        function resetWeights() {
+            document.getElementById('dueDateSlider').value = 40;
+            document.getElementById('profitabilitySlider').value = 30;
+            document.getElementById('complexitySlider').value = 20;
+            document.getElementById('daysWorkedSlider').value = 10;
+            document.getElementById('complexPercentage').value = 30;
+            updateWeights();
+        }
+
+        function completeMilestone(milestoneId) {
+            const milestone = sampleMilestones.find(m => m.id === milestoneId);
+            if (milestone) {
+                milestone.status = 'Completed';
+                
+                // Unlock next milestone in the same project and mark it as Ready
+                const project = sampleProjects.find(p => p.id === milestone.projectId);
+                if (project) {
+                    const projectMilestones = sampleMilestones
+                        .filter(m => m.projectId === project.id)
+                        .sort((a, b) => a.order - b.order);
+                    
+                    const completedIndex = projectMilestones.findIndex(m => m.id === milestoneId);
+                    const nextMilestone = projectMilestones[completedIndex + 1];
+                    
+                    if (nextMilestone && nextMilestone.status === 'Not Started') {
+                        nextMilestone.status = 'Ready';
+                    }
+                }
+                
+                removeCompletedFromSchedule(milestoneId);
+            }
+        }
+
+        function removeCompletedFromSchedule(completedMilestoneId) {
+            const scheduleOutput = document.getElementById('scheduleOutput');
+            const currentSchedule = Array.from(scheduleOutput.querySelectorAll('.milestone-item')).filter(item => {
+                const checkbox = item.querySelector('.milestone-checkbox');
+                return checkbox && !checkbox.checked;
+            });
+            
+            if (currentSchedule.length === 0) {
+                scheduleOutput.innerHTML = `
+                    <div class="milestone-item" style="border-left-color: #27ae60; background: #d4edda;">
+                        <div class="milestone-title">🎉 All scheduled tasks completed!</div>
+                        <div class="milestone-details">Adjust your available hours above and click "Generate Schedule" if you want to add more work to your day.</div>
+                    </div>
+                `;
+            } else {
+                let remainingHours = 0;
+                currentSchedule.forEach(item => {
+                    const timeElement = item.querySelector('.milestone-time');
+                    if (timeElement) {
+                        const hours = parseFloat(timeElement.textContent.replace('h', ''));
+                        remainingHours += hours;
+                    }
+                });
+                
+                const summary = scheduleOutput.querySelector('.summary');
+                if (summary) {
+                    const availableHours = parseFloat(document.getElementById('availableHours').value) || 8;
+                    const completedHours = availableHours - remainingHours;
+                    summary.innerHTML = `
+                        <strong>Schedule Summary:</strong> ${remainingHours.toFixed(1)}h remaining of ${availableHours}h total<br>
+                        <strong>Completed:</strong> ${completedHours.toFixed(1)}h • 
+                        <strong>Progress:</strong> ${Math.round((completedHours/availableHours)*100)}%
+                    `;
+                }
+            }
+        }
+
+        // ========= READY MILESTONES (original behavior: 1 per project; more unlock during scheduling) =========
+        function getReadyMilestones() {
+            const ready = [];
+            
+            sampleProjects.forEach(project => {
+                const projectMilestones = sampleMilestones
+                    .filter(m => m.projectId === project.id)
+                    .sort((a, b) => a.order - b.order);
+                
+                for (let i = 0; i < projectMilestones.length; i++) {
+                    const milestone = projectMilestones[i];
+                    if (milestone.status === 'Completed') continue;
+                    const previousMilestone = projectMilestones[i - 1];
+                    const canStart = !previousMilestone || previousMilestone.status === 'Completed';
+                    
+                    if (canStart && (milestone.status === 'Ready' || milestone.status === 'Not Started')) {
+                        ready.push({ milestone, project });
+                        break; // start with one per project; unlocking happens during scheduling
+                    }
+                }
+            });
+            
+            return ready;
+        }
+
+        // ========= SCHEDULING (improved, but fits original structure) =========
+        function calculatePriorities(readyTasks) {
+            const today = new Date();
+            const dueDateWeight = parseInt(document.getElementById('dueDateSlider').value) / 100;
+            const profitabilityWeight = parseInt(document.getElementById('profitabilitySlider').value) / 100;
+            const complexityWeight = parseInt(document.getElementById('complexitySlider').value) / 100;
+            const daysWorkedWeight = parseInt(document.getElementById('daysWorkedSlider').value) / 100;
+            
+            return readyTasks.map(task => {
+                const dueDate = task.project.dueDate ? new Date(task.project.dueDate) : new Date(Date.now() + 14*24*60*60*1000);
+                const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                const dueDateUrgency = Math.max(0, (30 - daysUntilDue)) / 30; // 0..1
+                const profitabilityScore = (task.project.profitability ?? 3) / 5;    // 0..1
+                const complexityScore = (task.project.complexity ?? 3) / 5;          // 0..1 (higher = higher priority)
+                const daysWorked = 0; // placeholder
+                
+                const priority = (dueDateUrgency * dueDateWeight) + 
+                                 (profitabilityScore * profitabilityWeight) + 
+                                 (complexityScore * complexityWeight) + 
+                                 (daysWorked * daysWorkedWeight);
+                
+                return {
+                    ...task,
+                    priority,
+                    daysUntilDue,
+                    isComplex: (task.project.complexity ?? 3) >= 4
+                };
+            }).sort((a, b) => b.priority - a.priority);
+        }
+
+        function nextMilestoneInProject(milestone) {
+            const list = sampleMilestones
+                .filter(m => m.projectId === milestone.projectId)
+                .sort((a,b) => a.order - b.order);
+            const idx = list.findIndex(m => m.id === milestone.id);
+            return idx >= 0 ? list[idx + 1] : null;
+        }
+
+        function balanceComplexity(prioritizedTasks, availableHours) {
+            const STEP = 0.5; // finer packing
+            const complexTasks = prioritizedTasks.filter(t => t.isComplex);
+            const simpleTasks  = prioritizedTasks.filter(t => !t.isComplex);
+            const complexPercentage = parseInt(document.getElementById('complexPercentage').value) / 100;
+            const complexHoursNeeded = availableHours * complexPercentage;
+            
+            const schedule = [];
+            let totalHours = 0;
+            let complexHours = 0;
+
+            function addToSchedule(task, hours) {
+                if (hours <= 0 || totalHours >= availableHours) return 0;
+                const hoursToAdd = Math.min(hours, availableHours - totalHours);
+                const existing = schedule.find(s => s.milestone.id === task.milestone.id);
+                if (existing) {
+                    existing.scheduledHours += hoursToAdd;
+                } else {
+                    schedule.push({ ...task, scheduledHours: hoursToAdd });
+                }
+                totalHours += hoursToAdd;
+                if (task.isComplex) complexHours += hoursToAdd;
+                return hoursToAdd;
+            }
+
+            // Phase 1: schedule complex tasks to their estimates
+            for (const t of complexTasks) {
+                if (totalHours >= availableHours) break;
+                addToSchedule(t, t.milestone.estimatedHours);
+            }
+
+            // Phase 2: schedule simple tasks to their estimates
+            for (const t of simpleTasks) {
+                if (totalHours >= availableHours) break;
+                addToSchedule(t, t.milestone.estimatedHours);
+            }
+
+            // Phase 2.5: enforce complex-hours floor by topping up and unlocking
+            function boostComplex() {
+                let added = 0;
+                for (const t of complexTasks) {
+                    if (totalHours >= availableHours || complexHours >= complexHoursNeeded) break;
+                    const existing = schedule.find(s => s.milestone.id === t.milestone.id);
+                    const current = existing ? existing.scheduledHours : 0;
+                    if (current < t.milestone.estimatedHours) {
+                        added += addToSchedule(t, Math.min(t.milestone.estimatedHours - current, STEP));
+                    }
+                }
+                for (const t of complexTasks) {
+                    if (totalHours >= availableHours || complexHours >= complexHoursNeeded) break;
+                    const existing = schedule.find(s => s.milestone.id === t.milestone.id);
+                    if (existing && existing.scheduledHours >= t.milestone.estimatedHours) {
+                        const next = nextMilestoneInProject(t.milestone);
+                        if (next && next.status !== 'Completed') {
+                            const nextTask = { milestone: next, project: t.project, priority: t.priority, daysUntilDue: t.daysUntilDue, isComplex: t.isComplex };
+                            added += addToSchedule(nextTask, Math.min(next.estimatedHours, STEP));
+                        }
+                    }
+                }
+                return added;
+            }
+
+            while (complexHours < complexHoursNeeded && totalHours < availableHours) {
+                if (boostComplex() === 0) break;
+            }
+
+            // Phase 3: fill the remaining day—top up to estimates then unlock subsequent milestones
+            let guard = 0;
+            while (totalHours < availableHours && guard++ < 200) {
+                let addedThisLoop = 0;
+                for (const t of prioritizedTasks) {
+                    if (totalHours >= availableHours) break;
+                    const existing = schedule.find(s => s.milestone.id === t.milestone.id);
+                    if (existing) {
+                        if (existing.scheduledHours < t.milestone.estimatedHours) {
+                            addedThisLoop += addToSchedule(t, Math.min(t.milestone.estimatedHours - existing.scheduledHours, STEP));
+                            continue;
+                        }
+                        const next = nextMilestoneInProject(t.milestone);
+                        if (next && next.status !== 'Completed') {
+                            const nextTask = { milestone: next, project: t.project, priority: t.priority, daysUntilDue: t.daysUntilDue, isComplex: (t.project.complexity ?? 3) >= 4 };
+                            addedThisLoop += addToSchedule(nextTask, Math.min(next.estimatedHours, STEP));
+                        }
+                    } else {
+                        addedThisLoop += addToSchedule(t, Math.min(t.milestone.estimatedHours, STEP));
+                    }
+                }
+                if (addedThisLoop === 0) break;
+            }
+
+            return { schedule, totalHours, complexHours };
+        }
+
+        // ========= RENDER =========
+        function displaySchedule(result, availableHours) {
+            const { schedule, totalHours, complexHours } = result;
+            let html = '';
+            
+            schedule.forEach((item) => {
+                const dueText = item.daysUntilDue < 0 ? '⚠️ OVERDUE!' : 
+                              item.daysUntilDue <= 3 ? '🔥 Due soon' : 
+                              item.daysUntilDue <= 7 ? '📅 Due this week' : '✅ On track';
+                
+                const complexClass = item.isComplex ? 'complex' : '';
+                const timeClass = item.isComplex ? 'complex' : '';
+                const completedClass = item.milestone.status === 'Completed' ? 'completed' : '';
+                
+                html += `
+                    <div class="milestone-item ${complexClass} ${completedClass}">
+                        <div class="milestone-row">
+                            <input type="checkbox" class="milestone-checkbox" 
+                                   ${item.milestone.status === 'Completed' ? 'checked' : ''} 
+                                   onchange="completeMilestone(${item.milestone.id})">
+                            <div class="milestone-content">
+                                <div class="milestone-header">
+                                    <div class="milestone-title">${item.milestone.name}</div>
+                                    <div class="milestone-time ${timeClass}">${item.scheduledHours}h</div>
+                                </div>
+                                <div class="milestone-details">
+                                    <span class="complexity-badge complexity-${item.project.complexity}">C${item.project.complexity}</span>
+                                    <span class="profitability-badge profitability-${item.project.profitability}">P${item.project.profitability}</span>
+                                    ${dueText} • Priority: ${item.priority.toFixed(2)}
+                                </div>
+                                <div class="milestone-project">
+                                    ${item.project.name} - ${item.project.instrumentMake} ${item.project.instrumentModel}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            const complexPercentage = totalHours > 0 ? Math.round((complexHours / totalHours) * 100) : 0;
+            const targetPercentage = parseInt(document.getElementById('complexPercentage').value);
+            
+            html += `
+                <div class="summary">
+                    <strong>Schedule Summary:</strong> ${totalHours.toFixed(1)}h scheduled of ${availableHours}h available<br>
+                    <strong>Complex work (4-5):</strong> ${complexHours.toFixed(1)}h (${complexPercentage}%)
+                    ${complexPercentage < targetPercentage ? ` ⚠️ Below ${targetPercentage}% target!` : ` ✅ Good balance!`}
+                </div>
+            `;
+            
+            document.getElementById('scheduleOutput').innerHTML = html;
+        }
+
+        // ========= MAIN =========
+        async function generateSchedule() {
+            const availableHours = parseFloat(document.getElementById('availableHours').value) || 8;
+            
+            const readyMilestones = getReadyMilestones();
+            if (readyMilestones.length === 0) {
+                document.getElementById('scheduleOutput').innerHTML = 
+                    '<div class="milestone-item"><div class="milestone-title">🎉 All current milestones completed!</div><div class="milestone-details">Add new projects or mark next milestones as ready.</div></div>';
+                return;
+            }
+            
+            const prioritizedTasks = calculatePriorities(readyMilestones);
+            const schedule = balanceComplexity(prioritizedTasks, availableHours);
+            
+            displaySchedule(schedule, availableHours);
+        }
+
+        // Load data (API → fallback) then render
+        window.onload = async function() {
+            await loadDataFromVercel();
+            generateSchedule();
+        };
+    </script>
+</body>
+</html>
