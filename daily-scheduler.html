@@ -664,5 +664,22 @@
             generateSchedule();
         };
     </script>
+
+<div style="margin:16px 0; padding:12px; background:#fff7ed; border-left:6px solid #ea580c; border-radius:8px;">
+  <button id="testApiBtn" style="padding:6px 10px;">Test API</button>
+  <pre id="diagOut" style="white-space:pre-wrap; background:#fff; border:1px solid #e5e7eb; padding:8px; border-radius:6px; max-height:220px; overflow:auto;"></pre>
+</div>
+<script>
+  function echo(s){ document.getElementById('diagOut').textContent = s; }
+  document.getElementById('testApiBtn').onclick = async () => {
+    try {
+      const res = await fetch('/api/notion-proxy', { headers:{Accept:'application/json'} });
+      const text = await res.text();
+      echo('Status: ' + res.status + '\n\n' + text);
+    } catch(e) {
+      echo('Fetch error: ' + (e?.message || e));
+    }
+  };
+</script>
 </body>
 </html>
