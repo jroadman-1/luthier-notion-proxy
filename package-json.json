@@ -1,0 +1,14 @@
+{
+  "name": "luthier-notion-proxy",
+  "version": "1.0.0",
+  "description": "Notion API proxy for Luthier scheduler",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "echo 'Deployed to Vercel'"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
