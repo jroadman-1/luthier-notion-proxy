@@ -665,21 +665,55 @@
         };
     </script>
 
-<div style="margin:16px 0; padding:12px; background:#fff7ed; border-left:6px solid #ea580c; border-radius:8px;">
-  <button id="testApiBtn" style="padding:6px 10px;">Test API</button>
-  <pre id="diagOut" style="white-space:pre-wrap; background:#fff; border:1px solid #e5e7eb; padding:8px; border-radius:6px; max-height:220px; overflow:auto;"></pre>
+    <div id="diag" style="margin:16px 0; padding:12px; background:#fff7ed; border-left:6px solid #ea580c; border-radius:8px; font:14px/1.4 system-ui, sans-serif;">
+  <strong>Diagnostics</strong>
+  <button id="testApiBtn" style="margin-left:8px; padding:6px 10px; border:0; border-radius:6px; background:#2563eb; color:#fff; cursor:pointer;">
+    Test API
+  </button>
+  <div style="margin-top:8px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px;">
+    <div>API_URL: <span id="diagApiUrl"></span></div>
+    <pre id="diagOut" style="white-space:pre-wrap; background:#fff; border:1px solid #e5e7eb; padding:8px; border-radius:6px; max-height:240px; overflow:auto;"></pre>
+  </div>
 </div>
+
 <script>
-  function echo(s){ document.getElementById('diagOut').textContent = s; }
-  document.getElementById('testApiBtn').onclick = async () => {
-    try {
-      const res = await fetch('/api/notion-proxy', { headers:{Accept:'application/json'} });
-      const text = await res.text();
-      echo('Status: ' + res.status + '\n\n' + text);
-    } catch(e) {
-      echo('Fetch error: ' + (e?.message || e));
+  window.addEventListener('DOMContentLoaded', () => {
+    const out = document.getElementById('diagOut');
+    const apiSpan = document.getElementById('diagApiUrl');
+    const btn = document.getElementById('testApiBtn');
+
+    function echo(s){ out.textContent = s; }
+    function getApiUrl(){
+      // Uses the same API_URL variable your page already defines:
+      // const API_URL = '/api/notion-proxy';
+      try { return API_URL; } catch { return '(API_URL not defined)'; }
     }
-  };
+
+    async function testApiNow() {
+      const url = getApiUrl();
+      apiSpan.textContent = url;
+      echo('Calling ' + url + ' …');
+      try {
+        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+        const text = await res.text();
+        // Try to pretty-print JSON if possible
+        try {
+          const json = JSON.parse(text);
+          echo('Status: ' + res.status + '\n\n' + JSON.stringify(json, null, 2));
+        } catch {
+          echo('Status: ' + res.status + '\n\n' + text);
+        }
+      } catch (e) {
+        echo('Network/Fetch error: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    // Bind and run once
+    btn.addEventListener('click', testApiNow);
+    testApiNow();
+  });
 </script>
+
+
 </body>
 </html>
