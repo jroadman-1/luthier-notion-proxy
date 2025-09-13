@@ -578,9 +578,21 @@
                 const data = await dataResponse.json();
                 const workflows = await workflowsResponse.json();
                 
+                console.log('Full API Response:', data);
+                console.log('Projects received:', data.projects?.length || 0);
+                console.log('Milestones received:', data.milestones?.length || 0);
+                
                 allProjects = data.projects || [];
                 allMilestones = data.milestones || [];
                 allWorkflows = workflows.workflows || [];
+                
+                // Debug milestone data
+                if (allMilestones.length > 0) {
+                    console.log('Sample milestone:', allMilestones[0]);
+                    console.log('All milestone statuses:', [...new Set(allMilestones.map(m => m.status))]);
+                } else {
+                    console.warn('No milestones received from API');
+                }
                 
                 console.log(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`);
                 
