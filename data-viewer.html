@@ -322,11 +322,10 @@
                     console.log('All status values found:', allStatuses);
                     console.log('Sample project data:', data.projects[0]);
                     
-                    // Filter for "In Progress" projects 
-                    const inProgressProjects = data.projects.filter(p => p.status === 'In Progress');
-                    console.log(`Found ${inProgressProjects.length} "In Progress" projects out of ${data.projects.length} total`);
+                    // API should already be filtering for "On The Bench" projects
+                    console.log(`Received ${data.projects.length} projects from API`);
                     
-                    allProjects = inProgressProjects.map((project, index) => {
+                    allProjects = data.projects.map((project, index) => {
                         console.log(`Processing project ${index + 1}:`, project.name);
                         
                         const complexity = getComplexityValue(project.complexity);
@@ -405,12 +404,31 @@
             }
 
             if (projectsToShow.length === 0) {
-                document.getElementById('projectOutput').innerHTML = `
-                    <div class="empty-state">
-                        <h3>No projects found for current filter</h3>
-                        <p>Try clicking "Show All Projects" to see all data.</p>
-                    </div>
-                `;
+                let message = '';
+                if (currentFilter === 'ready') {
+                    message = `
+                        <div class="empty-state">
+                            <h3>No projects ready to work on</h3>
+                            <p>Projects need both complexity/profitability ratings AND milestones defined to be "ready".</p>
+                            <p>Try "Show Needs Setup" to see what needs configuration.</p>
+                        </div>
+                    `;
+                } else if (currentFilter === 'needsSetup') {
+                    message = `
+                        <div class="empty-state">
+                            <h3>All projects have basic setup complete</h3>
+                            <p>All projects have complexity and profitability ratings.</p>
+                        </div>
+                    `;
+                } else {
+                    message = `
+                        <div class="empty-state">
+                            <h3>No projects to display</h3>
+                            <p>Check your filters or try refreshing from Notion.</p>
+                        </div>
+                    `;
+                }
+                document.getElementById('projectOutput').innerHTML = message;
                 return;
             }
 
