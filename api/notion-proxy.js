@@ -5,33 +5,45 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
   if (req.method === 'OPTIONS') return res.status(200).end();
-
+  
   try {
     const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID } = process.env;
-
     const missing = [];
     if (!NOTION_TOKEN) missing.push('NOTION_TOKEN');
     if (!NOTION_DATABASE_ID) missing.push('NOTION_DATABASE_ID');
     if (missing.length) {
       return res.status(500).json({ error: 'Missing environment variables', missing });
     }
-
+    
     const notion = new Client({ auth: NOTION_TOKEN });
-
-    // Projects
-    const projectsResp = await notion.databases.query({ database_id: NOTION_DATABASE_ID });
+    
+    // Projects - FILTER FOR "On The Bench" STATUS ONLY
+    const projectsResp = await notion.databases.query({ 
+      database_id: NOTION_DATABASE_ID,
+      filter: {
+        property: 'Status',
+        status: {
+          equals: 'On The Bench'
+        }
+      }
+    });
+    
     const projects = projectsResp.results.map(page => ({
       id: page.id,
       name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
-      instrumentMake: page.properties?.Make?.rich_text?.[0]?.plain_text ?? '',
-      instrumentModel: page.properties?.Model?.rich_text?.[0]?.plain_text ?? '',
+      instrumentMake: page.properties?.['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
+      instrumentModel: page.properties?.['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
       complexity: Number(page.properties?.Complexity?.number ?? 3),
       profitability: Number(page.properties?.Profitability?.number ?? 3),
       status: page.properties?.Status?.status?.name ?? 'On The Bench',
-      dueDate: page.properties?.Due?.date?.start ?? null
+      dueDate: page.properties?.['Due Date']?.date?.start ?? null,
+      totalMilestones: Number(page.properties?.['Total Milestones']?.number ?? 0),
+      completedMilestones: Number(page.properties?.['Completed Milestones']?.number ?? 0),
+      progress: Number(page.properties?.['Progress %']?.number ?? 0)
     }));
-
+    
     // Milestones (optional second DB)
     let milestones = [];
     if (NOTION_MILESTONES_DATABASE_ID) {
@@ -45,8 +57,9 @@ module.exports = async (req, res) => {
         status: page.properties?.Status?.status?.name ?? 'Not Started'
       }));
     }
-
+    
     res.status(200).json({ projects, milestones });
+    
   } catch (err) {
     console.error('Notion proxy error:', err);
     res.status(500).json({ error: 'Internal server error', detail: err?.message || String(err) });
