@@ -677,315 +677,43 @@
 </div>
 
 <script>
-// =========================
-// LIVE NOTION SCHEDULER JS (safe for missing controls)
-// =========================
-const API_URL = '/api/notion-proxy';
-const STEP = 0.5;
+  window.addEventListener('DOMContentLoaded', () => {
+    const out = document.getElementById('diagOut');
+    const apiSpan = document.getElementById('diagApiUrl');
+    const btn = document.getElementById('testApiBtn');
 
-// Safe DOM helpers
-const $ = id => document.getElementById(id);
-const num = (id, def) => {
-  const el = $(id);
-  const v = el && typeof el.value !== 'undefined' ? parseFloat(el.value) : NaN;
-  return Number.isFinite(v) ? v : def;
-};
-
-let projects = [];
-let milestones = [];
-
-// -------------------------
-// Load data from API
-// -------------------------
-async function loadDataFromVercel() {
-  const res = await fetch(API_URL, { headers: { 'Accept':'application/json' } });
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
-  const data = await res.json();
-  if (!Array.isArray(data.projects) || !Array.isArray(data.milestones)) {
-    throw new Error('API shape error: expected {projects:[], milestones:[]}');
-  }
-
-  projects = data.projects
-    .filter(p => (p.status || '').toLowerCase() === 'on the bench')
-    .map(p => ({
-      id: String(p.id),
-      name: p.name ?? 'Untitled',
-      instrumentMake: p.instrumentMake ?? '',
-      instrumentModel: p.instrumentModel ?? '',
-      complexity: Number(p.complexity ?? 3),
-      profitability: Number(p.profitability ?? 3),
-      status: p.status ?? 'In Progress',
-      dueDate: p.dueDate ?? null
-    }));
-
-  milestones = data.milestones.map(m => ({
-    id: String(m.id),
-    projectId: String(m.projectId),
-    name: m.name ?? 'Untitled',
-    estimatedHours: Number(m.estimatedHours ?? 1),
-    order: Number(m.order ?? 1),
-    status: m.status ?? 'Not Started'
-  }));
-}
-
-// -------------------------
-// Scheduling helpers
-// -------------------------
-function getReadyMilestones() {
-  const ready = [];
-  projects.forEach(project => {
-    const list = milestones.filter(m => m.projectId === project.id)
-                           .sort((a,b)=>a.order-b.order);
-    for (let i=0;i<list.length;i++) {
-      const m = list[i];
-      if (m.status === 'Completed') continue;
-      const prev = list[i-1];
-      const canStart = !prev || prev.status === 'Completed';
-      if (canStart && (m.status === 'Ready' || m.status === 'Not Started')) {
-        ready.push({ milestone:m, project });
-        break;
-      }
+    function echo(s){ out.textContent = s; }
+    function getApiUrl(){
+      // Uses the same API_URL variable your page already defines:
+      // const API_URL = '/api/notion-proxy';
+      try { return API_URL; } catch { return '(API_URL not defined)'; }
     }
-  });
-  return ready;
-}
 
-function calculatePriorities(readyTasks) {
-  const today = new Date();
-  const dueW = num('dueDateSlider', 50)/100;
-  const profW = num('profitabilitySlider', 50)/100;
-  const cxW   = num('complexitySlider', 50)/100;
-  const daysW = num('daysWorkedSlider', 0)/100;
-
-  return readyTasks.map(task => {
-    const dueDate = task.project.dueDate ? new Date(task.project.dueDate)
-                                         : new Date(Date.now()+14*864e5);
-    const daysUntilDue = Math.ceil((dueDate - today)/864e5);
-    const dueUrg = Math.max(0,(30 - daysUntilDue))/30;
-    const profit = (task.project.profitability ?? 3)/5;
-    const cx     = (task.project.complexity ?? 3)/5;
-    const days   = 0;
-
-    const priority = dueUrg*dueW + profit*profW + cx*cxW + days*daysW;
-    return { ...task, priority, daysUntilDue, isComplex: (task.project.complexity ?? 3) >= 4 };
-  }).sort((a,b)=> b.priority - a.priority);
-}
-
-function nextMilestoneInProject(milestone) {
-  const list = milestones.filter(m => m.projectId === milestone.projectId)
-                         .sort((a,b)=>a.order-b.order);
-  const idx = list.findIndex(m => m.id === milestone.id);
-  return idx >= 0 ? list[idx+1] : null;
-}
-
-function balanceComplexity(prioritizedTasks, availableHours) {
-  const complexTasks = prioritizedTasks.filter(t => t.isComplex);
-  const simpleTasks  = prioritizedTasks.filter(t => !t.isComplex);
-  const complexNeed  = availableHours * (num('complexPercentage', 40)/100);
-
-  const schedule = [];
-  let total = 0, complexHrs = 0;
-
-  function addToSchedule(task, hours) {
-    if (hours <= 0 || total >= availableHours) return 0;
-    const inc = Math.min(hours, availableHours - total);
-    const existing = schedule.find(s => s.milestone.id === task.milestone.id);
-    if (existing) existing.scheduledHours += inc;
-    else schedule.push({ ...task, scheduledHours: inc });
-    total += inc;
-    if (task.isComplex) complexHrs += inc;
-    return inc;
-  }
-
-  for (const t of complexTasks) { if (total>=availableHours) break; addToSchedule(t, t.milestone.estimatedHours); }
-  for (const t of simpleTasks)  { if (total>=availableHours) break; addToSchedule(t, t.milestone.estimatedHours); }
-
-  function boostComplex() {
-    let added = 0;
-    for (const t of complexTasks) {
-      if (total>=availableHours || complexHrs>=complexNeed) break;
-      const existing = schedule.find(s=>s.milestone.id===t.milestone.id);
-      const cur = existing ? existing.scheduledHours : 0;
-      if (cur < t.milestone.estimatedHours) {
-        added += addToSchedule(t, Math.min(t.milestone.estimatedHours - cur, STEP));
-      }
-    }
-    for (const t of complexTasks) {
-      if (total>=availableHours || complexHrs>=complexNeed) break;
-      const existing = schedule.find(s=>s.milestone.id===t.milestone.id);
-      if (existing && existing.scheduledHours >= t.milestone.estimatedHours) {
-        const nxt = nextMilestoneInProject(t.milestone);
-        if (nxt && nxt.status !== 'Completed') {
-          const nt = { milestone:nxt, project:t.project, priority:t.priority, daysUntilDue:t.daysUntilDue, isComplex:t.isComplex };
-          added += addToSchedule(nt, Math.min(nxt.estimatedHours, STEP));
+    async function testApiNow() {
+      const url = getApiUrl();
+      apiSpan.textContent = url;
+      echo('Calling ' + url + ' …');
+      try {
+        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+        const text = await res.text();
+        // Try to pretty-print JSON if possible
+        try {
+          const json = JSON.parse(text);
+          echo('Status: ' + res.status + '\n\n' + JSON.stringify(json, null, 2));
+        } catch {
+          echo('Status: ' + res.status + '\n\n' + text);
         }
+      } catch (e) {
+        echo('Network/Fetch error: ' + (e && e.message ? e.message : e));
       }
     }
-    return added;
-  }
-  while (complexHrs < complexNeed && total < availableHours) {
-    if (boostComplex() === 0) break;
-  }
 
-  let guard = 0;
-  while (total < availableHours && guard++ < 200) {
-    let loopAdd = 0;
-    for (const t of prioritizedTasks) {
-      if (total>=availableHours) break;
-      const existing = schedule.find(s=>s.milestone.id===t.milestone.id);
-      if (existing) {
-        if (existing.scheduledHours < t.milestone.estimatedHours) {
-          loopAdd += addToSchedule(t, Math.min(t.milestone.estimatedHours - existing.scheduledHours, STEP));
-          continue;
-        }
-        const nxt = nextMilestoneInProject(t.milestone);
-        if (nxt && nxt.status !== 'Completed') {
-          const nt = { milestone:nxt, project:t.project, priority:t.priority, daysUntilDue:t.daysUntilDue, isComplex:(t.project.complexity ?? 3) >= 4 };
-          loopAdd += addToSchedule(nt, Math.min(nxt.estimatedHours, STEP));
-        }
-      } else {
-        loopAdd += addToSchedule(t, Math.min(t.milestone.estimatedHours, STEP));
-      }
-    }
-    if (loopAdd === 0) break;
-  }
-
-  return { schedule, totalHours: total, complexHours: complexHrs };
-}
-
-// -------------------------
-// Rendering & actions
-// -------------------------
-function displaySchedule(result, availableHours) {
-  const out = $('scheduleOutput');
-  const { schedule, totalHours, complexHours } = result;
-
-  if (!schedule.length) {
-    out.innerHTML = `<div class="milestone-item">No tasks could be scheduled — check milestone statuses in Notion.</div>`;
-    return;
-  }
-
-  let html = '';
-  schedule.forEach(item => {
-    const dueText = item.daysUntilDue < 0 ? '⚠️ OVERDUE'
-                  : item.daysUntilDue <= 3 ? '🔥 Due soon'
-                  : item.daysUntilDue <= 7 ? '📅 This week'
-                  : '✅ On track';
-    const isCx = item.isComplex ? 'complex' : '';
-    html += `
-      <div class="milestone-item ${isCx}">
-        <div class="milestone-row">
-          <input type="checkbox" class="milestone-checkbox"
-                 ${item.milestone.status === 'Completed' ? 'checked' : ''}
-                 onchange="completeMilestone('${item.milestone.id}')">
-          <div class="milestone-content">
-            <div class="milestone-header">
-              <div class="milestone-title">${item.milestone.name}</div>
-              <div class="milestone-time ${isCx}">${item.scheduledHours}h</div>
-            </div>
-            <div class="milestone-details">
-              <span class="complexity-badge complexity-${item.project.complexity}">C${item.project.complexity}</span>
-              <span class="profitability-badge profitability-${item.project.profitability}">P${item.project.profitability}</span>
-              ${dueText} • Priority: ${item.priority.toFixed(2)}
-            </div>
-            <div class="milestone-project">
-              ${item.project.name} — ${item.project.instrumentMake} ${item.project.instrumentModel}
-            </div>
-          </div>
-        </div>
-      </div>`;
+    // Bind and run once
+    btn.addEventListener('click', testApiNow);
+    testApiNow();
   });
-
-  const pct = totalHours>0 ? Math.round((complexHours/totalHours)*100) : 0;
-  const target = num('complexPercentage', 40);
-  html += `
-    <div class="summary">
-      <strong>Schedule:</strong> ${totalHours.toFixed(1)}h of ${availableHours}h •
-      <strong>Complex (4–5):</strong> ${complexHours.toFixed(1)}h (${pct}%)
-      ${pct < target ? `⚠️ Below ${target}% target` : `✅ On target`}
-    </div>`;
-  out.innerHTML = html;
-}
-
-function completeMilestone(milestoneId) {
-  const ms = milestones.find(m => m.id === String(milestoneId));
-  if (!ms) return;
-  ms.status = 'Completed';
-
-  const siblings = milestones.filter(x => x.projectId === ms.projectId)
-                             .sort((a,b)=>a.order-b.order);
-  const idx = siblings.findIndex(x => x.id === ms.id);
-  const next = siblings[idx+1];
-  if (next && next.status === 'Not Started') next.status = 'Ready';
-
-  removeCompletedFromSchedule(ms.id);
-}
-
-function removeCompletedFromSchedule() {
-  const out = $('scheduleOutput');
-  const items = Array.from(out.querySelectorAll('.milestone-item'));
-  let remaining = 0;
-  items.forEach(item => {
-    const cb = item.querySelector('.milestone-checkbox');
-    const t  = item.querySelector('.milestone-time');
-    if (cb && !cb.checked && t) remaining += parseFloat(t.textContent.replace('h',''))||0;
-  });
-  const summary = out.querySelector('.summary');
-  if (summary) {
-    const availableHours = num('availableHours', 8);
-    const completed = Math.max(0, availableHours - remaining);
-    summary.innerHTML = `
-      <strong>Schedule Summary:</strong> ${remaining.toFixed(1)}h remaining of ${availableHours}h total<br>
-      <strong>Completed:</strong> ${completed.toFixed(1)}h •
-      <strong>Progress:</strong> ${Math.round((completed/availableHours)*100)}%
-    `;
-  }
-}
-
-// -------------------------
-// Main
-// -------------------------
-async function generateSchedule() {
-  const availableHours = num('availableHours', 8);
-
-  if (!projects.length) {
-    $('scheduleOutput').innerHTML =
-      '<div class="milestone-item">No "On The Bench" projects found in Notion.</div>';
-    return;
-  }
-  if (!milestones.length) {
-    $('scheduleOutput').innerHTML =
-      '<div class="milestone-item">No milestones returned. Add NOTION_MILESTONES_DATABASE_ID or populate the DB.</div>';
-    return;
-  }
-
-  const ready = getReadyMilestones();
-  if (!ready.length) {
-    $('scheduleOutput').innerHTML =
-      '<div class="milestone-item">No ready milestones. Mark prior steps Completed in Notion.</div>';
-    return;
-  }
-
-  const prioritized = calculatePriorities(ready);
-  const result = balanceComplexity(prioritized, availableHours);
-  displaySchedule(result, availableHours);
-}
-
-window.addEventListener('DOMContentLoaded', async () => {
-  try {
-    await loadDataFromVercel();
-  } catch (e) {
-    console.error('API load failed:', e);
-    $('scheduleOutput').innerHTML = `<div class="milestone-item">API error: ${e.message}</div>`;
-    return;
-  }
-  generateSchedule();
-
-  // Re-generate when controls (if present) change
-  ['dueDateSlider','profitabilitySlider','complexitySlider','daysWorkedSlider','complexPercentage','availableHours']
-    .forEach(id => { const el = $(id); if (el) el.addEventListener('input', generateSchedule); });
-});
 </script>
+
 
 </body>
 </html>
