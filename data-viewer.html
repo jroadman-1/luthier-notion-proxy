@@ -326,11 +326,16 @@
                 
                 const data = await res.json();
                 console.log('Raw API Response:', data);
+                console.log('First few projects:', data.projects?.slice(0, 3));
 
-                // Transform your data format into workable projects
+                // Check what status values we actually have
                 if (Array.isArray(data.projects)) {
+                    const allStatuses = [...new Set(data.projects.map(p => p.status))];
+                    console.log('All status values found:', allStatuses);
+                    
+                    // Transform your data format into workable projects
+                    // Remove the status filter for now to see all data
                     allProjects = data.projects
-                        .filter(p => p.status === 'On The Bench') // Only "On The Bench" projects
                         .map(project => ({
                             id: project.id,
                             name: project.name || 'Unnamed Project',
@@ -341,12 +346,16 @@
                             status: project.status,
                             dueDate: project.dueDate,
                             milestones: [], // Will be populated from embedded data if available
-                            totalMilestones: 0,
-                            completedMilestones: 0,
-                            progress: 0,
+                            totalMilestones: project.totalMilestones || 0,
+                            completedMilestones: project.completedMilestones || 0,
+                            progress: project['progress %'] || 0,
                             hasData: !!(project.complexity || project.profitability),
-                            needsSetup: !(project.complexity && project.profitability)
+                            needsSetup: !(project.complexity && project.profitability),
+                            rawProject: project // Keep raw data for debugging
                         }));
+                    
+                    console.log(`Loaded ${allProjects.length} projects (before filtering)`);
+                    console.log('First project after mapping:', allProjects[0]);
                 } else {
                     throw new Error('Expected projects array in API response');
                 }
