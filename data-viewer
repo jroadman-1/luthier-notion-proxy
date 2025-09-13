@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luthier Daily Scheduler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .schedule-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .project-item {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        .project-item.has-milestones {
+            border-left-color: #27ae60;
+        }
+        
+        .project-item.needs-setup {
+            border-left-color: #f39c12;
+            background: #fefdf7;
+        }
+        
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .project-title {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        
+        .project-status {
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .project-details {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .project-instrument {
+            font-style: italic;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        
+        .milestone-list {
+            background: #fff;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .milestone-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-left: 3px solid #3498db;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        .milestone-item.completed {
+            background: #d4edda;
+            border-left-color: #28a745;
+            opacity: 0.7;
+        }
+        
+        .complexity-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .complexity-1 { background: #27ae60; }
+        .complexity-2 { background: #f39c12; }
+        .complexity-3 { background: #e67e22; }
+        .complexity-4 { background: #e74c3c; }
+        .complexity-5 { background: #8e44ad; }
+        
+        .profitability-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .profitability-1 { background: #95a5a6; }
+        .profitability-2 { background: #f39c12; }
+        .profitability-3 { background: #3498db; }
+        .profitability-4 { background: #27ae60; }
+        .profitability-5 { background: #2ecc71; }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+        }
+        
+        .btn.success {
+            background: #27ae60;
+        }
+        
+        .btn.warning {
+            background: #f39c12;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            color: #c62828;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .progress-fill {
+            background: #28a745;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .sync-status {
+            font-size: 12px;
+            color: #ccc;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎸 Luthier Workbench</h1>
+        <p>Projects currently "On The Bench"</p>
+        <div class="sync-status" id="syncStatus">Loading from Notion...</div>
+    </div>
+
+    <!-- Stats Dashboard -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value" id="totalProjects">0</div>
+            <div class="stat-label">Total Projects</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="withMilestones">0</div>
+            <div class="stat-label">With Milestones</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="needsSetup">0</div>
+            <div class="stat-label">Need Setup</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="totalMilestones">0</div>
+            <div class="stat-label">Total Milestones</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn success" onclick="loadData()">Refresh from Notion</button>
+        <button class="btn" onclick="showOnlyReady()">Show Only Ready to Work</button>
+        <button class="btn warning" onclick="showNeedsSetup()">Show Needs Setup</button>
+        <button class="btn" onclick="showAll()">Show All Projects</button>
+    </div>
+
+    <div class="schedule-container">
+        <h3>📋 Current Projects</h3>
+        <div id="projectOutput">
+            <div class="loading">Loading projects from Notion...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/notion-proxy';
+        
+        let allProjects = [];
+        let currentFilter = 'all';
+
+        // Parse your complexity and profitability formats
+        function parseComplexity(complexityStr) {
+            if (!complexityStr) return 0;
+            const match = complexityStr.match(/^(\d+)-/);
+            return match ? parseInt(match[1]) : 0;
+        }
+
+        function parseProfitability(profitabilityStr) {
+            if (!profitabilityStr) return 0;
+            const match = profitabilityStr.match(/^(\d+)-/);
+            return match ? parseInt(match[1]) : 0;
+        }
+
+        // Parse milestones from your text format
+        function parseMilestones(milestonesStr) {
+            if (!milestonesStr) return [];
+            
+            // Extract milestone names from the format "Name (https://...)"
+            const milestoneMatches = milestonesStr.match(/([^(]+)\s*\(https:\/\/[^)]+\)/g);
+            if (!milestoneMatches) return [];
+            
+            return milestoneMatches.map((match, index) => {
+                const name = match.replace(/\s*\(https:\/\/[^)]+\)$/, '').trim();
+                return {
+                    id: index,
+                    name: name,
+                    status: 'Ready', // Assume all are ready for now
+                    estimatedHours: 1 // Default estimate
+                };
+            });
+        }
+
+        async function loadData() {
+            try {
+                document.getElementById('syncStatus').textContent = 'Loading from Notion...';
+                
+                const res = await fetch(API_URL, { 
+                    headers: { 'Accept': 'application/json' } 
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`API responded with status ${res.status}`);
+                }
+                
+                const data = await res.json();
+                console.log('Raw API Response:', data);
+
+                // Transform your data format into workable projects
+                if (Array.isArray(data.projects)) {
+                    allProjects = data.projects
+                        .filter(p => p.status === 'On The Bench') // Only "On The Bench" projects
+                        .map(project => ({
+                            id: project.id,
+                            name: project.name || 'Unnamed Project',
+                            instrumentMake: project.instrumentMake || 'Unknown',
+                            instrumentModel: project.instrumentModel || 'Model',
+                            complexity: parseComplexity(project.complexity),
+                            profitability: parseProfitability(project.profitability),
+                            status: project.status,
+                            dueDate: project.dueDate,
+                            milestones: [], // Will be populated from embedded data if available
+                            totalMilestones: 0,
+                            completedMilestones: 0,
+                            progress: 0,
+                            hasData: !!(project.complexity || project.profitability),
+                            needsSetup: !(project.complexity && project.profitability)
+                        }));
+                } else {
+                    throw new Error('Expected projects array in API response');
+                }
+                
+                updateStats();
+                displayProjects();
+                
+                document.getElementById('syncStatus').textContent = 
+                    `Last sync: ${new Date().toLocaleTimeString()} - ${allProjects.length} projects loaded`;
+                
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                document.getElementById('syncStatus').textContent = 'Sync failed - check console';
+                
+                document.getElementById('projectOutput').innerHTML = `
+                    <div class="error">
+                        <strong>Failed to load projects from Notion</strong><br>
+                        Error: ${error.message}<br>
+                        <button class="btn" onclick="loadData()" style="margin-top: 10px;">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        function updateStats() {
+            const withMilestones = allProjects.filter(p => p.totalMilestones > 0).length;
+            const needsSetup = allProjects.filter(p => p.needsSetup).length;
+            const totalMilestones = allProjects.reduce((sum, p) => sum + p.totalMilestones, 0);
+
+            document.getElementById('totalProjects').textContent = allProjects.length;
+            document.getElementById('withMilestones').textContent = withMilestones;
+            document.getElementById('needsSetup').textContent = needsSetup;
+            document.getElementById('totalMilestones').textContent = totalMilestones;
+        }
+
+        function displayProjects() {
+            let projectsToShow = allProjects;
+
+            // Apply current filter
+            switch(currentFilter) {
+                case 'ready':
+                    projectsToShow = allProjects.filter(p => p.totalMilestones > 0 && !p.needsSetup);
+                    break;
+                case 'needsSetup':
+                    projectsToShow = allProjects.filter(p => p.needsSetup);
+                    break;
+                case 'all':
+                default:
+                    // Show all
+                    break;
+            }
+
+            if (projectsToShow.length === 0) {
+                document.getElementById('projectOutput').innerHTML = `
+                    <div class="empty-state">
+                        <h3>No projects found</h3>
+                        <p>No projects match the current filter criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            
+            projectsToShow.forEach(project => {
+                const complexityClass = project.complexity > 0 ? `complexity-${project.complexity}` : 'complexity-3';
+                const profitabilityClass = project.profitability > 0 ? `profitability-${project.profitability}` : 'profitability-3';
+                
+                let projectClass = 'project-item';
+                if (project.totalMilestones > 0) {
+                    projectClass += ' has-milestones';
+                } else if (project.needsSetup) {
+                    projectClass += ' needs-setup';
+                }
+
+                html += `
+                    <div class="${projectClass}">
+                        <div class="project-header">
+                            <div class="project-title">${project.name}</div>
+                            <div class="project-status">${project.status}</div>
+                        </div>
+                        
+                        <div class="project-instrument">
+                            ${project.instrumentMake} ${project.instrumentModel}
+                        </div>
+                        
+                        <div class="project-details">
+                `;
+
+                if (project.complexity > 0) {
+                    html += `<span class="complexity-badge ${complexityClass}">Complexity ${project.complexity}</span>`;
+                }
+                
+                if (project.profitability > 0) {
+                    html += `<span class="profitability-badge ${profitabilityClass}">Profitability ${project.profitability}</span>`;
+                }
+
+                if (!project.hasData) {
+                    html += `<span style="color: #f39c12;">⚠️ Needs complexity and profitability ratings</span>`;
+                }
+
+                html += `
+                        </div>
+                `;
+
+                if (project.totalMilestones > 0) {
+                    const progressPercent = project.totalMilestones > 0 ? 
+                        Math.round((project.completedMilestones / project.totalMilestones) * 100) : 0;
+                    
+                    html += `
+                        <div class="milestone-list">
+                            <strong>Milestones (${project.completedMilestones}/${project.totalMilestones} completed)</strong>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                    `;
+                    
+                    project.milestones.forEach(milestone => {
+                        const completedClass = milestone.status === 'Completed' ? 'completed' : '';
+                        html += `
+                            <div class="milestone-item ${completedClass}">
+                                ${milestone.name}
+                                <span style="float: right; font-size: 12px; color: #666;">
+                                    ${milestone.estimatedHours}h • ${milestone.status}
+                                </span>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                } else {
+                    html += `
+                        <div style="color: #666; font-style: italic; margin-top: 10px;">
+                            No milestones defined yet
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            });
+            
+            document.getElementById('projectOutput').innerHTML = html;
+        }
+
+        // Filter functions
+        function showAll() {
+            currentFilter = 'all';
+            displayProjects();
+        }
+
+        function showOnlyReady() {
+            currentFilter = 'ready';
+            displayProjects();
+        }
+
+        function showNeedsSetup() {
+            currentFilter = 'needsSetup';
+            displayProjects();
+        }
+
+        // Initialize
+        window.onload = function() {
+            loadData();
+        };
+    </script>
+</body>
+</html>
