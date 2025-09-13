@@ -114,28 +114,6 @@
             margin-bottom: 10px;
         }
         
-        .milestone-list {
-            background: #fff;
-            border-radius: 6px;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        
-        .milestone-item {
-            padding: 8px 12px;
-            margin: 5px 0;
-            background: #f8f9fa;
-            border-left: 3px solid #3498db;
-            border-radius: 3px;
-            font-size: 14px;
-        }
-        
-        .milestone-item.completed {
-            background: #d4edda;
-            border-left-color: #28a745;
-            opacity: 0.7;
-        }
-        
         .complexity-badge {
             display: inline-block;
             padding: 3px 8px;
@@ -206,20 +184,6 @@
             color: #c62828;
         }
         
-        .progress-bar {
-            background: #e9ecef;
-            border-radius: 10px;
-            height: 8px;
-            overflow: hidden;
-            margin: 5px 0;
-        }
-        
-        .progress-fill {
-            background: #28a745;
-            height: 100%;
-            transition: width 0.3s ease;
-        }
-        
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -230,6 +194,17 @@
             font-size: 12px;
             color: #ccc;
             text-align: right;
+        }
+        
+        .raw-data {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 150px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -280,36 +255,51 @@
         let allProjects = [];
         let currentFilter = 'all';
 
-        // Parse your complexity and profitability formats
-        function parseComplexity(complexityStr) {
-            if (!complexityStr) return 0;
-            const match = complexityStr.match(/^(\d+)-/);
-            return match ? parseInt(match[1]) : 0;
+        // Fixed parsing functions with correct parameter names
+        function getComplexityValue(complexityData) {
+            console.log('Processing complexity:', complexityData, typeof complexityData);
+            
+            if (!complexityData) return 0;
+            
+            // Handle if it's already a number
+            if (typeof complexityData === 'number') return complexityData;
+            
+            // Handle string formats like "3-Moderate Repairs"
+            if (typeof complexityData === 'string') {
+                const match = complexityData.match(/^(\d+)-/);
+                return match ? parseInt(match[1]) : 0;
+            }
+            
+            // Handle Notion select objects {name: "3-Moderate Repairs"}
+            if (typeof complexityData === 'object' && complexityData.name) {
+                const match = complexityData.name.match(/^(\d+)-/);
+                return match ? parseInt(match[1]) : 0;
+            }
+            
+            return 0;
         }
 
-        function parseProfitability(profitabilityStr) {
-            if (!profitabilityStr) return 0;
-            const match = profitabilityStr.match(/^(\d+)-/);
-            return match ? parseInt(match[1]) : 0;
-        }
-
-        // Parse milestones from your text format
-        function parseMilestones(milestonesStr) {
-            if (!milestonesStr) return [];
+        function getProfitabilityValue(profitabilityData) {
+            console.log('Processing profitability:', profitabilityData, typeof profitabilityData);
             
-            // Extract milestone names from the format "Name (https://...)"
-            const milestoneMatches = milestonesStr.match(/([^(]+)\s*\(https:\/\/[^)]+\)/g);
-            if (!milestoneMatches) return [];
+            if (!profitabilityData) return 0;
             
-            return milestoneMatches.map((match, index) => {
-                const name = match.replace(/\s*\(https:\/\/[^)]+\)$/, '').trim();
-                return {
-                    id: index,
-                    name: name,
-                    status: 'Ready', // Assume all are ready for now
-                    estimatedHours: 1 // Default estimate
-                };
-            });
+            // Handle if it's already a number
+            if (typeof profitabilityData === 'number') return profitabilityData;
+            
+            // Handle string formats like "3-Standard"
+            if (typeof profitabilityData === 'string') {
+                const match = profitabilityData.match(/^(\d+)-/);
+                return match ? parseInt(match[1]) : 0;
+            }
+            
+            // Handle Notion select objects {name: "3-Standard"}
+            if (typeof profitabilityData === 'object' && profitabilityData.name) {
+                const match = profitabilityData.name.match(/^(\d+)-/);
+                return match ? parseInt(match[1]) : 0;
+            }
+            
+            return 0;
         }
 
         async function loadData() {
@@ -326,36 +316,42 @@
                 
                 const data = await res.json();
                 console.log('Raw API Response:', data);
-                console.log('First few projects:', data.projects?.slice(0, 3));
 
-                // Check what status values we actually have
                 if (Array.isArray(data.projects)) {
                     const allStatuses = [...new Set(data.projects.map(p => p.status))];
                     console.log('All status values found:', allStatuses);
+                    console.log('Sample project data:', data.projects[0]);
                     
-                    // Transform your data format into workable projects
-                    // Remove the status filter for now to see all data
-                    allProjects = data.projects
-                        .map(project => ({
+                    // Filter for "In Progress" projects 
+                    const inProgressProjects = data.projects.filter(p => p.status === 'In Progress');
+                    console.log(`Found ${inProgressProjects.length} "In Progress" projects out of ${data.projects.length} total`);
+                    
+                    allProjects = inProgressProjects.map((project, index) => {
+                        console.log(`Processing project ${index + 1}:`, project.name);
+                        
+                        const complexity = getComplexityValue(project.complexity);
+                        const profitability = getProfitabilityValue(project.profitability);
+                        
+                        return {
                             id: project.id,
                             name: project.name || 'Unnamed Project',
                             instrumentMake: project.instrumentMake || 'Unknown',
                             instrumentModel: project.instrumentModel || 'Model',
-                            complexity: parseComplexity(project.complexity),
-                            profitability: parseProfitability(project.profitability),
+                            complexity: complexity,
+                            profitability: profitability,
                             status: project.status,
                             dueDate: project.dueDate,
-                            milestones: [], // Will be populated from embedded data if available
                             totalMilestones: project.totalMilestones || 0,
                             completedMilestones: project.completedMilestones || 0,
-                            progress: project['progress %'] || 0,
-                            hasData: !!(project.complexity || project.profitability),
-                            needsSetup: !(project.complexity && project.profitability),
-                            rawProject: project // Keep raw data for debugging
-                        }));
+                            progress: project.progress || 0,
+                            hasData: !!(complexity || profitability),
+                            needsSetup: !(complexity && profitability),
+                            rawProject: project
+                        };
+                    });
                     
-                    console.log(`Loaded ${allProjects.length} projects (before filtering)`);
-                    console.log('First project after mapping:', allProjects[0]);
+                    console.log(`Successfully processed ${allProjects.length} projects`);
+                    
                 } else {
                     throw new Error('Expected projects array in API response');
                 }
@@ -411,8 +407,8 @@
             if (projectsToShow.length === 0) {
                 document.getElementById('projectOutput').innerHTML = `
                     <div class="empty-state">
-                        <h3>No projects found</h3>
-                        <p>No projects match the current filter criteria.</p>
+                        <h3>No projects found for current filter</h3>
+                        <p>Try clicking "Show All Projects" to see all data.</p>
                     </div>
                 `;
                 return;
@@ -453,39 +449,21 @@
                     html += `<span class="profitability-badge ${profitabilityClass}">Profitability ${project.profitability}</span>`;
                 }
 
-                if (!project.hasData) {
+                if (project.needsSetup) {
                     html += `<span style="color: #f39c12;">⚠️ Needs complexity and profitability ratings</span>`;
                 }
 
-                html += `
-                        </div>
-                `;
+                html += `</div>`;
 
                 if (project.totalMilestones > 0) {
                     const progressPercent = project.totalMilestones > 0 ? 
                         Math.round((project.completedMilestones / project.totalMilestones) * 100) : 0;
                     
                     html += `
-                        <div class="milestone-list">
-                            <strong>Milestones (${project.completedMilestones}/${project.totalMilestones} completed)</strong>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progressPercent}%"></div>
-                            </div>
+                        <div style="margin-top: 10px;">
+                            <strong>Milestones: ${project.completedMilestones}/${project.totalMilestones} completed (${progressPercent}%)</strong>
+                        </div>
                     `;
-                    
-                    project.milestones.forEach(milestone => {
-                        const completedClass = milestone.status === 'Completed' ? 'completed' : '';
-                        html += `
-                            <div class="milestone-item ${completedClass}">
-                                ${milestone.name}
-                                <span style="float: right; font-size: 12px; color: #666;">
-                                    ${milestone.estimatedHours}h • ${milestone.status}
-                                </span>
-                            </div>
-                        `;
-                    });
-                    
-                    html += `</div>`;
                 } else {
                     html += `
                         <div style="color: #666; font-style: italic; margin-top: 10px;">
@@ -493,6 +471,14 @@
                         </div>
                     `;
                 }
+
+                // Show raw data for debugging
+                html += `
+                    <details style="margin-top: 10px;">
+                        <summary style="cursor: pointer; color: #666; font-size: 12px;">Show raw data</summary>
+                        <div class="raw-data">${JSON.stringify(project.rawProject, null, 2)}</div>
+                    </details>
+                `;
 
                 html += `</div>`;
             });
