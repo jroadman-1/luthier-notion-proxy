@@ -118,69 +118,11 @@
             color: #888;
         }
         
-        .time-tracker {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            display: none;
-            background: #ecf0f1;
-            padding: 10px;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            z-index: 10;
-            min-width: 200px;
-        }
-        
-        .time-tracker.active {
-            display: block;
-        }
-        
         .timer-display {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
-            text-align: center;
-            margin-bottom: 10px;
             color: #2c3e50;
-        }
-        
-        .timer-controls {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-        
-        .timer-btn {
-            flex: 1;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .timer-btn.start {
-            background: #27ae60;
-            color: white;
-        }
-        
-        .timer-btn.pause {
-            background: #f39c12;
-            color: white;
-        }
-        
-        .timer-btn.stop {
-            background: #e74c3c;
-            color: white;
-        }
-        
-        .timer-notes {
-            width: 100%;
-            height: 40px;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 12px;
-            resize: vertical;
+            margin: 5px 0;
         }
         
         .summary {
@@ -295,39 +237,6 @@
             width: 100px;
         }
         
-        .work-log-entry {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-        }
-        
-        .work-log-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-        
-        .work-log-project {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .work-log-time {
-            background: #3498db;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-        
-        .work-log-details {
-            font-size: 14px;
-            color: #666;
-        }
-        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -371,7 +280,7 @@
         
         .sync-status {
             font-size: 12px;
-            color: #666;
+            color: #ccc;
             text-align: right;
             margin-bottom: 10px;
         }
@@ -396,14 +305,46 @@
             color: white;
         }
         
+        .action-btn.timer.running {
+            background: #e74c3c;
+        }
+        
         .action-btn.complete {
             background: #27ae60;
             color: white;
         }
         
-        .action-btn.notes {
-            background: #95a5a6;
+        .work-log-entry {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        
+        .work-log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .work-log-project {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .work-log-time {
+            background: #3498db;
             color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .work-log-details {
+            font-size: 14px;
+            color: #666;
         }
     </style>
 </head>
@@ -498,9 +439,307 @@
         const API_URL = '/api/notion-proxy';
         
         // ========= STATE MANAGEMENT =========
-        let sampleProjects = [];
-        let sampleMilestones = [];
+        let sampleProjects = [
+            { id: 1, name: "John Smith", instrumentMake: "Martin", instrumentModel: "D-28", complexity: 4, profitability: 5, status: "In Progress", dueDate: "2025-09-15", lastWorked: "2025-09-10", totalHours: 8 },
+            { id: 2, name: "Sarah Johnson", instrumentMake: "Gibson", instrumentModel: "Les Paul", complexity: 2, profitability: 3, status: "In Progress", dueDate: "2025-09-20", lastWorked: "2025-09-11", totalHours: 3 },
+            { id: 3, name: "Mike Davis", instrumentMake: "Taylor", instrumentModel: "814ce", complexity: 5, profitability: 4, status: "In Progress", dueDate: "2025-09-18", lastWorked: "2025-09-09", totalHours: 12 },
+            { id: 4, name: "Lisa Brown", instrumentMake: "Fender", instrumentModel: "Stratocaster", complexity: 1, profitability: 2, status: "In Progress", dueDate: "2025-09-25", lastWorked: null, totalHours: 0 }
+        ];
+
+        let sampleMilestones = [
+            // Martin D-28 (Complex refret)
+            { id: 1, projectId: 1, name: "Remove strings and hardware", estimatedHours: 0.5, order: 1, status: "Completed", hoursWorked: 0.5 },
+            { id: 2, projectId: 1, name: "Remove old frets", estimatedHours: 1.5, order: 2, status: "Completed", hoursWorked: 1.8 },
+            { id: 3, projectId: 1, name: "Level fretboard", estimatedHours: 1.0, order: 3, status: "Ready", hoursWorked: 0 },
+            { id: 4, projectId: 1, name: "Install new frets", estimatedHours: 2.0, order: 4, status: "Not Started", hoursWorked: 0 },
+            { id: 5, projectId: 1, name: "Level and crown frets", estimatedHours: 2.0, order: 5, status: "Not Started", hoursWorked: 0 },
+            { id: 6, projectId: 1, name: "Final setup", estimatedHours: 1.0, order: 6, status: "Not Started", hoursWorked: 0 },
+
+            // Gibson Les Paul (Simple setup)
+            { id: 7, projectId: 2, name: "Adjust truss rod", estimatedHours: 0.5, order: 1, status: "Ready", hoursWorked: 0 },
+            { id: 8, projectId: 2, name: "Set action and intonation", estimatedHours: 1.0, order: 2, status: "Not Started", hoursWorked: 0 },
+
+            // Taylor 814ce (Complex neck reset)
+            { id: 9, projectId: 3, name: "Remove strings and assess", estimatedHours: 0.5, order: 1, status: "Completed", hoursWorked: 0.3 },
+            { id: 10, projectId: 3, name: "Steam neck joint", estimatedHours: 1.5, order: 2, status: "Ready", hoursWorked: 0 },
+            { id: 11, projectId: 3, name: "Remove neck", estimatedHours: 1.0, order: 3, status: "Not Started", hoursWorked: 0 },
+            { id: 12, projectId: 3, name: "Plane neck heel", estimatedHours: 2.0, order: 4, status: "Not Started", hoursWorked: 0 },
+            { id: 13, projectId: 3, name: "Reattach neck", estimatedHours: 1.5, order: 5, status: "Not Started", hoursWorked: 0 },
+            { id: 14, projectId: 3, name: "Final setup", estimatedHours: 1.0, order: 6, status: "Not Started", hoursWorked: 0 },
+
+            // Fender Strat (Basic work)
+            { id: 15, projectId: 4, name: "Replace strings", estimatedHours: 0.3, order: 1, status: "Ready", hoursWorked: 0 },
+            { id: 16, projectId: 4, name: "Basic setup", estimatedHours: 0.7, order: 2, status: "Not Started", hoursWorked: 0 }
+        ];
+        
         let workLog = JSON.parse(localStorage.getItem('workLog') || '[]');
         let timers = {}; // milestoneId -> { startTime, totalTime, isRunning, notes }
         let isOnline = navigator.onLine;
-        let pendingSync = JSON.parse(localStorage.getItem('pending
+        let pendingSync = JSON.parse(localStorage.getItem('pendingSync') || '[]');
+
+        // ========= UTILITY FUNCTIONS =========
+        function updateSyncStatus() {
+            const statusEl = document.getElementById('syncStatus');
+            const lastSync = localStorage.getItem('lastSync');
+            if (lastSync) {
+                const date = new Date(lastSync);
+                statusEl.textContent = `Last sync: ${date.toLocaleTimeString()}`;
+            }
+        }
+
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const thisWeekStart = new Date();
+            thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
+            const thisWeekStartStr = thisWeekStart.toISOString().split('T')[0];
+
+            // Calculate hours today
+            const todayHours = workLog
+                .filter(entry => entry.date === today)
+                .reduce((sum, entry) => sum + entry.hours, 0);
+
+            // Calculate hours this week
+            const weekHours = workLog
+                .filter(entry => entry.date >= thisWeekStartStr)
+                .reduce((sum, entry) => sum + entry.hours, 0);
+
+            // Active projects
+            const activeProjects = sampleProjects.filter(p => p.status === 'In Progress').length;
+
+            // Completed today
+            const completedToday = workLog
+                .filter(entry => entry.date === today && entry.milestoneCompleted)
+                .length;
+
+            document.getElementById('todayHours').textContent = todayHours.toFixed(1);
+            document.getElementById('weekHours').textContent = weekHours.toFixed(1);
+            document.getElementById('activeProjects').textContent = activeProjects;
+            document.getElementById('completedToday').textContent = completedToday;
+        }
+
+        function calculateDaysSinceWorked(project) {
+            if (!project.lastWorked) return 999; // Never worked
+            const lastWorked = new Date(project.lastWorked);
+            const today = new Date();
+            const diffTime = Math.abs(today - lastWorked);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('workLog', JSON.stringify(workLog));
+            localStorage.setItem('pendingSync', JSON.stringify(pendingSync));
+        }
+
+        // ========= TIMER FUNCTIONS =========
+        function toggleTimer(milestoneId) {
+            if (!timers[milestoneId]) {
+                timers[milestoneId] = {
+                    startTime: null,
+                    totalTime: 0,
+                    isRunning: false,
+                    notes: ''
+                };
+            }
+
+            const timer = timers[milestoneId];
+            
+            if (timer.isRunning) {
+                // Stop timer
+                timer.totalTime += Date.now() - timer.startTime;
+                timer.isRunning = false;
+                timer.startTime = null;
+            } else {
+                // Start timer
+                timer.startTime = Date.now();
+                timer.isRunning = true;
+            }
+
+            updateTimerDisplay(milestoneId);
+            updateTimerButton(milestoneId);
+        }
+
+        function updateTimerDisplay(milestoneId) {
+            const timer = timers[milestoneId];
+            if (!timer) return;
+
+            let totalMs = timer.totalTime;
+            if (timer.isRunning && timer.startTime) {
+                totalMs += Date.now() - timer.startTime;
+            }
+
+            const hours = Math.floor(totalMs / (1000 * 60 * 60));
+            const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((totalMs % (1000 * 60)) / 1000);
+
+            const display = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const timerEl = document.getElementById(`timer-${milestoneId}`);
+            if (timerEl) {
+                timerEl.textContent = `⏱️ ${display}`;
+            }
+        }
+
+        function updateTimerButton(milestoneId) {
+            const btn = document.getElementById(`timer-btn-${milestoneId}`);
+            if (!btn) return;
+
+            const timer = timers[milestoneId];
+            if (timer && timer.isRunning) {
+                btn.textContent = '⏹️ Stop';
+                btn.classList.add('running');
+            } else {
+                btn.textContent = '▶️ Start';
+                btn.classList.remove('running');
+            }
+        }
+
+        function updateAllTimers() {
+            Object.keys(timers).forEach(milestoneId => {
+                updateTimerDisplay(milestoneId);
+            });
+        }
+
+        // Update timers every second
+        setInterval(updateAllTimers, 1000);
+
+        // ========= DATA LOADING =========
+        async function loadDataFromVercel() {
+            try {
+                const res = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+                
+                const data = await res.json();
+                
+                if (Array.isArray(data.projects) && Array.isArray(data.milestones)) {
+                    sampleProjects = data.projects;
+                    sampleMilestones = data.milestones;
+                    localStorage.setItem('lastSync', new Date().toISOString());
+                    updateSyncStatus();
+                    console.log('Data loaded from API successfully');
+                    return true;
+                }
+                
+                console.warn('Unexpected API response format');
+                return false;
+            } catch (e) {
+                console.warn('API fetch failed, using fallback data:', e.message);
+                return false;
+            }
+        }
+
+        // ========= SCHEDULING FUNCTIONS =========
+        function updateWeights() {
+            const dueDateWeight = document.getElementById('dueDateSlider').value;
+            const profitabilityWeight = document.getElementById('profitabilitySlider').value;
+            const complexityWeight = document.getElementById('complexitySlider').value;
+            const daysWorkedWeight = document.getElementById('daysWorkedSlider').value;
+            
+            document.getElementById('dueDateWeight').textContent = dueDateWeight;
+            document.getElementById('profitabilityWeight').textContent = profitabilityWeight;
+            document.getElementById('complexityWeight').textContent = complexityWeight;
+            document.getElementById('daysWorkedWeight').textContent = daysWorkedWeight;
+            
+            const total = parseInt(dueDateWeight) + parseInt(profitabilityWeight) + 
+                         parseInt(complexityWeight) + parseInt(daysWorkedWeight);
+            document.getElementById('totalWeight').textContent = total;
+            
+            // Auto-regenerate schedule when weights change
+            generateSchedule();
+        }
+
+        function resetWeights() {
+            document.getElementById('dueDateSlider').value = 40;
+            document.getElementById('profitabilitySlider').value = 30;
+            document.getElementById('complexitySlider').value = 20;
+            document.getElementById('daysWorkedSlider').value = 10;
+            document.getElementById('complexPercentage').value = 30;
+            updateWeights();
+        }
+
+        function getReadyMilestones() {
+            const ready = [];
+            
+            sampleProjects.forEach(project => {
+                const projectMilestones = sampleMilestones
+                    .filter(m => m.projectId === project.id)
+                    .sort((a, b) => a.order - b.order);
+                
+                for (let i = 0; i < projectMilestones.length; i++) {
+                    const milestone = projectMilestones[i];
+                    if (milestone.status === 'Completed') continue;
+                    
+                    const previousMilestone = projectMilestones[i - 1];
+                    const canStart = !previousMilestone || previousMilestone.status === 'Completed';
+                    
+                    if (canStart && (milestone.status === 'Ready' || milestone.status === 'Not Started')) {
+                        ready.push({ milestone, project });
+                        break; // One per project initially
+                    }
+                }
+            });
+            
+            return ready;
+        }
+
+        function calculatePriorities(readyTasks) {
+            const today = new Date();
+            const dueDateWeight = parseInt(document.getElementById('dueDateSlider').value) / 100;
+            const profitabilityWeight = parseInt(document.getElementById('profitabilitySlider').value) / 100;
+            const complexityWeight = parseInt(document.getElementById('complexitySlider').value) / 100;
+            const daysWorkedWeight = parseInt(document.getElementById('daysWorkedSlider').value) / 100;
+            
+            return readyTasks.map(task => {
+                const dueDate = task.project.dueDate ? new Date(task.project.dueDate) : new Date(Date.now() + 14*24*60*60*1000);
+                const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                const dueDateUrgency = Math.max(0, (30 - daysUntilDue)) / 30;
+                const profitabilityScore = (task.project.profitability ?? 3) / 5;
+                const complexityScore = (task.project.complexity ?? 3) / 5;
+                const daysSinceWorked = calculateDaysSinceWorked(task.project);
+                const daysWorkedScore = Math.min(daysSinceWorked / 30, 1); // Normalize to 0-1
+                
+                const priority = (dueDateUrgency * dueDateWeight) + 
+                                 (profitabilityScore * profitabilityWeight) + 
+                                 (complexityScore * complexityWeight) + 
+                                 (daysWorkedScore * daysWorkedWeight);
+                
+                return {
+                    ...task,
+                    priority,
+                    daysUntilDue,
+                    daysSinceWorked,
+                    isComplex: (task.project.complexity ?? 3) >= 4
+                };
+            }).sort((a, b) => b.priority - a.priority);
+        }
+
+        function nextMilestoneInProject(milestone) {
+            const list = sampleMilestones
+                .filter(m => m.projectId === milestone.projectId)
+                .sort((a,b) => a.order - b.order);
+            const idx = list.findIndex(m => m.id === milestone.id);
+            return idx >= 0 ? list[idx + 1] : null;
+        }
+
+        function balanceComplexity(prioritizedTasks, availableHours) {
+            const STEP = 0.5;
+            const complexTasks = prioritizedTasks.filter(t => t.isComplex);
+            const simpleTasks = prioritizedTasks.filter(t => !t.isComplex);
+            const complexPercentage = parseInt(document.getElementById('complexPercentage').value) / 100;
+            const complexHoursNeeded = availableHours * complexPercentage;
+            
+            const schedule = [];
+            let totalHours = 0;
+            let complexHours = 0;
+
+            function addToSchedule(task, hours) {
+                if (hours <= 0 || totalHours >= availableHours) return 0;
+                const hoursToAdd = Math.min(hours, availableHours - totalHours);
+                const existing = schedule.find(s => s.milestone.id === task.milestone.id);
+                if (existing) {
+                    existing.scheduledHours += hoursToAdd;
+                } else {
+                    schedule.push({ ...task, scheduledHours: hoursToAdd });
+                }
+                totalHours += hoursToAdd;
+                if (task.isComplex) complexHours += hoursToAdd;
+                
