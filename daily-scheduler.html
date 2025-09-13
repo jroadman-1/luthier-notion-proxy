@@ -38,7 +38,7 @@
         }
         
         .stat-value {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #2c3e50;
         }
@@ -55,14 +55,6 @@
             border-radius: 8px;
             margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .schedule-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
         }
         
         .priority-weights {
@@ -113,12 +105,21 @@
             width: 100px;
         }
         
+        .schedule-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
         .milestone-item {
             background: #f8f9fa;
             border-left: 4px solid #3498db;
             padding: 15px;
             margin-bottom: 10px;
             border-radius: 4px;
+            position: relative;
         }
         
         .milestone-item.complex {
@@ -200,7 +201,7 @@
         .complexity-4 { background: #e74c3c; }
         .complexity-5 { background: #8e44ad; }
         
-        .profitability-badge {
+        .urgency-badge {
             display: inline-block;
             padding: 2px 6px;
             border-radius: 10px;
@@ -210,11 +211,10 @@
             margin-right: 5px;
         }
         
-        .profitability-1 { background: #95a5a6; }
-        .profitability-2 { background: #f39c12; }
-        .profitability-3 { background: #3498db; }
-        .profitability-4 { background: #27ae60; }
-        .profitability-5 { background: #2ecc71; }
+        .urgency-high { background: #e74c3c; }
+        .urgency-medium { background: #f39c12; }
+        .urgency-low { background: #3498db; }
+        .urgency-none { background: #95a5a6; }
         
         .btn {
             background: #3498db;
@@ -234,6 +234,10 @@
         
         .btn.success {
             background: #27ae60;
+        }
+        
+        .btn.danger {
+            background: #e74c3c;
         }
         
         .summary {
@@ -265,20 +269,26 @@
             text-align: right;
         }
         
+        .timer-controls {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
         .timer-display {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-right: 10px;
         }
         
         .action-btn {
-            padding: 5px 10px;
+            padding: 5px 12px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
-            margin-right: 5px;
-            margin-top: 5px;
         }
         
         .action-btn.timer {
@@ -294,39 +304,198 @@
             background: #27ae60;
             color: white;
         }
+        
+        .actual-hours-input {
+            width: 60px;
+            padding: 2px 6px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .milestone-management {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid #3498db;
+            color: #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        
+        .milestone-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        
+        .milestone-preview {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🎸 Luthier Daily Scheduler</h1>
-        <p>Smart scheduling for projects "On The Bench"</p>
-        <div class="sync-status" id="syncStatus">Loading from Notion...</div>
+        <p>Smart scheduling for projects on the bench</p>
+        <div class="sync-status" id="syncStatus">Ready</div>
     </div>
 
     <!-- Statistics Dashboard -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-value" id="totalProjects">0</div>
-            <div class="stat-label">Total Projects</div>
+            <div class="stat-label">Projects on Bench</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="totalMilestones">0</div>
-            <div class="stat-label">Total Milestones</div>
+            <div class="stat-value" id="readyMilestones">0</div>
+            <div class="stat-label">Ready Milestones</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" id="readyToWork">0</div>
-            <div class="stat-label">Ready to Work</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="estimatedHours">0.0</div>
+            <div class="stat-value" id="totalHours">0.0</div>
             <div class="stat-label">Est. Hours Available</div>
         </div>
         <div class="stat-card">
             <div class="stat-value" id="complexWork">0</div>
             <div class="stat-label">Complex Projects</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-value" id="urgentWork">0</div>
+            <div class="stat-label">Due Soon</div>
+        </div>
     </div>
 
+    <!-- Milestone Management -->
+    <div class="milestone-management">
+        <h3>📋 Milestone Management</h3>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('individual')">Individual</button>
+            <button class="tab" onclick="switchTab('workflow')">Workflow</button>
+            <button class="tab" onclick="switchTab('autosplit')">Auto-Split</button>
+        </div>
+        
+        <!-- Individual Milestone Tab -->
+        <div class="tab-content active" id="individual-content">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label>Project:</label>
+                    <select id="individual-project"></select>
+                </div>
+                <div class="form-group">
+                    <label>Milestone Name:</label>
+                    <input type="text" id="individual-name" placeholder="e.g., Remove strings">
+                </div>
+                <div class="form-group">
+                    <label>Estimated Hours:</label>
+                    <input type="number" id="individual-hours" step="0.25" min="0.25" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Order:</label>
+                    <input type="number" id="individual-order" min="1" value="1">
+                </div>
+            </div>
+            <button class="btn" onclick="createIndividualMilestone()">Add Milestone</button>
+        </div>
+        
+        <!-- Workflow Tab -->
+        <div class="tab-content" id="workflow-content">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label>Project:</label>
+                    <select id="workflow-project"></select>
+                </div>
+                <div class="form-group">
+                    <label>Workflow Template:</label>
+                    <select id="workflow-template"></select>
+                </div>
+            </div>
+            <div id="workflow-preview"></div>
+            <button class="btn" onclick="createWorkflowMilestones()">Apply Workflow</button>
+        </div>
+        
+        <!-- Auto-Split Tab -->
+        <div class="tab-content" id="autosplit-content">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label>Project:</label>
+                    <select id="autosplit-project"></select>
+                </div>
+                <div class="form-group">
+                    <label>Total Hours:</label>
+                    <input type="number" id="autosplit-total" step="0.25" min="0.25" value="4">
+                </div>
+                <div class="form-group">
+                    <label>Number of Chunks:</label>
+                    <input type="number" id="autosplit-chunks" min="2" max="10" value="4">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Base Name:</label>
+                <input type="text" id="autosplit-name" placeholder="e.g., Work Session" value="Work Session">
+            </div>
+            <div id="autosplit-preview"></div>
+            <button class="btn" onclick="createAutoSplitMilestones()">Create Milestones</button>
+        </div>
+    </div>
+
+    <!-- Scheduling Controls -->
     <div class="controls">
         <h3>⚙️ Scheduling Controls</h3>
         
@@ -336,22 +505,18 @@
         </div>
 
         <div class="priority-weights">
-            <h4>Priority Weight Adjustments</h4>
+            <h4>Priority Weights</h4>
             <div class="slider-group">
-                <label>Due Date Urgency: <span id="dueDateWeight">40</span>%</label>
-                <input type="range" id="dueDateSlider" min="0" max="80" value="40" oninput="updateWeights()">
+                <label>Due Date Urgency: <span id="urgencyWeight">40</span>%</label>
+                <input type="range" id="urgencySlider" min="0" max="80" value="40" oninput="updateWeights()">
             </div>
             <div class="slider-group">
-                <label>Profitability: <span id="profitabilityWeight">30</span>%</label>
-                <input type="range" id="profitabilitySlider" min="0" max="80" value="30" oninput="updateWeights()">
+                <label>Complexity Priority: <span id="complexityWeight">40</span>%</label>
+                <input type="range" id="complexitySlider" min="0" max="80" value="40" oninput="updateWeights()">
             </div>
             <div class="slider-group">
-                <label>Complexity Priority: <span id="complexityWeight">20</span>%</label>
-                <input type="range" id="complexitySlider" min="0" max="80" value="20" oninput="updateWeights()">
-            </div>
-            <div class="slider-group">
-                <label>Progress Momentum: <span id="progressWeight">10</span>%</label>
-                <input type="range" id="progressSlider" min="0" max="50" value="10" oninput="updateWeights()">
+                <label>Neglect Factor: <span id="neglectWeight">20</span>%</label>
+                <input type="range" id="neglectSlider" min="0" max="50" value="20" oninput="updateWeights()">
             </div>
             <div class="weight-total">
                 Total Weight: <span id="totalWeight">100</span>%
@@ -360,158 +525,386 @@
 
         <div class="input-group">
             <label>Minimum Complex Work:</label>
-            <input type="number" id="complexPercentage" value="30" min="0" max="100" step="5">%
+            <input type="number" id="complexPercentage" value="40" min="0" max="100" step="5">%
         </div>
 
-        <button class="btn" onclick="generateSchedule()">Generate Schedule</button>
+        <button class="btn" onclick="generateSchedule()">Generate Daily Schedule</button>
         <button class="btn" onclick="resetWeights()" style="background: #95a5a6;">Reset Defaults</button>
         <button class="btn success" onclick="refreshData()">Refresh from Notion</button>
     </div>
 
+    <!-- Daily Schedule -->
     <div class="schedule-container">
-        <h3>📅 Today's Optimized Schedule</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>📅 Today's Schedule</h3>
+            <button class="btn success" onclick="saveProgress()" id="saveBtn" disabled>Save Progress</button>
+        </div>
         <div id="scheduleOutput">
-            <div class="loading">Loading projects from Notion...</div>
+            <div class="loading">Click "Refresh from Notion" then "Generate Daily Schedule"</div>
         </div>
     </div>
 
     <script>
         const API_URL = '/api/notion-proxy';
         
+        // Global state
         let allProjects = [];
         let allMilestones = [];
-        let workTasks = []; // Generated work items
+        let allWorkflows = [];
+        let currentSchedule = [];
         let timers = {};
+        let hasUnsavedChanges = false;
 
-        // Parse complexity and profitability from your "3-Standard" format
-        function parseRatingValue(ratingStr) {
-            if (!ratingStr) return 3; // Default to medium
-            if (typeof ratingStr === 'number') return ratingStr;
-            const match = ratingStr.match(/^(\d+)-/);
-            return match ? parseInt(match[1]) : 3;
-        }
+        // Initialize
+        window.onload = function() {
+            loadScheduleFromStorage();
+            refreshData();
+        };
 
+        // Data management
         async function refreshData() {
             try {
-                document.getElementById('syncStatus').textContent = 'Loading from Notion...';
+                document.getElementById('syncStatus').textContent = 'Loading...';
                 
-                const res = await fetch(API_URL);
-                if (!res.ok) throw new Error(`API responded with status ${res.status}`);
+                const [dataResponse, workflowsResponse] = await Promise.all([
+                    fetch(API_URL),
+                    fetch(`${API_URL}?action=workflows`)
+                ]);
                 
-                const data = await res.json();
-                console.log('API Response:', data);
-
-                allProjects = data.projects.map(project => ({
-                    id: project.id,
-                    name: project.name,
-                    instrumentMake: project.instrumentMake,
-                    instrumentModel: project.instrumentModel,
-                    complexity: parseRatingValue(project.complexity),
-                    profitability: parseRatingValue(project.profitability),
-                    status: project.status,
-                    dueDate: project.dueDate,
-                    totalMilestones: project.totalMilestones || 0,
-                    completedMilestones: project.completedMilestones || 0,
-                    progress: project.progress || 0,
-                    estimatedHours: project.estimatedHours || 0,
-                    totalEstimatedHour: project.totalEstimatedHour || 0
-                }));
-
+                if (!dataResponse.ok || !workflowsResponse.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+                
+                const data = await dataResponse.json();
+                const workflows = await workflowsResponse.json();
+                
+                allProjects = data.projects || [];
                 allMilestones = data.milestones || [];
+                allWorkflows = workflows.workflows || [];
                 
-                console.log(`Loaded ${allProjects.length} projects and ${allMilestones.length} milestones`);
+                console.log(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`);
                 
+                populateProjectSelectors();
+                populateWorkflowSelector();
                 updateStats();
-                generateSchedule();
                 
                 document.getElementById('syncStatus').textContent = 
-                    `Last sync: ${new Date().toLocaleTimeString()} - ${allProjects.length} projects`;
+                    `Last sync: ${new Date().toLocaleTimeString()}`;
                 
             } catch (error) {
-                console.error('Failed to load data:', error);
+                console.error('Failed to refresh data:', error);
                 document.getElementById('syncStatus').textContent = 'Sync failed';
-                
-                document.getElementById('scheduleOutput').innerHTML = `
-                    <div class="error">
-                        <strong>Failed to load from Notion</strong><br>
-                        ${error.message}
-                    </div>
-                `;
             }
         }
 
-        function updateStats() {
-            const totalMilestones = allProjects.reduce((sum, p) => sum + p.totalMilestones, 0);
-            const readyToWork = allProjects.filter(p => p.totalMilestones > 0 && p.complexity > 0).length;
-            const estimatedHours = allProjects.reduce((sum, p) => sum + p.totalEstimatedHour, 0);
-            const complexWork = allProjects.filter(p => p.complexity >= 4).length;
-
-            document.getElementById('totalProjects').textContent = allProjects.length;
-            document.getElementById('totalMilestones').textContent = totalMilestones;
-            document.getElementById('readyToWork').textContent = readyToWork;
-            document.getElementById('estimatedHours').textContent = estimatedHours.toFixed(1);
-            document.getElementById('complexWork').textContent = complexWork;
+        function populateProjectSelectors() {
+            const selectors = ['individual-project', 'workflow-project', 'autosplit-project'];
+            
+            selectors.forEach(selectorId => {
+                const select = document.getElementById(selectorId);
+                select.innerHTML = '<option value="">Select a project...</option>';
+                
+                allProjects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = `${project.name} - ${project.instrumentMake} ${project.instrumentModel}`;
+                    select.appendChild(option);
+                });
+            });
         }
 
+        function populateWorkflowSelector() {
+            const select = document.getElementById('workflow-template');
+            select.innerHTML = '<option value="">Select a workflow...</option>';
+            
+            allWorkflows.forEach(workflow => {
+                const option = document.createElement('option');
+                option.value = workflow.id;
+                option.textContent = workflow.name;
+                select.appendChild(option);
+            });
+            
+            select.onchange = previewWorkflow;
+        }
+
+        function updateStats() {
+            const readyMilestones = getReadyMilestones().length;
+            const totalHours = allProjects.reduce((sum, p) => sum + (p.totalEstimatedHour || 0), 0);
+            const complexWork = allProjects.filter(p => p.complexity >= 4).length;
+            const urgentWork = allProjects.filter(p => {
+                if (!p.dueDate) return false;
+                const daysUntil = Math.ceil((new Date(p.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+                return daysUntil <= 7;
+            }).length;
+
+            document.getElementById('totalProjects').textContent = allProjects.length;
+            document.getElementById('readyMilestones').textContent = readyMilestones;
+            document.getElementById('totalHours').textContent = totalHours.toFixed(1);
+            document.getElementById('complexWork').textContent = complexWork;
+            document.getElementById('urgentWork').textContent = urgentWork;
+        }
+
+        // Tab management
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}-content`).classList.add('active');
+        }
+
+        // Weight management
         function updateWeights() {
-            const dueDateWeight = document.getElementById('dueDateSlider').value;
-            const profitabilityWeight = document.getElementById('profitabilitySlider').value;
+            const urgencyWeight = document.getElementById('urgencySlider').value;
             const complexityWeight = document.getElementById('complexitySlider').value;
-            const progressWeight = document.getElementById('progressSlider').value;
+            const neglectWeight = document.getElementById('neglectSlider').value;
             
-            document.getElementById('dueDateWeight').textContent = dueDateWeight;
-            document.getElementById('profitabilityWeight').textContent = profitabilityWeight;
+            document.getElementById('urgencyWeight').textContent = urgencyWeight;
             document.getElementById('complexityWeight').textContent = complexityWeight;
-            document.getElementById('progressWeight').textContent = progressWeight;
+            document.getElementById('neglectWeight').textContent = neglectWeight;
             
-            const total = parseInt(dueDateWeight) + parseInt(profitabilityWeight) + 
-                         parseInt(complexityWeight) + parseInt(progressWeight);
+            const total = parseInt(urgencyWeight) + parseInt(complexityWeight) + parseInt(neglectWeight);
             document.getElementById('totalWeight').textContent = total;
-            
-            generateSchedule();
         }
 
         function resetWeights() {
-            document.getElementById('dueDateSlider').value = 40;
-            document.getElementById('profitabilitySlider').value = 30;
-            document.getElementById('complexitySlider').value = 20;
-            document.getElementById('progressSlider').value = 10;
-            document.getElementById('complexPercentage').value = 30;
+            document.getElementById('urgencySlider').value = 40;
+            document.getElementById('complexitySlider').value = 40;
+            document.getElementById('neglectSlider').value = 20;
+            document.getElementById('complexPercentage').value = 40;
             updateWeights();
         }
 
-        function calculatePriorities() {
-            const today = new Date();
-            const dueDateWeight = parseInt(document.getElementById('dueDateSlider').value) / 100;
-            const profitabilityWeight = parseInt(document.getElementById('profitabilitySlider').value) / 100;
-            const complexityWeight = parseInt(document.getElementById('complexitySlider').value) / 100;
-            const progressWeight = parseInt(document.getElementById('progressSlider').value) / 100;
+        // Milestone creation functions
+        async function createIndividualMilestone() {
+            const projectId = document.getElementById('individual-project').value;
+            const name = document.getElementById('individual-name').value;
+            const hours = parseFloat(document.getElementById('individual-hours').value);
+            const order = parseInt(document.getElementById('individual-order').value);
             
-            return allProjects
-                .filter(project => project.totalMilestones > 0) // Only projects with milestones
-                .map(project => {
-                    const dueDate = project.dueDate ? new Date(project.dueDate) : new Date(Date.now() + 30*24*60*60*1000);
-                    const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                    const dueDateUrgency = Math.max(0, (30 - daysUntilDue)) / 30;
-                    const profitabilityScore = project.profitability / 5;
-                    const complexityScore = project.complexity / 5;
-                    const progressScore = project.progress / 100;
+            if (!projectId || !name || !hours) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const milestones = [{
+                name: name,
+                estimatedHours: hours,
+                order: order
+            }];
+            
+            await createMilestones(projectId, milestones, 'Individual');
+        }
+
+        async function createWorkflowMilestones() {
+            const projectId = document.getElementById('workflow-project').value;
+            const workflowId = document.getElementById('workflow-template').value;
+            
+            if (!projectId || !workflowId) {
+                alert('Please select both a project and workflow');
+                return;
+            }
+            
+            const workflow = allWorkflows.find(w => w.id === workflowId);
+            if (!workflow) return;
+            
+            let milestones;
+            try {
+                milestones = JSON.parse(workflow.data);
+            } catch (e) {
+                alert('Invalid workflow data format');
+                return;
+            }
+            
+            await createMilestones(projectId, milestones, 'Workflow');
+        }
+
+        async function createAutoSplitMilestones() {
+            const projectId = document.getElementById('autosplit-project').value;
+            const totalHours = parseFloat(document.getElementById('autosplit-total').value);
+            const chunks = parseInt(document.getElementById('autosplit-chunks').value);
+            const baseName = document.getElementById('autosplit-name').value;
+            
+            if (!projectId || !totalHours || !chunks || !baseName) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            const hoursPerChunk = totalHours / chunks;
+            const milestones = [];
+            
+            for (let i = 1; i <= chunks; i++) {
+                milestones.push({
+                    name: `${baseName} ${i}`,
+                    estimatedHours: Math.round(hoursPerChunk * 4) / 4, // Round to nearest 0.25
+                    order: i
+                });
+            }
+            
+            await createMilestones(projectId, milestones, 'Auto-Split');
+        }
+
+        async function createMilestones(projectId, milestones, source) {
+            try {
+                const response = await fetch(`${API_URL}?action=create-milestones`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: projectId,
+                        milestones: milestones,
+                        source: source
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to create milestones');
+                
+                alert(`Successfully created ${milestones.length} milestone(s)`);
+                refreshData();
+                clearForms();
+                
+            } catch (error) {
+                console.error('Error creating milestones:', error);
+                alert('Failed to create milestones');
+            }
+        }
+
+        function clearForms() {
+            document.getElementById('individual-name').value = '';
+            document.getElementById('individual-hours').value = '1';
+            document.getElementById('individual-order').value = '1';
+        }
+
+        function previewWorkflow() {
+            const workflowId = document.getElementById('workflow-template').value;
+            const preview = document.getElementById('workflow-preview');
+            
+            if (!workflowId) {
+                preview.innerHTML = '';
+                return;
+            }
+            
+            const workflow = allWorkflows.find(w => w.id === workflowId);
+            if (!workflow) return;
+            
+            let milestones;
+            try {
+                milestones = JSON.parse(workflow.data);
+            } catch (e) {
+                preview.innerHTML = '<div class="error">Invalid workflow data</div>';
+                return;
+            }
+            
+            let html = '<div class="milestone-list"><h4>Preview:</h4>';
+            milestones.forEach(milestone => {
+                html += `
+                    <div class="milestone-preview">
+                        <span>${milestone.name}</span>
+                        <span>${milestone.hours}h</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            preview.innerHTML = html;
+        }
+
+        // Auto-split preview
+        document.getElementById('autosplit-total').oninput = 
+        document.getElementById('autosplit-chunks').oninput = 
+        document.getElementById('autosplit-name').oninput = function() {
+            const totalHours = parseFloat(document.getElementById('autosplit-total').value) || 0;
+            const chunks = parseInt(document.getElementById('autosplit-chunks').value) || 1;
+            const baseName = document.getElementById('autosplit-name').value || 'Work Session';
+            const preview = document.getElementById('autosplit-preview');
+            
+            if (totalHours === 0) {
+                preview.innerHTML = '';
+                return;
+            }
+            
+            const hoursPerChunk = totalHours / chunks;
+            let html = '<div class="milestone-list"><h4>Preview:</h4>';
+            
+            for (let i = 1; i <= chunks; i++) {
+                const hours = Math.round(hoursPerChunk * 4) / 4;
+                html += `
+                    <div class="milestone-preview">
+                        <span>${baseName} ${i}</span>
+                        <span>${hours}h</span>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            
+            preview.innerHTML = html;
+        };
+
+        // Scheduling algorithm
+        function getReadyMilestones() {
+            const readyMilestones = [];
+            
+            allProjects.forEach(project => {
+                const projectMilestones = allMilestones
+                    .filter(m => m.projectId === project.id)
+                    .sort((a, b) => a.order - b.order);
+                
+                for (let i = 0; i < projectMilestones.length; i++) {
+                    const milestone = projectMilestones[i];
+                    if (milestone.status === 'Completed') continue;
                     
-                    const priority = (dueDateUrgency * dueDateWeight) + 
-                                     (profitabilityScore * profitabilityWeight) + 
-                                     (complexityScore * complexityWeight) + 
-                                     (progressScore * progressWeight);
+                    const previousMilestone = projectMilestones[i - 1];
+                    const canStart = !previousMilestone || previousMilestone.status === 'Completed';
                     
-                    return {
-                        project,
-                        priority,
-                        daysUntilDue,
-                        isComplex: project.complexity >= 4,
-                        remainingHours: project.totalEstimatedHour * (1 - project.progress / 100),
-                        milestoneProgress: `${project.completedMilestones}/${project.totalMilestones}`
-                    };
-                })
-                .sort((a, b) => b.priority - a.priority);
+                    if (canStart && (milestone.status === 'Ready' || milestone.status === 'Not Started')) {
+                        readyMilestones.push({
+                            milestone: milestone,
+                            project: project
+                        });
+                        break; // One per project initially
+                    }
+                }
+            });
+            
+            return readyMilestones;
+        }
+
+        function calculatePriorities(readyTasks) {
+            const today = new Date();
+            const urgencyWeight = parseInt(document.getElementById('urgencySlider').value) / 100;
+            const complexityWeight = parseInt(document.getElementById('complexitySlider').value) / 100;
+            const neglectWeight = parseInt(document.getElementById('neglectSlider').value) / 100;
+            
+            return readyTasks.map(task => {
+                // Urgency calculation (21-day window)
+                const dueDate = task.project.dueDate ? new Date(task.project.dueDate) : new Date(Date.now() + 21*24*60*60*1000);
+                const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                const urgency = Math.max(0, (21 - daysUntilDue)) / 21;
+                
+                // Complexity score
+                const complexity = (task.project.complexity || 3) / 5;
+                
+                // Neglect calculation
+                let neglect = 0;
+                if (task.project.lastWorked) {
+                    const lastWorked = new Date(task.project.lastWorked);
+                    const daysSinceWorked = Math.ceil((today - lastWorked) / (1000 * 60 * 60 * 24));
+                    neglect = Math.min(daysSinceWorked / 30, 1);
+                }
+                
+                const priority = (urgency * urgencyWeight) + 
+                                (complexity * complexityWeight) + 
+                                (neglect * neglectWeight);
+                
+                return {
+                    ...task,
+                    priority,
+                    urgency,
+                    complexity,
+                    neglect,
+                    daysUntilDue,
+                    isComplex: (task.project.complexity || 3) >= 4
+                };
+            }).sort((a, b) => b.priority - a.priority);
         }
 
         function generateSchedule() {
@@ -519,117 +912,151 @@
             const complexPercentage = parseInt(document.getElementById('complexPercentage').value) / 100;
             
             if (allProjects.length === 0) {
-                document.getElementById('scheduleOutput').innerHTML = `
-                    <div class="loading">Click "Refresh from Notion" to load your projects</div>
-                `;
+                document.getElementById('scheduleOutput').innerHTML = 
+                    '<div class="loading">Click "Refresh from Notion" to load your projects</div>';
                 return;
             }
-
-            const prioritizedTasks = calculatePriorities();
             
-            if (prioritizedTasks.length === 0) {
+            const readyTasks = getReadyMilestones();
+            if (readyTasks.length === 0) {
                 document.getElementById('scheduleOutput').innerHTML = `
                     <div class="milestone-item">
-                        <div class="milestone-title">No projects ready for scheduling</div>
-                        <div class="milestone-details">Projects need milestones defined to appear in the schedule.</div>
+                        <div class="milestone-title">No milestones ready for scheduling</div>
+                        <div class="milestone-details">Create some milestones for your projects first.</div>
                     </div>
                 `;
                 return;
             }
-
-            // Simple scheduling: allocate time based on priority and available hours
-            const schedule = [];
-            let totalScheduledHours = 0;
-            let complexHours = 0;
-            const minComplexHours = availableHours * complexPercentage;
-
-            // First pass: schedule high-priority items
-            for (const task of prioritizedTasks) {
-                if (totalScheduledHours >= availableHours) break;
-                
-                const hoursToSchedule = Math.min(
-                    task.remainingHours,
-                    availableHours - totalScheduledHours,
-                    2 // Max 2 hours per project in first pass
-                );
-                
-                if (hoursToSchedule > 0) {
-                    schedule.push({
-                        ...task,
-                        scheduledHours: hoursToSchedule
-                    });
-                    
-                    totalScheduledHours += hoursToSchedule;
-                    if (task.isComplex) complexHours += hoursToSchedule;
-                }
-            }
-
-            // Second pass: ensure minimum complex work
-            if (complexHours < minComplexHours && totalScheduledHours < availableHours) {
-                const complexTasks = prioritizedTasks.filter(t => t.isComplex);
-                for (const task of complexTasks) {
-                    if (complexHours >= minComplexHours || totalScheduledHours >= availableHours) break;
-                    
-                    const existing = schedule.find(s => s.project.id === task.project.id);
-                    const additionalHours = Math.min(
-                        1, // Add 1 hour increments
-                        availableHours - totalScheduledHours,
-                        minComplexHours - complexHours
-                    );
-                    
-                    if (existing) {
-                        existing.scheduledHours += additionalHours;
-                    } else {
-                        schedule.push({
-                            ...task,
-                            scheduledHours: additionalHours
-                        });
-                    }
-                    
-                    totalScheduledHours += additionalHours;
-                    complexHours += additionalHours;
-                }
-            }
-
-            displaySchedule(schedule, totalScheduledHours, complexHours, availableHours);
+            
+            const prioritizedTasks = calculatePriorities(readyTasks);
+            const schedule = balanceComplexity(prioritizedTasks, availableHours, complexPercentage);
+            
+            currentSchedule = schedule.schedule;
+            saveScheduleToStorage();
+            displaySchedule(schedule, availableHours);
         }
 
-        function displaySchedule(schedule, totalHours, complexHours, availableHours) {
+        function balanceComplexity(prioritizedTasks, availableHours, complexPercentage) {
+            const STEP = 0.5;
+            const complexTasks = prioritizedTasks.filter(t => t.isComplex);
+            const simpleTasks = prioritizedTasks.filter(t => !t.isComplex);
+            const minComplexHours = availableHours * complexPercentage;
+            
+            const schedule = [];
+            let totalHours = 0;
+            let complexHours = 0;
+
+            function addToSchedule(task, hours) {
+                if (hours <= 0 || totalHours >= availableHours) return 0;
+                const hoursToAdd = Math.min(hours, availableHours - totalHours);
+                const existing = schedule.find(s => s.milestone.id === task.milestone.id);
+                
+                if (existing) {
+                    existing.scheduledHours += hoursToAdd;
+                } else {
+                    schedule.push({ ...task, scheduledHours: hoursToAdd });
+                }
+                
+                totalHours += hoursToAdd;
+                if (task.isComplex) complexHours += hoursToAdd;
+                return hoursToAdd;
+            }
+
+            // Phase 1: Schedule complex tasks first
+            for (const task of complexTasks) {
+                if (totalHours >= availableHours) break;
+                addToSchedule(task, task.milestone.estimatedHours);
+            }
+
+            // Phase 2: Schedule simple tasks
+            for (const task of simpleTasks) {
+                if (totalHours >= availableHours) break;
+                addToSchedule(task, task.milestone.estimatedHours);
+            }
+
+            // Phase 2.5: Enforce complex hours minimum
+            while (complexHours < minComplexHours && totalHours < availableHours) {
+                let added = false;
+                
+                for (const task of complexTasks) {
+                    if (complexHours >= minComplexHours || totalHours >= availableHours) break;
+                    const existing = schedule.find(s => s.milestone.id === task.milestone.id);
+                    
+                    if (existing && existing.scheduledHours < task.milestone.estimatedHours) {
+                        const addedHours = addToSchedule(task, STEP);
+                        if (addedHours > 0) added = true;
+                    }
+                }
+                
+                if (!added) break;
+            }
+
+            // Phase 3: Fill remaining time
+            let iterations = 0;
+            while (totalHours < availableHours && iterations < 50) {
+                let addedThisIteration = false;
+                iterations++;
+                
+                for (const task of prioritizedTasks) {
+                    if (totalHours >= availableHours) break;
+                    const existing = schedule.find(s => s.milestone.id === task.milestone.id);
+                    
+                    if (existing && existing.scheduledHours < task.milestone.estimatedHours) {
+                        const addedHours = addToSchedule(task, STEP);
+                        if (addedHours > 0) addedThisIteration = true;
+                    } else if (!existing) {
+                        const addedHours = addToSchedule(task, Math.min(STEP, task.milestone.estimatedHours));
+                        if (addedHours > 0) addedThisIteration = true;
+                    }
+                }
+                
+                if (!addedThisIteration) break;
+            }
+
+            return { schedule, totalHours, complexHours };
+        }
+
+        function displaySchedule(result, availableHours) {
+            const { schedule, totalHours, complexHours } = result;
             let html = '';
             
-            schedule.forEach((item) => {
-                const dueText = item.daysUntilDue < 0 ? '⚠️ OVERDUE!' : 
-                              item.daysUntilDue <= 3 ? '🔥 Due soon' : 
-                              item.daysUntilDue <= 7 ? '📅 Due this week' : '✅ On track';
+            schedule.forEach((item, index) => {
+                const urgencyText = item.daysUntilDue < 0 ? 'OVERDUE!' : 
+                                  item.daysUntilDue <= 3 ? 'Due soon' : 
+                                  item.daysUntilDue <= 7 ? 'Due this week' : 'On schedule';
+                
+                const urgencyClass = item.daysUntilDue < 0 ? 'urgency-high' : 
+                                   item.daysUntilDue <= 3 ? 'urgency-high' : 
+                                   item.daysUntilDue <= 7 ? 'urgency-medium' : 'urgency-low';
                 
                 const complexClass = item.isComplex ? 'complex' : '';
                 const timeClass = item.isComplex ? 'complex' : '';
                 
                 html += `
-                    <div class="milestone-item ${complexClass}">
+                    <div class="milestone-item ${complexClass}" id="schedule-${item.milestone.id}">
                         <div class="milestone-row">
                             <input type="checkbox" class="milestone-checkbox" 
-                                   onchange="markProgress('${item.project.id}')">
+                                   onchange="completeMilestone('${item.milestone.id}', ${index})">
                             <div class="milestone-content">
                                 <div class="milestone-header">
-                                    <div class="milestone-title">${item.project.name}</div>
+                                    <div class="milestone-title">${item.milestone.name}</div>
                                     <div class="milestone-time ${timeClass}">${item.scheduledHours.toFixed(1)}h</div>
                                 </div>
                                 <div class="milestone-details">
                                     <span class="complexity-badge complexity-${item.project.complexity}">C${item.project.complexity}</span>
-                                    <span class="profitability-badge profitability-${item.project.profitability}">P${item.project.profitability}</span>
-                                    ${dueText} • Priority: ${item.priority.toFixed(2)}
+                                    <span class="urgency-badge ${urgencyClass}">${urgencyText}</span>
+                                    Priority: ${item.priority.toFixed(2)}
                                 </div>
                                 <div class="milestone-project">
-                                    ${item.project.instrumentMake} ${item.project.instrumentModel} • 
-                                    Progress: ${item.milestoneProgress} • 
-                                    Remaining: ${item.remainingHours.toFixed(1)}h
+                                    ${item.project.name} - ${item.project.instrumentMake} ${item.project.instrumentModel}
                                 </div>
-                                <div style="margin-top: 8px;">
-                                    <button class="action-btn timer" id="timer-${item.project.id}" 
-                                            onclick="toggleTimer('${item.project.id}')">Start Timer</button>
+                                <div class="timer-controls">
+                                    <div class="timer-display" id="timer-display-${item.milestone.id}">00:00:00</div>
+                                    <button class="action-btn timer" id="timer-btn-${item.milestone.id}" 
+                                            onclick="toggleTimer('${item.milestone.id}')">Start Timer</button>
+                                    <input type="number" class="actual-hours-input" id="actual-${item.milestone.id}" 
+                                           step="0.25" min="0" placeholder="Actual hrs">
                                 </div>
-                                <div class="timer-display" id="timer-display-${item.project.id}"></div>
                             </div>
                         </div>
                     </div>
@@ -650,15 +1077,16 @@
             document.getElementById('scheduleOutput').innerHTML = html;
         }
 
-        function toggleTimer(projectId) {
-            if (!timers[projectId]) {
-                timers[projectId] = {
+        // Timer functions
+        function toggleTimer(milestoneId) {
+            if (!timers[milestoneId]) {
+                timers[milestoneId] = {
                     startTime: Date.now(),
                     totalTime: 0,
                     isRunning: true
                 };
             } else {
-                const timer = timers[projectId];
+                const timer = timers[milestoneId];
                 if (timer.isRunning) {
                     timer.totalTime += Date.now() - timer.startTime;
                     timer.isRunning = false;
@@ -667,47 +1095,167 @@
                     timer.isRunning = true;
                 }
             }
-            updateTimerDisplay(projectId);
+            
+            updateTimerDisplay(milestoneId);
         }
 
-        function updateTimerDisplay(projectId) {
-            const timer = timers[projectId];
-            const btn = document.getElementById(`timer-${projectId}`);
-            const display = document.getElementById(`timer-display-${projectId}`);
+        function updateTimerDisplay(milestoneId) {
+            const timer = timers[milestoneId];
+            const btn = document.getElementById(`timer-btn-${milestoneId}`);
+            const display = document.getElementById(`timer-display-${milestoneId}`);
+            const actualInput = document.getElementById(`actual-${milestoneId}`);
             
-            if (timer && btn && display) {
-                let totalMs = timer.totalTime;
-                if (timer.isRunning) {
-                    totalMs += Date.now() - timer.startTime;
-                }
-                
-                const hours = Math.floor(totalMs / (1000 * 60 * 60));
-                const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
-                
-                btn.textContent = timer.isRunning ? 'Stop Timer' : 'Start Timer';
-                btn.className = timer.isRunning ? 'action-btn timer running' : 'action-btn timer';
-                display.textContent = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            if (!timer || !btn || !display) return;
+            
+            let totalMs = timer.totalTime;
+            if (timer.isRunning) {
+                totalMs += Date.now() - timer.startTime;
+            }
+            
+            const hours = Math.floor(totalMs / (1000 * 60 * 60));
+            const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((totalMs % (1000 * 60)) / 1000);
+            
+            display.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            btn.textContent = timer.isRunning ? 'Stop Timer' : 'Start Timer';
+            btn.className = timer.isRunning ? 'action-btn timer running' : 'action-btn timer';
+            
+            // Auto-fill actual hours
+            if (actualInput) {
+                const actualHours = Math.round((totalMs / (1000 * 60 * 60)) * 4) / 4;
+                actualInput.value = actualHours > 0 ? actualHours : '';
             }
         }
 
-        function markProgress(projectId) {
-            console.log('Progress marked for project:', projectId);
-            // TODO: Sync progress back to Notion
-        }
-
-        // Update all timers every minute
+        // Update all timers every second
         setInterval(() => {
-            Object.keys(timers).forEach(projectId => {
-                if (timers[projectId].isRunning) {
-                    updateTimerDisplay(projectId);
+            Object.keys(timers).forEach(milestoneId => {
+                if (timers[milestoneId].isRunning) {
+                    updateTimerDisplay(milestoneId);
                 }
             });
-        }, 60000);
+        }, 1000);
 
-        // Initialize
-        window.onload = function() {
-            refreshData();
-        };
+        // Completion handling
+        function completeMilestone(milestoneId, scheduleIndex) {
+            const scheduleItem = currentSchedule[scheduleIndex];
+            if (!scheduleItem) return;
+            
+            const actualHours = parseFloat(document.getElementById(`actual-${milestoneId}`).value) || 0;
+            
+            scheduleItem.completed = true;
+            scheduleItem.actualHours = actualHours;
+            
+            document.getElementById(`schedule-${milestoneId}`).classList.add('completed');
+            
+            hasUnsavedChanges = true;
+            document.getElementById('saveBtn').disabled = false;
+            document.getElementById('saveBtn').textContent = 'Save Progress *';
+            
+            saveScheduleToStorage();
+        }
+
+        // Save progress to Notion
+        async function saveProgress() {
+            const completedMilestones = currentSchedule
+                .filter(item => item.completed)
+                .map(item => ({
+                    milestoneId: item.milestone.id,
+                    projectId: item.project.id,
+                    actualHours: item.actualHours || 0
+                }));
+            
+            if (completedMilestones.length === 0) {
+                alert('No completed milestones to save');
+                return;
+            }
+            
+            try {
+                document.getElementById('saveBtn').textContent = 'Saving...';
+                
+                const response = await fetch(`${API_URL}?action=save-progress`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ completedMilestones })
+                });
+                
+                if (!response.ok) throw new Error('Failed to save progress');
+                
+                hasUnsavedChanges = false;
+                document.getElementById('saveBtn').disabled = true;
+                document.getElementById('saveBtn').textContent = 'Saved ✓';
+                
+                // Refresh data to get updated milestones
+                setTimeout(refreshData, 1000);
+                
+            } catch (error) {
+                console.error('Error saving progress:', error);
+                alert('Failed to save progress');
+                document.getElementById('saveBtn').textContent = 'Save Progress *';
+            }
+        }
+
+        // LocalStorage functions
+        function saveScheduleToStorage() {
+            localStorage.setItem('luthierSchedule', JSON.stringify({
+                schedule: currentSchedule,
+                timers: timers,
+                generated: new Date().toISOString()
+            }));
+        }
+
+        function loadScheduleFromStorage() {
+            const saved = localStorage.getItem('luthierSchedule');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    currentSchedule = data.schedule || [];
+                    timers = data.timers || {};
+                    
+                    if (currentSchedule.length > 0) {
+                        displayStoredSchedule();
+                    }
+                } catch (e) {
+                    console.error('Error loading schedule from storage:', e);
+                }
+            }
+        }
+
+        function displayStoredSchedule() {
+            if (currentSchedule.length === 0) return;
+            
+            const totalHours = currentSchedule.reduce((sum, item) => sum + item.scheduledHours, 0);
+            const complexHours = currentSchedule
+                .filter(item => item.isComplex)
+                .reduce((sum, item) => sum + item.scheduledHours, 0);
+            
+            displaySchedule({ 
+                schedule: currentSchedule, 
+                totalHours, 
+                complexHours 
+            }, totalHours);
+            
+            // Restore completion states
+            currentSchedule.forEach((item, index) => {
+                if (item.completed) {
+                    const checkbox = document.querySelector(`input[onchange="completeMilestone('${item.milestone.id}', ${index})"]`);
+                    const scheduleItem = document.getElementById(`schedule-${item.milestone.id}`);
+                    
+                    if (checkbox) checkbox.checked = true;
+                    if (scheduleItem) scheduleItem.classList.add('completed');
+                    
+                    const actualInput = document.getElementById(`actual-${item.milestone.id}`);
+                    if (actualInput) actualInput.value = item.actualHours || '';
+                }
+            });
+            
+            // Update save button state
+            const hasCompleted = currentSchedule.some(item => item.completed);
+            if (hasCompleted && !hasUnsavedChanges) {
+                document.getElementById('saveBtn').disabled = false;
+                document.getElementById('saveBtn').textContent = 'Save Progress';
+            }
+        }
     </script>
 </body>
 </html>
