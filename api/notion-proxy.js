@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
       instrumentModel: page.properties?.Model?.rich_text?.[0]?.plain_text ?? '',
       complexity: Number(page.properties?.Complexity?.number ?? 3),
       profitability: Number(page.properties?.Profitability?.number ?? 3),
-      status: page.properties?.Status?.status?.name ?? 'In Progress',
+      status: page.properties?.Status?.status?.name ?? 'On The Bench',
       dueDate: page.properties?.Due?.date?.start ?? null
     }));
 
