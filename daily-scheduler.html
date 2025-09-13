@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -35,15 +35,6 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        
-        .work-log-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
         }
         
         .milestone-item {
@@ -52,7 +43,6 @@
             padding: 15px;
             margin-bottom: 10px;
             border-radius: 4px;
-            position: relative;
         }
         
         .milestone-item.complex {
@@ -116,13 +106,6 @@
         .milestone-project {
             font-size: 12px;
             color: #888;
-        }
-        
-        .timer-display {
-            font-size: 14px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 5px 0;
         }
         
         .summary {
@@ -205,19 +188,10 @@
             cursor: pointer;
             font-size: 14px;
             margin-right: 10px;
-            margin-bottom: 10px;
         }
         
         .btn:hover {
             background: #2980b9;
-        }
-        
-        .btn.success {
-            background: #27ae60;
-        }
-        
-        .btn.success:hover {
-            background: #229954;
         }
         
         .input-group {
@@ -237,67 +211,14 @@
             width: 100px;
         }
         
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .offline-indicator {
-            background: #e74c3c;
-            color: white;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            text-align: center;
-            display: none;
-        }
-        
-        .offline-indicator.show {
-            display: block;
-        }
-        
-        .sync-status {
-            font-size: 12px;
-            color: #ccc;
-            text-align: right;
-            margin-bottom: 10px;
-        }
-        
-        .milestone-actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
         .action-btn {
             padding: 5px 10px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
+            margin-right: 5px;
+            margin-top: 5px;
         }
         
         .action-btn.timer {
@@ -305,78 +226,16 @@
             color: white;
         }
         
-        .action-btn.timer.running {
-            background: #e74c3c;
-        }
-        
         .action-btn.complete {
             background: #27ae60;
             color: white;
-        }
-        
-        .work-log-entry {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-        }
-        
-        .work-log-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-        
-        .work-log-project {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .work-log-time {
-            background: #3498db;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 12px;
-        }
-        
-        .work-log-details {
-            font-size: 14px;
-            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🎸 Luthier Daily Scheduler</h1>
-        <p>Smart scheduling with complexity balancing and time tracking</p>
-        <div class="sync-status" id="syncStatus">Last sync: Never</div>
-    </div>
-
-    <div class="offline-indicator" id="offlineIndicator">
-        ⚠️ Working offline - changes will sync when connection is restored
-    </div>
-
-    <!-- Statistics Dashboard -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-value" id="todayHours">0.0</div>
-            <div class="stat-label">Hours Today</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="weekHours">0.0</div>
-            <div class="stat-label">Hours This Week</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="activeProjects">0</div>
-            <div class="stat-label">Active Projects</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="completedToday">0</div>
-            <div class="stat-label">Completed Today</div>
-        </div>
+        <p>Smart scheduling with complexity balancing</p>
     </div>
 
     <div class="controls">
@@ -417,7 +276,7 @@
 
         <button class="btn" onclick="generateSchedule()">Generate Schedule</button>
         <button class="btn" onclick="resetWeights()" style="background: #95a5a6;">Reset to Defaults</button>
-        <button class="btn success" onclick="syncWithNotion()">Sync with Notion</button>
+        <button class="btn" onclick="syncWithNotion()" style="background: #27ae60;">Sync with Notion</button>
     </div>
 
     <div class="schedule-container">
@@ -427,207 +286,80 @@
         </div>
     </div>
 
-    <div class="work-log-container">
-        <h3>📊 Today's Work Log</h3>
-        <div id="workLogOutput">
-            <p>Time tracking will appear here as you work on milestones.</p>
-        </div>
-    </div>
-
     <script>
-        // ========= CONFIGURATION =========
+        // ========= API CONFIG =========
         const API_URL = '/api/notion-proxy';
         
-        // ========= STATE MANAGEMENT =========
+        // ========= SAMPLE DATA (FALLBACK) =========
         let sampleProjects = [
-            { id: 1, name: "John Smith", instrumentMake: "Martin", instrumentModel: "D-28", complexity: 4, profitability: 5, status: "In Progress", dueDate: "2025-09-15", lastWorked: "2025-09-10", totalHours: 8 },
-            { id: 2, name: "Sarah Johnson", instrumentMake: "Gibson", instrumentModel: "Les Paul", complexity: 2, profitability: 3, status: "In Progress", dueDate: "2025-09-20", lastWorked: "2025-09-11", totalHours: 3 },
-            { id: 3, name: "Mike Davis", instrumentMake: "Taylor", instrumentModel: "814ce", complexity: 5, profitability: 4, status: "In Progress", dueDate: "2025-09-18", lastWorked: "2025-09-09", totalHours: 12 },
-            { id: 4, name: "Lisa Brown", instrumentMake: "Fender", instrumentModel: "Stratocaster", complexity: 1, profitability: 2, status: "In Progress", dueDate: "2025-09-25", lastWorked: null, totalHours: 0 }
+            { id: 1, name: "John Smith", instrumentMake: "Martin", instrumentModel: "D-28", complexity: 4, profitability: 5, status: "In Progress", dueDate: "2025-09-15", lastWorked: "2025-09-10" },
+            { id: 2, name: "Sarah Johnson", instrumentMake: "Gibson", instrumentModel: "Les Paul", complexity: 2, profitability: 3, status: "In Progress", dueDate: "2025-09-20", lastWorked: "2025-09-11" },
+            { id: 3, name: "Mike Davis", instrumentMake: "Taylor", instrumentModel: "814ce", complexity: 5, profitability: 4, status: "In Progress", dueDate: "2025-09-18", lastWorked: "2025-09-09" },
+            { id: 4, name: "Lisa Brown", instrumentMake: "Fender", instrumentModel: "Stratocaster", complexity: 1, profitability: 2, status: "In Progress", dueDate: "2025-09-25", lastWorked: null }
         ];
 
         let sampleMilestones = [
             // Martin D-28 (Complex refret)
-            { id: 1, projectId: 1, name: "Remove strings and hardware", estimatedHours: 0.5, order: 1, status: "Completed", hoursWorked: 0.5 },
-            { id: 2, projectId: 1, name: "Remove old frets", estimatedHours: 1.5, order: 2, status: "Completed", hoursWorked: 1.8 },
-            { id: 3, projectId: 1, name: "Level fretboard", estimatedHours: 1.0, order: 3, status: "Ready", hoursWorked: 0 },
-            { id: 4, projectId: 1, name: "Install new frets", estimatedHours: 2.0, order: 4, status: "Not Started", hoursWorked: 0 },
-            { id: 5, projectId: 1, name: "Level and crown frets", estimatedHours: 2.0, order: 5, status: "Not Started", hoursWorked: 0 },
-            { id: 6, projectId: 1, name: "Final setup", estimatedHours: 1.0, order: 6, status: "Not Started", hoursWorked: 0 },
+            { id: 1, projectId: 1, name: "Remove strings and hardware", estimatedHours: 0.5, order: 1, status: "Completed" },
+            { id: 2, projectId: 1, name: "Remove old frets", estimatedHours: 1.5, order: 2, status: "Completed" },
+            { id: 3, projectId: 1, name: "Level fretboard", estimatedHours: 1.0, order: 3, status: "Ready" },
+            { id: 4, projectId: 1, name: "Install new frets", estimatedHours: 2.0, order: 4, status: "Not Started" },
+            { id: 5, projectId: 1, name: "Level and crown frets", estimatedHours: 2.0, order: 5, status: "Not Started" },
+            { id: 6, projectId: 1, name: "Final setup", estimatedHours: 1.0, order: 6, status: "Not Started" },
 
             // Gibson Les Paul (Simple setup)
-            { id: 7, projectId: 2, name: "Adjust truss rod", estimatedHours: 0.5, order: 1, status: "Ready", hoursWorked: 0 },
-            { id: 8, projectId: 2, name: "Set action and intonation", estimatedHours: 1.0, order: 2, status: "Not Started", hoursWorked: 0 },
+            { id: 7, projectId: 2, name: "Adjust truss rod", estimatedHours: 0.5, order: 1, status: "Ready" },
+            { id: 8, projectId: 2, name: "Set action and intonation", estimatedHours: 1.0, order: 2, status: "Not Started" },
 
             // Taylor 814ce (Complex neck reset)
-            { id: 9, projectId: 3, name: "Remove strings and assess", estimatedHours: 0.5, order: 1, status: "Completed", hoursWorked: 0.3 },
-            { id: 10, projectId: 3, name: "Steam neck joint", estimatedHours: 1.5, order: 2, status: "Ready", hoursWorked: 0 },
-            { id: 11, projectId: 3, name: "Remove neck", estimatedHours: 1.0, order: 3, status: "Not Started", hoursWorked: 0 },
-            { id: 12, projectId: 3, name: "Plane neck heel", estimatedHours: 2.0, order: 4, status: "Not Started", hoursWorked: 0 },
-            { id: 13, projectId: 3, name: "Reattach neck", estimatedHours: 1.5, order: 5, status: "Not Started", hoursWorked: 0 },
-            { id: 14, projectId: 3, name: "Final setup", estimatedHours: 1.0, order: 6, status: "Not Started", hoursWorked: 0 },
+            { id: 9, projectId: 3, name: "Remove strings and assess", estimatedHours: 0.5, order: 1, status: "Completed" },
+            { id: 10, projectId: 3, name: "Steam neck joint", estimatedHours: 1.5, order: 2, status: "Ready" },
+            { id: 11, projectId: 3, name: "Remove neck", estimatedHours: 1.0, order: 3, status: "Not Started" },
+            { id: 12, projectId: 3, name: "Plane neck heel", estimatedHours: 2.0, order: 4, status: "Not Started" },
+            { id: 13, projectId: 3, name: "Reattach neck", estimatedHours: 1.5, order: 5, status: "Not Started" },
+            { id: 14, projectId: 3, name: "Final setup", estimatedHours: 1.0, order: 6, status: "Not Started" },
 
             // Fender Strat (Basic work)
-            { id: 15, projectId: 4, name: "Replace strings", estimatedHours: 0.3, order: 1, status: "Ready", hoursWorked: 0 },
-            { id: 16, projectId: 4, name: "Basic setup", estimatedHours: 0.7, order: 2, status: "Not Started", hoursWorked: 0 }
+            { id: 15, projectId: 4, name: "Replace strings", estimatedHours: 0.3, order: 1, status: "Ready" },
+            { id: 16, projectId: 4, name: "Basic setup", estimatedHours: 0.7, order: 2, status: "Not Started" }
         ];
-        
-        let workLog = JSON.parse(localStorage.getItem('workLog') || '[]');
-        let timers = {}; // milestoneId -> { startTime, totalTime, isRunning, notes }
-        let isOnline = navigator.onLine;
-        let pendingSync = JSON.parse(localStorage.getItem('pendingSync') || '[]');
 
-        // ========= UTILITY FUNCTIONS =========
-        function updateSyncStatus() {
-            const statusEl = document.getElementById('syncStatus');
-            const lastSync = localStorage.getItem('lastSync');
-            if (lastSync) {
-                const date = new Date(lastSync);
-                statusEl.textContent = `Last sync: ${date.toLocaleTimeString()}`;
-            }
-        }
-
-        function updateStats() {
-            const today = new Date().toISOString().split('T')[0];
-            const thisWeekStart = new Date();
-            thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
-            const thisWeekStartStr = thisWeekStart.toISOString().split('T')[0];
-
-            // Calculate hours today
-            const todayHours = workLog
-                .filter(entry => entry.date === today)
-                .reduce((sum, entry) => sum + entry.hours, 0);
-
-            // Calculate hours this week
-            const weekHours = workLog
-                .filter(entry => entry.date >= thisWeekStartStr)
-                .reduce((sum, entry) => sum + entry.hours, 0);
-
-            // Active projects
-            const activeProjects = sampleProjects.filter(p => p.status === 'In Progress').length;
-
-            // Completed today
-            const completedToday = workLog
-                .filter(entry => entry.date === today && entry.milestoneCompleted)
-                .length;
-
-            document.getElementById('todayHours').textContent = todayHours.toFixed(1);
-            document.getElementById('weekHours').textContent = weekHours.toFixed(1);
-            document.getElementById('activeProjects').textContent = activeProjects;
-            document.getElementById('completedToday').textContent = completedToday;
-        }
-
-        function calculateDaysSinceWorked(project) {
-            if (!project.lastWorked) return 999; // Never worked
-            const lastWorked = new Date(project.lastWorked);
-            const today = new Date();
-            const diffTime = Math.abs(today - lastWorked);
-            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        }
-
-        function saveToLocalStorage() {
-            localStorage.setItem('workLog', JSON.stringify(workLog));
-            localStorage.setItem('pendingSync', JSON.stringify(pendingSync));
-        }
-
-        // ========= TIMER FUNCTIONS =========
-        function toggleTimer(milestoneId) {
-            if (!timers[milestoneId]) {
-                timers[milestoneId] = {
-                    startTime: null,
-                    totalTime: 0,
-                    isRunning: false,
-                    notes: ''
-                };
-            }
-
-            const timer = timers[milestoneId];
-            
-            if (timer.isRunning) {
-                // Stop timer
-                timer.totalTime += Date.now() - timer.startTime;
-                timer.isRunning = false;
-                timer.startTime = null;
-            } else {
-                // Start timer
-                timer.startTime = Date.now();
-                timer.isRunning = true;
-            }
-
-            updateTimerDisplay(milestoneId);
-            updateTimerButton(milestoneId);
-        }
-
-        function updateTimerDisplay(milestoneId) {
-            const timer = timers[milestoneId];
-            if (!timer) return;
-
-            let totalMs = timer.totalTime;
-            if (timer.isRunning && timer.startTime) {
-                totalMs += Date.now() - timer.startTime;
-            }
-
-            const hours = Math.floor(totalMs / (1000 * 60 * 60));
-            const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((totalMs % (1000 * 60)) / 1000);
-
-            const display = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            const timerEl = document.getElementById(`timer-${milestoneId}`);
-            if (timerEl) {
-                timerEl.textContent = `⏱️ ${display}`;
-            }
-        }
-
-        function updateTimerButton(milestoneId) {
-            const btn = document.getElementById(`timer-btn-${milestoneId}`);
-            if (!btn) return;
-
-            const timer = timers[milestoneId];
-            if (timer && timer.isRunning) {
-                btn.textContent = '⏹️ Stop';
-                btn.classList.add('running');
-            } else {
-                btn.textContent = '▶️ Start';
-                btn.classList.remove('running');
-            }
-        }
-
-        function updateAllTimers() {
-            Object.keys(timers).forEach(milestoneId => {
-                updateTimerDisplay(milestoneId);
-            });
-        }
-
-        // Update timers every second
-        setInterval(updateAllTimers, 1000);
+        let timers = {};
 
         // ========= DATA LOADING =========
         async function loadDataFromVercel() {
             try {
                 const res = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
-                if (!res.ok) throw new Error('Fetch failed: ' + res.status);
-                
+                if (!res.ok) throw new Error('Fetch failed: ' + res.status + ' ' + (await res.text()));
                 const data = await res.json();
-                
+
                 if (Array.isArray(data.projects) && Array.isArray(data.milestones)) {
                     sampleProjects = data.projects;
                     sampleMilestones = data.milestones;
-                    localStorage.setItem('lastSync', new Date().toISOString());
-                    updateSyncStatus();
-                    console.log('Data loaded from API successfully');
-                    return true;
+                    return;
                 }
-                
-                console.warn('Unexpected API response format');
-                return false;
+
+                if (Array.isArray(data.results)) {
+                    sampleProjects = data.results.map(page => ({
+                        id: page.id,
+                        name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
+                        instrumentMake: page.properties?.Make?.rich_text?.[0]?.plain_text ?? '',
+                        instrumentModel: page.properties?.Model?.rich_text?.[0]?.plain_text ?? '',
+                        complexity: Number(page.properties?.Complexity?.number ?? 3),
+                        profitability: Number(page.properties?.Profitability?.number ?? 3),
+                        status: page.properties?.Status?.status?.name ?? 'In Progress',
+                        dueDate: page.properties?.Due?.date?.start ?? null
+                    }));
+                    return;
+                }
+
+                console.warn('Unrecognized payload; using local samples.');
             } catch (e) {
-                console.warn('API fetch failed, using fallback data:', e.message);
-                return false;
+                console.warn('API fetch failed; using local samples.', e);
             }
         }
 
-        // ========= SCHEDULING FUNCTIONS =========
+        // ========= UI HELPERS =========
         function updateWeights() {
             const dueDateWeight = document.getElementById('dueDateSlider').value;
             const profitabilityWeight = document.getElementById('profitabilitySlider').value;
@@ -643,7 +375,6 @@
                          parseInt(complexityWeight) + parseInt(daysWorkedWeight);
             document.getElementById('totalWeight').textContent = total;
             
-            // Auto-regenerate schedule when weights change
             generateSchedule();
         }
 
@@ -656,6 +387,82 @@
             updateWeights();
         }
 
+        function calculateDaysSinceWorked(project) {
+            if (!project.lastWorked) return 999;
+            const lastWorked = new Date(project.lastWorked);
+            const today = new Date();
+            const diffTime = Math.abs(today - lastWorked);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        async function syncWithNotion() {
+            console.log('Syncing with Notion...');
+            const success = await loadDataFromVercel();
+            if (success) {
+                generateSchedule();
+                alert('Sync successful!');
+            } else {
+                alert('Sync failed - using local data');
+            }
+        }
+
+        // ========= MILESTONE FUNCTIONS =========
+        function completeMilestone(milestoneId) {
+            const milestone = sampleMilestones.find(m => m.id === milestoneId);
+            if (milestone) {
+                milestone.status = 'Completed';
+                
+                const project = sampleProjects.find(p => p.id === milestone.projectId);
+                if (project) {
+                    const projectMilestones = sampleMilestones
+                        .filter(m => m.projectId === project.id)
+                        .sort((a, b) => a.order - b.order);
+                    
+                    const completedIndex = projectMilestones.findIndex(m => m.id === milestoneId);
+                    const nextMilestone = projectMilestones[completedIndex + 1];
+                    
+                    if (nextMilestone && nextMilestone.status === 'Not Started') {
+                        nextMilestone.status = 'Ready';
+                    }
+                }
+                
+                generateSchedule();
+            }
+        }
+
+        function toggleTimer(milestoneId) {
+            if (!timers[milestoneId]) {
+                timers[milestoneId] = {
+                    startTime: Date.now(),
+                    totalTime: 0,
+                    isRunning: true
+                };
+            } else {
+                const timer = timers[milestoneId];
+                if (timer.isRunning) {
+                    timer.totalTime += Date.now() - timer.startTime;
+                    timer.isRunning = false;
+                } else {
+                    timer.startTime = Date.now();
+                    timer.isRunning = true;
+                }
+            }
+            
+            updateTimerButtons();
+        }
+
+        function updateTimerButtons() {
+            Object.keys(timers).forEach(milestoneId => {
+                const btn = document.getElementById(`timer-btn-${milestoneId}`);
+                if (btn) {
+                    const timer = timers[milestoneId];
+                    btn.textContent = timer.isRunning ? 'Stop Timer' : 'Start Timer';
+                    btn.style.background = timer.isRunning ? '#e74c3c' : '#3498db';
+                }
+            });
+        }
+
+        // ========= SCHEDULING =========
         function getReadyMilestones() {
             const ready = [];
             
@@ -667,13 +474,12 @@
                 for (let i = 0; i < projectMilestones.length; i++) {
                     const milestone = projectMilestones[i];
                     if (milestone.status === 'Completed') continue;
-                    
                     const previousMilestone = projectMilestones[i - 1];
                     const canStart = !previousMilestone || previousMilestone.status === 'Completed';
                     
                     if (canStart && (milestone.status === 'Ready' || milestone.status === 'Not Started')) {
                         ready.push({ milestone, project });
-                        break; // One per project initially
+                        break;
                     }
                 }
             });
@@ -695,7 +501,7 @@
                 const profitabilityScore = (task.project.profitability ?? 3) / 5;
                 const complexityScore = (task.project.complexity ?? 3) / 5;
                 const daysSinceWorked = calculateDaysSinceWorked(task.project);
-                const daysWorkedScore = Math.min(daysSinceWorked / 30, 1); // Normalize to 0-1
+                const daysWorkedScore = Math.min(daysSinceWorked / 30, 1);
                 
                 const priority = (dueDateUrgency * dueDateWeight) + 
                                  (profitabilityScore * profitabilityWeight) + 
@@ -712,34 +518,106 @@
             }).sort((a, b) => b.priority - a.priority);
         }
 
-        function nextMilestoneInProject(milestone) {
-            const list = sampleMilestones
-                .filter(m => m.projectId === milestone.projectId)
-                .sort((a,b) => a.order - b.order);
-            const idx = list.findIndex(m => m.id === milestone.id);
-            return idx >= 0 ? list[idx + 1] : null;
-        }
-
         function balanceComplexity(prioritizedTasks, availableHours) {
-            const STEP = 0.5;
-            const complexTasks = prioritizedTasks.filter(t => t.isComplex);
-            const simpleTasks = prioritizedTasks.filter(t => !t.isComplex);
-            const complexPercentage = parseInt(document.getElementById('complexPercentage').value) / 100;
-            const complexHoursNeeded = availableHours * complexPercentage;
-            
             const schedule = [];
             let totalHours = 0;
             let complexHours = 0;
-
-            function addToSchedule(task, hours) {
-                if (hours <= 0 || totalHours >= availableHours) return 0;
-                const hoursToAdd = Math.min(hours, availableHours - totalHours);
-                const existing = schedule.find(s => s.milestone.id === task.milestone.id);
-                if (existing) {
-                    existing.scheduledHours += hoursToAdd;
-                } else {
-                    schedule.push({ ...task, scheduledHours: hoursToAdd });
-                }
-                totalHours += hoursToAdd;
-                if (task.isComplex) complexHours += hoursToAdd;
+            const complexPercentage = parseInt(document.getElementById('complexPercentage').value) / 100;
+            
+            for (const task of prioritizedTasks) {
+                if (totalHours >= availableHours) break;
                 
+                const hoursToAdd = Math.min(task.milestone.estimatedHours, availableHours - totalHours);
+                schedule.push({ ...task, scheduledHours: hoursToAdd });
+                totalHours += hoursToAdd;
+                
+                if (task.isComplex) {
+                    complexHours += hoursToAdd;
+                }
+            }
+            
+            return { schedule, totalHours, complexHours };
+        }
+
+        function displaySchedule(result, availableHours) {
+            const { schedule, totalHours, complexHours } = result;
+            let html = '';
+            
+            schedule.forEach((item) => {
+                const dueText = item.daysUntilDue < 0 ? '⚠️ OVERDUE!' : 
+                              item.daysUntilDue <= 3 ? '🔥 Due soon' : 
+                              item.daysUntilDue <= 7 ? '📅 Due this week' : '✅ On track';
+                
+                const complexClass = item.isComplex ? 'complex' : '';
+                const timeClass = item.isComplex ? 'complex' : '';
+                const completedClass = item.milestone.status === 'Completed' ? 'completed' : '';
+                
+                html += `
+                    <div class="milestone-item ${complexClass} ${completedClass}">
+                        <div class="milestone-row">
+                            <input type="checkbox" class="milestone-checkbox" 
+                                   ${item.milestone.status === 'Completed' ? 'checked' : ''} 
+                                   onchange="completeMilestone(${item.milestone.id})">
+                            <div class="milestone-content">
+                                <div class="milestone-header">
+                                    <div class="milestone-title">${item.milestone.name}</div>
+                                    <div class="milestone-time ${timeClass}">${item.scheduledHours}h</div>
+                                </div>
+                                <div class="milestone-details">
+                                    <span class="complexity-badge complexity-${item.project.complexity}">C${item.project.complexity}</span>
+                                    <span class="profitability-badge profitability-${item.project.profitability}">P${item.project.profitability}</span>
+                                    ${dueText} • Priority: ${item.priority.toFixed(2)} • Days since worked: ${item.daysSinceWorked === 999 ? 'Never' : item.daysSinceWorked}
+                                </div>
+                                <div class="milestone-project">
+                                    ${item.project.name} - ${item.project.instrumentMake} ${item.project.instrumentModel}
+                                </div>
+                                <div class="milestone-actions">
+                                    <button class="action-btn timer" id="timer-btn-${item.milestone.id}" onclick="toggleTimer(${item.milestone.id})">Start Timer</button>
+                                    <button class="action-btn complete" onclick="completeMilestone(${item.milestone.id})">Complete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            const complexPercentage = totalHours > 0 ? Math.round((complexHours / totalHours) * 100) : 0;
+            const targetPercentage = parseInt(document.getElementById('complexPercentage').value);
+            
+            html += `
+                <div class="summary">
+                    <strong>Schedule Summary:</strong> ${totalHours.toFixed(1)}h scheduled of ${availableHours}h available<br>
+                    <strong>Complex work (4-5):</strong> ${complexHours.toFixed(1)}h (${complexPercentage}%)
+                    ${complexPercentage < targetPercentage ? ` ⚠️ Below ${targetPercentage}% target!` : ` ✅ Good balance!`}
+                </div>
+            `;
+            
+            document.getElementById('scheduleOutput').innerHTML = html;
+            updateTimerButtons();
+        }
+
+        // ========= MAIN =========
+        async function generateSchedule() {
+            const availableHours = parseFloat(document.getElementById('availableHours').value) || 8;
+            
+            const readyMilestones = getReadyMilestones();
+            if (readyMilestones.length === 0) {
+                document.getElementById('scheduleOutput').innerHTML = 
+                    '<div class="milestone-item"><div class="milestone-title">🎉 All current milestones completed!</div><div class="milestone-details">Add new projects or mark next milestones as ready.</div></div>';
+                return;
+            }
+            
+            const prioritizedTasks = calculatePriorities(readyMilestones);
+            const schedule = balanceComplexity(prioritizedTasks, availableHours);
+            
+            displaySchedule(schedule, availableHours);
+        }
+
+        // ========= INITIALIZATION =========
+        window.onload = async function() {
+            await loadDataFromVercel();
+            generateSchedule();
+        };
+    </script>
+</body>
+</html>
