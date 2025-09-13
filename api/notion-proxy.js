@@ -1,4 +1,4 @@
-// /api/notion-proxy.js
+// /api/notion-proxy.js - DIAGNOSTIC VERSION
 const { Client } = require('@notionhq/client');
 
 module.exports = async (req, res) => {
@@ -9,59 +9,44 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   
   try {
-    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID } = process.env;
-    const missing = [];
-    if (!NOTION_TOKEN) missing.push('NOTION_TOKEN');
-    if (!NOTION_DATABASE_ID) missing.push('NOTION_DATABASE_ID');
-    if (missing.length) {
-      return res.status(500).json({ error: 'Missing environment variables', missing });
+    const { NOTION_TOKEN, NOTION_DATABASE_ID } = process.env;
+    if (!NOTION_TOKEN || !NOTION_DATABASE_ID) {
+      return res.status(500).json({ error: 'Missing environment variables' });
     }
     
     const notion = new Client({ auth: NOTION_TOKEN });
     
-    // Projects - FILTER FOR "On The Bench" STATUS ONLY
+    // First, let's get the database schema to see actual property names
+    const database = await notion.databases.retrieve({ database_id: NOTION_DATABASE_ID });
+    const propertyNames = Object.keys(database.properties);
+    
+    // Get first few projects WITHOUT filtering to see the structure
     const projectsResp = await notion.databases.query({ 
       database_id: NOTION_DATABASE_ID,
-      filter: {
-        property: 'Status',
-        status: {
-          equals: 'On The Bench'
-        }
-      }
+      page_size: 5 // Just get 5 projects for diagnosis
     });
     
-    const projects = projectsResp.results.map(page => ({
-      id: page.id,
-      name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
-      instrumentMake: page.properties?.['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
-      instrumentModel: page.properties?.['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
-      complexity: Number(page.properties?.Complexity?.number ?? 3),
-      profitability: Number(page.properties?.Profitability?.number ?? 3),
-      status: page.properties?.Status?.status?.name ?? 'On The Bench',
-      dueDate: page.properties?.['Due Date']?.date?.start ?? null,
-      totalMilestones: Number(page.properties?.['Total Milestones']?.number ?? 0),
-      completedMilestones: Number(page.properties?.['Completed Milestones']?.number ?? 0),
-      progress: Number(page.properties?.['Progress %']?.number ?? 0)
-    }));
+    // Extract all unique status values
+    const statusValues = projectsResp.results.map(page => {
+      return page.properties?.Status?.status?.name || 'NO_STATUS';
+    });
+    const uniqueStatuses = [...new Set(statusValues)];
     
-    // Milestones (optional second DB)
-    let milestones = [];
-    if (NOTION_MILESTONES_DATABASE_ID) {
-      const msResp = await notion.databases.query({ database_id: NOTION_MILESTONES_DATABASE_ID });
-      milestones = msResp.results.map(page => ({
-        id: page.id,
-        projectId: page.properties?.Project?.relation?.[0]?.id || null,
-        name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
-        estimatedHours: Number(page.properties?.EstimatedHours?.number ?? 1),
-        order: Number(page.properties?.Order?.number ?? 1),
-        status: page.properties?.Status?.status?.name ?? 'Not Started'
-      }));
-    }
-    
-    res.status(200).json({ projects, milestones });
+    // Return diagnostic info
+    res.status(200).json({ 
+      diagnostic: true,
+      propertyNames: propertyNames,
+      uniqueStatuses: uniqueStatuses,
+      sampleProject: projectsResp.results[0]?.properties || {},
+      totalProjects: projectsResp.results.length
+    });
     
   } catch (err) {
     console.error('Notion proxy error:', err);
-    res.status(500).json({ error: 'Internal server error', detail: err?.message || String(err) });
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      detail: err?.message || String(err),
+      stack: err?.stack
+    });
   }
 };
