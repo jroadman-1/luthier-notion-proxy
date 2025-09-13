@@ -628,7 +628,17 @@
         }
 
         function updateStats() {
-            const readyMilestones = getReadyMilestones().length;
+            // Debug milestone status
+            console.log('All milestones:', allMilestones.map(m => ({ 
+                id: m.id, 
+                name: m.name, 
+                status: m.status, 
+                projectId: m.projectId 
+            })));
+            
+            const readyMilestones = getReadyMilestones();
+            console.log('Ready milestones found:', readyMilestones.length);
+            
             const totalHours = allProjects.reduce((sum, p) => sum + (p.totalEstimatedHour || 0), 0);
             const complexWork = allProjects.filter(p => p.complexity >= 4).length;
             const urgentWork = allProjects.filter(p => {
@@ -638,7 +648,7 @@
             }).length;
 
             document.getElementById('totalProjects').textContent = allProjects.length;
-            document.getElementById('readyMilestones').textContent = readyMilestones;
+            document.getElementById('readyMilestones').textContent = readyMilestones.length;
             document.getElementById('totalHours').textContent = totalHours.toFixed(1);
             document.getElementById('complexWork').textContent = complexWork;
             document.getElementById('urgentWork').textContent = urgentWork;
