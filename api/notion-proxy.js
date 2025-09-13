@@ -1,63 +1,32 @@
-// /api/notion-proxy.js - CORRECTED VERSION
+// /api/notion-proxy.js - Complete system API
 const { Client } = require('@notionhq/client');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   if (req.method === 'OPTIONS') return res.status(200).end();
   
   try {
-    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID } = process.env;
-    if (!NOTION_TOKEN || !NOTION_DATABASE_ID) {
-      return res.status(500).json({ error: 'Missing environment variables' });
+    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+    
+    if (!NOTION_TOKEN || !NOTION_DATABASE_ID || !NOTION_MILESTONES_DATABASE_ID) {
+      return res.status(500).json({ error: 'Missing required environment variables' });
     }
     
     const notion = new Client({ auth: NOTION_TOKEN });
     
-    // Projects - FILTER FOR "On The Bench" STATUS
-    const projectsResp = await notion.databases.query({ 
-      database_id: NOTION_DATABASE_ID,
-      filter: {
-        property: 'Status',
-        select: {
-          equals: 'On The Bench'
-        }
-      }
-    });
-    
-    const projects = projectsResp.results.map(page => ({
-      id: page.id,
-      name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
-      instrumentMake: page.properties?.['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
-      instrumentModel: page.properties?.['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
-      complexity: page.properties?.Complexity?.select?.name ?? null,
-      profitability: page.properties?.Profitability?.select?.name ?? null,
-      status: page.properties?.Status?.select?.name ?? 'Unknown',
-      dueDate: page.properties?.['Due Date']?.date?.start ?? null,
-      totalMilestones: page.properties?.['Total Milestones']?.rollup?.number ?? 0,
-      completedMilestones: page.properties?.['Completed Milestones']?.rollup?.number ?? 0,
-      progress: page.properties?.['Progress %']?.formula?.number ?? 0,
-      estimatedHours: page.properties?.['Estimated Hours']?.number ?? null,
-      totalEstimatedHour: page.properties?.['Total Estimated Hour']?.rollup?.number ?? 0
-    }));
-    
-    // Milestones (optional second DB)
-    let milestones = [];
-    if (NOTION_MILESTONES_DATABASE_ID) {
-      const msResp = await notion.databases.query({ database_id: NOTION_MILESTONES_DATABASE_ID });
-      milestones = msResp.results.map(page => ({
-        id: page.id,
-        projectId: page.properties?.Project?.relation?.[0]?.id || null,
-        name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
-        estimatedHours: Number(page.properties?.EstimatedHours?.number ?? 1),
-        order: Number(page.properties?.Order?.number ?? 1),
-        status: page.properties?.Status?.status?.name ?? 'Not Started'
-      }));
+    switch (req.method) {
+      case 'GET':
+        return await handleGet(req, res, notion);
+      case 'POST':
+        return await handlePost(req, res, notion);
+      case 'PUT':
+        return await handlePut(req, res, notion);
+      default:
+        return res.status(405).json({ error: 'Method not allowed' });
     }
-    
-    res.status(200).json({ projects, milestones });
     
   } catch (err) {
     console.error('Notion proxy error:', err);
@@ -67,3 +36,349 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+async function handleGet(req, res, notion) {
+  const { action } = req.query;
+  const { NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'workflows':
+      return await getWorkflows(res, notion, NOTION_WORKFLOWS_DATABASE_ID);
+    default:
+      return await getAllData(res, notion, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID);
+  }
+}
+
+async function handlePost(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'create-milestones':
+      return await createMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'save-progress':
+      return await saveProgress(res, notion, NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
+
+async function handlePut(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_MILESTONES_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'update-milestone':
+      return await updateMilestone(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
+
+// Get all projects and milestones for scheduling
+async function getAllData(res, notion, projectsDbId, milestonesDbId) {
+  try {
+    const [projectsResponse, milestonesResponse] = await Promise.all([
+      notion.databases.query({
+        database_id: projectsDbId,
+        filter: {
+          property: 'Status',
+          select: {
+            equals: 'On The Bench'
+          }
+        }
+      }),
+      notion.databases.query({
+        database_id: milestonesDbId
+      })
+    ]);
+    
+    const projects = projectsResponse.results.map(mapProject);
+    const milestones = milestonesResponse.results.map(mapMilestone);
+    
+    return res.json({ projects, milestones });
+  } catch (error) {
+    throw new Error(`Failed to fetch data: ${error.message}`);
+  }
+}
+
+// Get workflow templates
+async function getWorkflows(res, notion, workflowsDbId) {
+  if (!workflowsDbId) {
+    return res.json({ workflows: [] });
+  }
+  
+  try {
+    const response = await notion.databases.query({
+      database_id: workflowsDbId
+    });
+    
+    const workflows = response.results.map(page => ({
+      id: page.id,
+      name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
+      data: page.properties?.Data?.rich_text?.[0]?.plain_text ?? '[]'
+    }));
+    
+    return res.json({ workflows });
+  } catch (error) {
+    throw new Error(`Failed to fetch workflows: ${error.message}`);
+  }
+}
+
+// Create milestones from various sources
+async function createMilestones(res, notion, milestonesDbId, data) {
+  const { projectId, milestones, source } = data;
+  
+  try {
+    const createdMilestones = [];
+    
+    for (const milestone of milestones) {
+      const response = await notion.pages.create({
+        parent: { database_id: milestonesDbId },
+        properties: {
+          'Name': {
+            title: [{ text: { content: milestone.name } }]
+          },
+          'Work Order': {
+            relation: [{ id: projectId }]
+          },
+          'Estimated Hours': {
+            number: milestone.estimatedHours || 1
+          },
+          'Order (Sequence)': {
+            number: milestone.order || 1
+          },
+          'Status': {
+            select: { name: 'Not Started' }
+          },
+          'Milestone Type': {
+            select: { name: source || 'Individual' }
+          }
+        }
+      });
+      
+      createdMilestones.push(mapMilestone(response));
+    }
+    
+    return res.json({ success: true, milestones: createdMilestones });
+  } catch (error) {
+    throw new Error(`Failed to create milestones: ${error.message}`);
+  }
+}
+
+// Save progress (completed milestones and actual hours)
+async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
+  const { completedMilestones } = data;
+  
+  try {
+    const updates = [];
+    const projectUpdates = new Set();
+    
+    for (const completion of completedMilestones) {
+      // Update milestone
+      const milestoneUpdate = notion.pages.update({
+        page_id: completion.milestoneId,
+        properties: {
+          'Status': {
+            select: { name: 'Completed' }
+          },
+          'Actual Hours': {
+            number: completion.actualHours
+          }
+        }
+      });
+      
+      updates.push(milestoneUpdate);
+      projectUpdates.add(completion.projectId);
+    }
+    
+    // Update Last Worked date for affected projects
+    const today = new Date().toISOString().split('T')[0];
+    for (const projectId of projectUpdates) {
+      const projectUpdate = notion.pages.update({
+        page_id: projectId,
+        properties: {
+          'Last Worked': {
+            date: { start: today }
+          }
+        }
+      });
+      
+      updates.push(projectUpdate);
+    }
+    
+    await Promise.all(updates);
+    
+    return res.json({ success: true, message: 'Progress saved successfully' });
+  } catch (error) {
+    throw new Error(`Failed to save progress: ${error.message}`);
+  }
+}
+
+// Update project information
+async function updateProject(res, notion, projectsDbId, data) {
+  const { projectId, ...updates } = data;
+  
+  try {
+    const properties = {};
+    
+    if (updates.name) {
+      properties.Name = { title: [{ text: { content: updates.name } }] };
+    }
+    if (updates.status) {
+      properties.Status = { select: { name: updates.status } };
+    }
+    if (updates.instrumentMake !== undefined) {
+      properties['Instrument Make'] = { 
+        rich_text: [{ text: { content: updates.instrumentMake || '' } }] 
+      };
+    }
+    if (updates.instrumentModel !== undefined) {
+      properties['Instrument Model'] = { 
+        rich_text: [{ text: { content: updates.instrumentModel || '' } }] 
+      };
+    }
+    if (updates.complexity !== undefined) {
+      const complexityValue = `${updates.complexity}-${['Simple','Easy','Moderate','Complex','Very Complex'][updates.complexity-1]}`;
+      properties.Complexity = { select: { name: complexityValue } };
+    }
+    if (updates.profitability !== undefined) {
+      const profitabilityValue = `${updates.profitability}-${['Low','Below Average','Standard','Good','Excellent'][updates.profitability-1]}`;
+      properties.Profitability = { select: { name: profitabilityValue } };
+    }
+    if (updates.dueDate !== undefined) {
+      properties['Due Date'] = updates.dueDate ? { date: { start: updates.dueDate } } : { date: null };
+    }
+
+    await notion.pages.update({
+      page_id: projectId,
+      properties
+    });
+
+    return res.json({ success: true, message: 'Project updated successfully' });
+  } catch (error) {
+    throw new Error(`Failed to update project: ${error.message}`);
+  }
+}
+
+// Save complete milestone set for a project
+async function saveMilestones(res, notion, milestonesDbId, data) {
+  const { projectId, milestones } = data;
+  
+  try {
+    // First, get existing milestones for this project
+    const existingResponse = await notion.databases.query({
+      database_id: milestonesDbId,
+      filter: {
+        property: 'Work Order',
+        relation: {
+          contains: projectId
+        }
+      }
+    });
+    
+    const existingMilestones = existingResponse.results.map(mapMilestone);
+    const updates = [];
+    
+    // Process each milestone
+    for (let i = 0; i < milestones.length; i++) {
+      const milestone = milestones[i];
+      
+      if (milestone.id && existingMilestones.find(m => m.id === milestone.id)) {
+        // Update existing milestone
+        const updatePromise = notion.pages.update({
+          page_id: milestone.id,
+          properties: {
+            'Name': { title: [{ text: { content: milestone.name } }] },
+            'Estimated Hours': { number: milestone.estimatedHours },
+            'Order (Sequence)': { number: i + 1 },
+            'Status': { select: { name: milestone.status || 'Not Started' } }
+          }
+        });
+        updates.push(updatePromise);
+      } else {
+        // Create new milestone
+        const createPromise = notion.pages.create({
+          parent: { database_id: milestonesDbId },
+          properties: {
+            'Name': { title: [{ text: { content: milestone.name } }] },
+            'Work Order': { relation: [{ id: projectId }] },
+            'Estimated Hours': { number: milestone.estimatedHours },
+            'Order (Sequence)': { number: i + 1 },
+            'Status': { select: { name: milestone.status || 'Not Started' } },
+            'Milestone Type': { select: { name: 'Individual' } }
+          }
+        });
+        updates.push(createPromise);
+      }
+    }
+    
+    // Delete milestones that were removed (exist in Notion but not in the new list)
+    const milestoneIds = milestones.filter(m => m.id).map(m => m.id);
+    const toDelete = existingMilestones.filter(m => !milestoneIds.includes(m.id));
+    
+    for (const milestone of toDelete) {
+      const deletePromise = notion.pages.update({
+        page_id: milestone.id,
+        archived: true
+      });
+      updates.push(deletePromise);
+    }
+    
+    await Promise.all(updates);
+    
+    return res.json({ 
+      success: true, 
+      message: `Updated ${milestones.length} milestones, deleted ${toDelete.length} milestones`
+    });
+  } catch (error) {
+    throw new Error(`Failed to save milestones: ${error.message}`);
+  }
+}
+
+// Mapping functions
+function mapProject(page) {
+  const props = page.properties;
+  
+  return {
+    id: page.id,
+    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
+    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
+    complexity: parseRatingValue(props.Complexity?.select?.name),
+    profitability: parseRatingValue(props.Profitability?.select?.name),
+    status: props.Status?.select?.name ?? 'Unknown',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    lastWorked: props['Last Worked']?.date?.start ?? null,
+    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
+    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
+    progress: props['Progress %']?.formula?.number ?? 0,
+    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0
+  };
+}
+
+function mapMilestone(page) {
+  const props = page.properties;
+  
+  return {
+    id: page.id,
+    projectId: props['Work Order']?.relation?.[0]?.id || null,
+    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
+    estimatedHours: props['Estimated Hours']?.number ?? 1,
+    actualHours: props['Actual Hours']?.number ?? 0,
+    order: props['Order (Sequence)']?.number ?? 1,
+    status: props.Status?.select?.name ?? 'Not Started',
+    milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    notes: props.Notes?.rich_text?.[0]?.plain_text ?? ''
+  };
+}
+
+function parseRatingValue(ratingStr) {
+  if (!ratingStr) return 3;
+  if (typeof ratingStr === 'number') return ratingStr;
+  const match = ratingStr.match(/^(\d+)-/);
+  return match ? parseInt(match[1]) : 3;
+}
