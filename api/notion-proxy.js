@@ -59,6 +59,8 @@ async function handlePost(req, res, notion) {
       return await createMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
     case 'save-progress':
       return await saveProgress(res, notion, NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, data);
+    case 'save-milestones':
+      return await saveMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
     default:
       return res.status(400).json({ error: 'Invalid action' });
   }
@@ -67,11 +69,13 @@ async function handlePost(req, res, notion) {
 async function handlePut(req, res, notion) {
   const { action } = req.query;
   const data = req.body;
-  const { NOTION_MILESTONES_DATABASE_ID } = process.env;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID } = process.env;
   
   switch (action) {
     case 'update-milestone':
       return await updateMilestone(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'update-project':
+      return await updateProject(res, notion, NOTION_DATABASE_ID, data);
     default:
       return res.status(400).json({ error: 'Invalid action' });
   }
@@ -264,6 +268,46 @@ async function updateProject(res, notion, projectsDbId, data) {
     return res.json({ success: true, message: 'Project updated successfully' });
   } catch (error) {
     throw new Error(`Failed to update project: ${error.message}`);
+  }
+}
+
+// Update single milestone
+async function updateMilestone(res, notion, milestonesDbId, data) {
+  const { milestoneId, ...updates } = data;
+  
+  try {
+    const properties = {};
+    
+    if (updates.name) {
+      properties.Name = { title: [{ text: { content: updates.name } }] };
+    }
+    if (updates.estimatedHours !== undefined) {
+      properties['Estimated Hours'] = { number: updates.estimatedHours };
+    }
+    if (updates.actualHours !== undefined) {
+      properties['Actual Hours'] = { number: updates.actualHours };
+    }
+    if (updates.status) {
+      properties.Status = { select: { name: updates.status } };
+    }
+    if (updates.order !== undefined) {
+      properties['Order (Sequence)'] = { number: updates.order };
+    }
+    if (updates.dueDate !== undefined) {
+      properties['Due Date'] = updates.dueDate ? { date: { start: updates.dueDate } } : { date: null };
+    }
+    if (updates.notes !== undefined) {
+      properties.Notes = { rich_text: [{ text: { content: updates.notes || '' } }] };
+    }
+
+    await notion.pages.update({
+      page_id: milestoneId,
+      properties
+    });
+
+    return res.json({ success: true, message: 'Milestone updated successfully' });
+  } catch (error) {
+    throw new Error(`Failed to update milestone: ${error.message}`);
   }
 }
 
