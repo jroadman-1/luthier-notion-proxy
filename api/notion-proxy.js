@@ -88,15 +88,19 @@ async function getAllData(res, notion, projectsDbId, milestonesDbId) {
           select: {
             equals: 'On The Bench'
           }
-        }
+        },
+        page_size: 100 // Ensure we get all projects
       }),
       notion.databases.query({
-        database_id: milestonesDbId
+        database_id: milestonesDbId,
+        page_size: 100 // Ensure we get all milestones
       })
     ]);
     
     const projects = projectsResponse.results.map(mapProject);
     const milestones = milestonesResponse.results.map(mapMilestone);
+    
+    console.log(`API returning ${projects.length} projects and ${milestones.length} milestones`);
     
     return res.json({ projects, milestones });
   } catch (error) {
