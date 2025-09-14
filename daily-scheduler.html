@@ -495,13 +495,13 @@
                         <div class="form-group">
                             <label>Complexity (1-5)</label>
                             <select id="complexity" onchange="markChanged()">
-                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.complexity || 3) === n ? 'selected' : ''}>${n} - ${['Simple','Easy','Moderate','Complex','Very Complex'][n-1]}</option>`).join('')}
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${currentProject.complexity === n ? 'selected' : ''}>${n} - ${['Simple','Easy','Moderate','Complex','Very Complex'][n-1]}</option>`).join('')}
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Profitability (1-5)</label>
                             <select id="profitability" onchange="markChanged()">
-                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.profitability || 3) === n ? 'selected' : ''}>${n} - ${['Low','Below Average','Standard','Good','Excellent'][n-1]}</option>`).join('')}
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${currentProject.profitability === n ? 'selected' : ''}>${n} - ${['Low','Below Average','Standard','Good','Excellent'][n-1]}</option>`).join('')}
                             </select>
                         </div>
                         <div class="form-group">
@@ -782,7 +782,6 @@
                 
                 // Collect project data
                 const projectData = {
-                    projectId: currentProject.id,
                     name: document.getElementById('projectName').value,
                     status: document.getElementById('projectStatus').value,
                     instrumentMake: document.getElementById('instrumentMake').value,
@@ -792,33 +791,12 @@
                     dueDate: document.getElementById('dueDate').value || null
                 };
                 
+                // TODO: Save project data to Notion
                 console.log('Project data to save:', projectData);
                 console.log('Milestones to save:', currentMilestones);
                 
-                // Save project data
-                const projectResponse = await fetch(`${API_URL}?action=update-project`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(projectData)
-                });
-                
-                if (!projectResponse.ok) {
-                    throw new Error('Failed to save project data');
-                }
-                
-                // Save milestones
-                const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        projectId: currentProject.id,
-                        milestones: currentMilestones
-                    })
-                });
-                
-                if (!milestoneResponse.ok) {
-                    throw new Error('Failed to save milestones');
-                }
+                // For now, just simulate save
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 hasUnsavedChanges = false;
                 updateSaveButton();
@@ -829,12 +807,9 @@
                     updateSaveButton();
                 }, 2000);
                 
-                // Refresh the projects list to show updated data
-                await refreshProjects();
-                
             } catch (error) {
                 console.error('Save failed:', error);
-                alert('Failed to save changes: ' + error.message);
+                alert('Failed to save changes');
                 document.getElementById('saveBtn').textContent = 'Save Changes *';
             }
         }
