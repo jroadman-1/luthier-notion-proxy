@@ -435,6 +435,18 @@
             document.getElementById('debugMilestoneCount').textContent = allMilestones.length;
         }
 
+        async function debugMilestones() {
+            try {
+                const response = await fetch(`${API_URL}?action=debug-milestones`);
+                const data = await response.json();
+                console.log('Milestone debug data:', data);
+                alert('Milestone debug data logged to console. Check browser console for details.');
+            } catch (error) {
+                console.error('Debug milestones failed:', error);
+                alert('Debug failed: ' + error.message);
+            }
+        }
+
         function logDebug(type, data) {
             console.log(`[${type}]`, data);
             if (debugMode) {
