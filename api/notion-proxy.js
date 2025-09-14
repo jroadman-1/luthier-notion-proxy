@@ -115,23 +115,44 @@ async function getAllData(res, notion, projectsDbId, milestonesDbId) {
 // Get workflow templates
 async function getWorkflows(res, notion, workflowsDbId) {
   if (!workflowsDbId) {
+    console.log('No workflows database ID provided');
     return res.json({ workflows: [] });
   }
   
   try {
-    const response = await notion.databases.query({
-      database_id: workflowsDbId
+    console.log('Fetching workflows from database:', workflowsDbId);
+    
+    let allWorkflows = [];
+    let hasMore = true;
+    let nextCursor = undefined;
+    
+    while (hasMore) {
+      const response = await notion.databases.query({
+        database_id: workflowsDbId,
+        page_size: 100,
+        start_cursor: nextCursor
+      });
+      
+      allWorkflows = allWorkflows.concat(response.results);
+      hasMore = response.has_more;
+      nextCursor = response.next_cursor;
+    }
+    
+    const workflows = allWorkflows.map(page => {
+      const workflow = {
+        id: page.id,
+        name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
+        data: page.properties?.Data?.rich_text?.[0]?.plain_text ?? '[]'
+      };
+      console.log('Mapped workflow:', workflow);
+      return workflow;
     });
     
-    const workflows = response.results.map(page => ({
-      id: page.id,
-      name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
-      data: page.properties?.Data?.rich_text?.[0]?.plain_text ?? '[]'
-    }));
-    
+    console.log(`Returning ${workflows.length} workflows`);
     return res.json({ workflows });
   } catch (error) {
-    throw new Error(`Failed to fetch workflows: ${error.message}`);
+    console.error('Error fetching workflows:', error);
+    return res.json({ workflows: [], error: error.message });
   }
 }
 
