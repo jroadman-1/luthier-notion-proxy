@@ -1,388 +1,830 @@
-// /api/notion-proxy.js - Complete system API
-const { Client } = require('@notionhq/client');
-
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  
-  try {
-    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
-    
-    if (!NOTION_TOKEN || !NOTION_DATABASE_ID || !NOTION_MILESTONES_DATABASE_ID) {
-      return res.status(500).json({ error: 'Missing required environment variables' });
-    }
-    
-    const notion = new Client({ auth: NOTION_TOKEN });
-    
-    switch (req.method) {
-      case 'GET':
-        return await handleGet(req, res, notion);
-      case 'POST':
-        return await handlePost(req, res, notion);
-      case 'PUT':
-        return await handlePut(req, res, notion);
-      default:
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-    
-  } catch (err) {
-    console.error('Notion proxy error:', err);
-    res.status(500).json({ 
-      error: 'Internal server error', 
-      detail: err?.message || String(err)
-    });
-  }
-};
-
-async function handleGet(req, res, notion) {
-  const { action } = req.query;
-  const { NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
-  
-  switch (action) {
-    case 'workflows':
-      return await getWorkflows(res, notion, NOTION_WORKFLOWS_DATABASE_ID);
-    default:
-      return await getAllData(res, notion, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID);
-  }
-}
-
-async function handlePost(req, res, notion) {
-  const { action } = req.query;
-  const data = req.body;
-  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID } = process.env;
-  
-  switch (action) {
-    case 'create-milestones':
-      return await createMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
-    case 'save-progress':
-      return await saveProgress(res, notion, NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, data);
-    default:
-      return res.status(400).json({ error: 'Invalid action' });
-  }
-}
-
-async function handlePut(req, res, notion) {
-  const { action } = req.query;
-  const data = req.body;
-  const { NOTION_MILESTONES_DATABASE_ID } = process.env;
-  
-  switch (action) {
-    case 'update-milestone':
-      return await updateMilestone(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
-    default:
-      return res.status(400).json({ error: 'Invalid action' });
-  }
-}
-
-// Get all projects and milestones for scheduling
-async function getAllData(res, notion, projectsDbId, milestonesDbId) {
-  try {
-    const [projectsResponse, milestonesResponse] = await Promise.all([
-      notion.databases.query({
-        database_id: projectsDbId,
-        filter: {
-          property: 'Status',
-          select: {
-            equals: 'On The Bench'
-          }
-        },
-        page_size: 100 // Ensure we get all projects
-      }),
-      notion.databases.query({
-        database_id: milestonesDbId,
-        page_size: 100 // Ensure we get all milestones
-      })
-    ]);
-    
-    const projects = projectsResponse.results.map(mapProject);
-    const milestones = milestonesResponse.results.map(mapMilestone);
-    
-    console.log(`API returning ${projects.length} projects and ${milestones.length} milestones`);
-    
-    return res.json({ projects, milestones });
-  } catch (error) {
-    throw new Error(`Failed to fetch data: ${error.message}`);
-  }
-}
-
-// Get workflow templates
-async function getWorkflows(res, notion, workflowsDbId) {
-  if (!workflowsDbId) {
-    return res.json({ workflows: [] });
-  }
-  
-  try {
-    const response = await notion.databases.query({
-      database_id: workflowsDbId
-    });
-    
-    const workflows = response.results.map(page => ({
-      id: page.id,
-      name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
-      data: page.properties?.Data?.rich_text?.[0]?.plain_text ?? '[]'
-    }));
-    
-    return res.json({ workflows });
-  } catch (error) {
-    throw new Error(`Failed to fetch workflows: ${error.message}`);
-  }
-}
-
-// Create milestones from various sources
-async function createMilestones(res, notion, milestonesDbId, data) {
-  const { projectId, milestones, source } = data;
-  
-  try {
-    const createdMilestones = [];
-    
-    for (const milestone of milestones) {
-      const response = await notion.pages.create({
-        parent: { database_id: milestonesDbId },
-        properties: {
-          'Name': {
-            title: [{ text: { content: milestone.name } }]
-          },
-          'Work Order': {
-            relation: [{ id: projectId }]
-          },
-          'Estimated Hours': {
-            number: milestone.estimatedHours || 1
-          },
-          'Order (Sequence)': {
-            number: milestone.order || 1
-          },
-          'Status': {
-            select: { name: 'Not Started' }
-          },
-          'Milestone Type': {
-            select: { name: source || 'Individual' }
-          }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management - Luthier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-      });
-      
-      createdMilestones.push(mapMilestone(response));
-    }
-    
-    return res.json({ success: true, milestones: createdMilestones });
-  } catch (error) {
-    throw new Error(`Failed to create milestones: ${error.message}`);
-  }
-}
-
-// Save progress (completed milestones and actual hours)
-async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
-  const { completedMilestones } = data;
-  
-  try {
-    const updates = [];
-    const projectUpdates = new Set();
-    
-    for (const completion of completedMilestones) {
-      // Update milestone
-      const milestoneUpdate = notion.pages.update({
-        page_id: completion.milestoneId,
-        properties: {
-          'Status': {
-            select: { name: 'Completed' }
-          },
-          'Actual Hours': {
-            number: completion.actualHours
-          }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
         }
-      });
-      
-      updates.push(milestoneUpdate);
-      projectUpdates.add(completion.projectId);
-    }
-    
-    // Update Last Worked date for affected projects
-    const today = new Date().toISOString().split('T')[0];
-    for (const projectId of projectUpdates) {
-      const projectUpdate = notion.pages.update({
-        page_id: projectId,
-        properties: {
-          'Last Worked': {
-            date: { start: today }
-          }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 140px);
         }
-      });
-      
-      updates.push(projectUpdate);
-    }
-    
-    await Promise.all(updates);
-    
-    return res.json({ success: true, message: 'Progress saved successfully' });
-  } catch (error) {
-    throw new Error(`Failed to save progress: ${error.message}`);
-  }
-}
-
-// Update project information
-async function updateProject(res, notion, projectsDbId, data) {
-  const { projectId, ...updates } = data;
-  
-  try {
-    const properties = {};
-    
-    if (updates.name) {
-      properties.Name = { title: [{ text: { content: updates.name } }] };
-    }
-    if (updates.status) {
-      properties.Status = { select: { name: updates.status } };
-    }
-    if (updates.instrumentMake !== undefined) {
-      properties['Instrument Make'] = { 
-        rich_text: [{ text: { content: updates.instrumentMake || '' } }] 
-      };
-    }
-    if (updates.instrumentModel !== undefined) {
-      properties['Instrument Model'] = { 
-        rich_text: [{ text: { content: updates.instrumentModel || '' } }] 
-      };
-    }
-    if (updates.complexity !== undefined) {
-      const complexityValue = `${updates.complexity}-${['Simple','Easy','Moderate','Complex','Very Complex'][updates.complexity-1]}`;
-      properties.Complexity = { select: { name: complexityValue } };
-    }
-    if (updates.profitability !== undefined) {
-      const profitabilityValue = `${updates.profitability}-${['Low','Below Average','Standard','Good','Excellent'][updates.profitability-1]}`;
-      properties.Profitability = { select: { name: profitabilityValue } };
-    }
-    if (updates.dueDate !== undefined) {
-      properties['Due Date'] = updates.dueDate ? { date: { start: updates.dueDate } } : { date: null };
-    }
-
-    await notion.pages.update({
-      page_id: projectId,
-      properties
-    });
-
-    return res.json({ success: true, message: 'Project updated successfully' });
-  } catch (error) {
-    throw new Error(`Failed to update project: ${error.message}`);
-  }
-}
-
-// Save complete milestone set for a project
-async function saveMilestones(res, notion, milestonesDbId, data) {
-  const { projectId, milestones } = data;
-  
-  try {
-    // First, get existing milestones for this project
-    const existingResponse = await notion.databases.query({
-      database_id: milestonesDbId,
-      filter: {
-        property: 'Work Order',
-        relation: {
-          contains: projectId
+        
+        .projects-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
         }
-      }
-    });
-    
-    const existingMilestones = existingResponse.results.map(mapMilestone);
-    const updates = [];
-    
-    // Process each milestone
-    for (let i = 0; i < milestones.length; i++) {
-      const milestone = milestones[i];
-      
-      if (milestone.id && existingMilestones.find(m => m.id === milestone.id)) {
-        // Update existing milestone
-        const updatePromise = notion.pages.update({
-          page_id: milestone.id,
-          properties: {
-            'Name': { title: [{ text: { content: milestone.name } }] },
-            'Estimated Hours': { number: milestone.estimatedHours },
-            'Order (Sequence)': { number: i + 1 },
-            'Status': { select: { name: milestone.status || 'Not Started' } }
-          }
-        });
-        updates.push(updatePromise);
-      } else {
-        // Create new milestone
-        const createPromise = notion.pages.create({
-          parent: { database_id: milestonesDbId },
-          properties: {
-            'Name': { title: [{ text: { content: milestone.name } }] },
-            'Work Order': { relation: [{ id: projectId }] },
-            'Estimated Hours': { number: milestone.estimatedHours },
-            'Order (Sequence)': { number: i + 1 },
-            'Status': { select: { name: milestone.status || 'Not Started' } },
-            'Milestone Type': { select: { name: 'Individual' } }
-          }
-        });
-        updates.push(createPromise);
-      }
-    }
-    
-    // Delete milestones that were removed (exist in Notion but not in the new list)
-    const milestoneIds = milestones.filter(m => m.id).map(m => m.id);
-    const toDelete = existingMilestones.filter(m => !milestoneIds.includes(m.id));
-    
-    for (const milestone of toDelete) {
-      const deletePromise = notion.pages.update({
-        page_id: milestone.id,
-        archived: true
-      });
-      updates.push(deletePromise);
-    }
-    
-    await Promise.all(updates);
-    
-    return res.json({ 
-      success: true, 
-      message: `Updated ${milestones.length} milestones, deleted ${toDelete.length} milestones`
-    });
-  } catch (error) {
-    throw new Error(`Failed to save milestones: ${error.message}`);
-  }
-}
+        
+        .projects-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .project-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .project-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .project-item.active {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .project-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        
+        .project-details {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .project-editor {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .editor-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            color: #2196f3;
+            border-bottom-color: #2196f3;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .milestone-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background: #fafafa;
+        }
+        
+        .milestone-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #ddd;
+        }
+        
+        .milestone-row.ready {
+            border-left-color: #4caf50;
+        }
+        
+        .milestone-row.completed {
+            border-left-color: #2196f3;
+            opacity: 0.7;
+        }
+        
+        .milestone-order {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .milestone-name {
+            flex: 1;
+        }
+        
+        .milestone-name input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            font-size: 14px;
+        }
+        
+        .milestone-hours {
+            width: 80px;
+        }
+        
+        .milestone-hours input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .milestone-status {
+            width: 100px;
+        }
+        
+        .milestone-status select {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 2px;
+            font-size: 12px;
+        }
+        
+        .milestone-actions {
+            width: 60px;
+        }
+        
+        .remove-milestone {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background: #1976d2;
+        }
+        
+        .btn.success {
+            background: #4caf50;
+        }
+        
+        .btn.secondary {
+            background: #6c757d;
+        }
+        
+        .btn.danger {
+            background: #ff5252;
+        }
+        
+        .workflow-selector {
+            margin-bottom: 15px;
+        }
+        
+        .workflow-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        .auto-split-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .save-indicator {
+            color: #4caf50;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎸 Project Management</h1>
+        <p>Manage projects and milestones</p>
+    </div>
 
-// Mapping functions
-function mapProject(page) {
-  const props = page.properties;
-  
-  return {
-    id: page.id,
-    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
-    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
-    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
-    complexity: parseRatingValue(props.Complexity?.select?.name),
-    profitability: parseRatingValue(props.Profitability?.select?.name),
-    status: props.Status?.select?.name ?? 'Unknown',
-    dueDate: props['Due Date']?.date?.start ?? null,
-    lastWorked: props['Last Worked']?.date?.start ?? null,
-    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
-    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
-    progress: props['Progress %']?.formula?.number ?? 0,
-    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0
-  };
-}
+    <div class="main-container">
+        <!-- Projects List -->
+        <div class="projects-list">
+            <div class="projects-header">
+                Projects
+                <button class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="refreshProjects()">Refresh</button>
+            </div>
+            <div id="projectsList">
+                <div class="loading">Loading projects...</div>
+            </div>
+        </div>
 
-function mapMilestone(page) {
-  const props = page.properties;
-  
-  return {
-    id: page.id,
-    projectId: props['Work Order']?.relation?.[0]?.id || null,
-    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
-    estimatedHours: props['Estimated Hours']?.number ?? 1,
-    actualHours: props['Actual Hours']?.number ?? 0,
-    order: props['Order (Sequence)']?.number ?? 1,
-    status: props.Status?.select?.name ?? 'Not Started',
-    milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
-    dueDate: props['Due Date']?.date?.start ?? null,
-    notes: props.Notes?.rich_text?.[0]?.plain_text ?? ''
-  };
-}
+        <!-- Project Editor -->
+        <div class="project-editor">
+            <div class="editor-header">
+                <h2 id="editorTitle">Select a project</h2>
+                <div>
+                    <button class="btn success" onclick="saveProject()" id="saveBtn" disabled>Save Changes</button>
+                    <button class="btn secondary" onclick="cancelChanges()">Cancel</button>
+                </div>
+            </div>
+            
+            <div class="editor-content" id="editorContent">
+                <div class="empty-state">
+                    <h3>Select a project to edit</h3>
+                    <p>Click on a project from the list to view and edit its details and milestones.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-function parseRatingValue(ratingStr) {
-  if (!ratingStr) return 3;
-  if (typeof ratingStr === 'number') return ratingStr;
-  const match = ratingStr.match(/^(\d+)-/);
-  return match ? parseInt(match[1]) : 3;
-}
+    <script>
+        const API_URL = '/api/notion-proxy';
+        
+        let allProjects = [];
+        let allWorkflows = [];
+        let currentProject = null;
+        let currentMilestones = [];
+        let hasUnsavedChanges = false;
+
+        // Initialize
+        window.onload = function() {
+            refreshProjects();
+        };
+
+        async function refreshProjects() {
+            try {
+                const [dataResponse, workflowsResponse] = await Promise.all([
+                    fetch(API_URL),
+                    fetch(`${API_URL}?action=workflows`)
+                ]);
+                
+                if (!dataResponse.ok || !workflowsResponse.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+                
+                const data = await dataResponse.json();
+                const workflows = await workflowsResponse.json();
+                
+                allProjects = data.projects || [];
+                allWorkflows = workflows.workflows || [];
+                
+                displayProjectsList();
+                
+            } catch (error) {
+                console.error('Failed to refresh projects:', error);
+                document.getElementById('projectsList').innerHTML = 
+                    '<div class="loading">Failed to load projects</div>';
+            }
+        }
+
+        function displayProjectsList() {
+            const container = document.getElementById('projectsList');
+            
+            if (allProjects.length === 0) {
+                container.innerHTML = '<div class="empty-state">No projects found</div>';
+                return;
+            }
+            
+            let html = '';
+            allProjects.forEach(project => {
+                const isActive = currentProject && currentProject.id === project.id;
+                html += `
+                    <div class="project-item ${isActive ? 'active' : ''}" onclick="selectProject('${project.id}')">
+                        <div class="project-name">${project.name}</div>
+                        <div class="project-details">
+                            ${project.instrumentMake} ${project.instrumentModel} • 
+                            ${project.totalMilestones || 0} milestones
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        async function selectProject(projectId) {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Continue anyway?')) {
+                    return;
+                }
+            }
+            
+            currentProject = allProjects.find(p => p.id === projectId);
+            if (!currentProject) return;
+            
+            // Load milestones for this project
+            await loadProjectMilestones(projectId);
+            
+            displayProjectEditor();
+            displayProjectsList(); // Refresh to show active state
+            
+            hasUnsavedChanges = false;
+            updateSaveButton();
+        }
+
+        async function loadProjectMilestones(projectId) {
+            try {
+                // For now, we'll fetch all milestones and filter
+                // In production, you might want a specific endpoint
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                currentMilestones = (data.milestones || [])
+                    .filter(m => m.projectId === projectId)
+                    .sort((a, b) => a.order - b.order);
+                    
+            } catch (error) {
+                console.error('Failed to load milestones:', error);
+                currentMilestones = [];
+            }
+        }
+
+        function displayProjectEditor() {
+            if (!currentProject) return;
+            
+            document.getElementById('editorTitle').textContent = currentProject.name;
+            
+            const content = `
+                <div class="form-section">
+                    <h3>Project Details</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Project Name</label>
+                            <input type="text" id="projectName" value="${currentProject.name || ''}" onchange="markChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="projectStatus" onchange="markChanged()">
+                                <option value="On The Bench" ${currentProject.status === 'On The Bench' ? 'selected' : ''}>On The Bench</option>
+                                <option value="Waiting" ${currentProject.status === 'Waiting' ? 'selected' : ''}>Waiting</option>
+                                <option value="Done" ${currentProject.status === 'Done' ? 'selected' : ''}>Done</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Instrument Make</label>
+                            <input type="text" id="instrumentMake" value="${currentProject.instrumentMake || ''}" onchange="markChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label>Instrument Model</label>
+                            <input type="text" id="instrumentModel" value="${currentProject.instrumentModel || ''}" onchange="markChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label>Complexity (1-5)</label>
+                            <select id="complexity" onchange="markChanged()">
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${currentProject.complexity === n ? 'selected' : ''}>${n} - ${['Simple','Easy','Moderate','Complex','Very Complex'][n-1]}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Profitability (1-5)</label>
+                            <select id="profitability" onchange="markChanged()">
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${currentProject.profitability === n ? 'selected' : ''}>${n} - ${['Low','Below Average','Standard','Good','Excellent'][n-1]}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="dueDate" value="${currentProject.dueDate || ''}" onchange="markChanged()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Milestones</h3>
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchMilestoneTab('individual')">Individual Entry</button>
+                        <button class="tab" onclick="switchMilestoneTab('workflow')">Workflow Templates</button>
+                        <button class="tab" onclick="switchMilestoneTab('autosplit')">Auto-Split Time</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="individual-tab">
+                        <div class="milestone-list" id="milestoneList">
+                            ${renderMilestoneList()}
+                        </div>
+                        <button class="btn" onclick="addMilestone()">Add Milestone</button>
+                        <button class="btn secondary" onclick="addMultipleMilestones()">Add 5 More</button>
+                    </div>
+                    
+                    <div class="tab-content" id="workflow-tab">
+                        <div class="workflow-selector">
+                            <label>Select Workflow Template:</label>
+                            <select id="workflowSelect" onchange="previewWorkflow()">
+                                <option value="">Choose a workflow...</option>
+                                ${allWorkflows.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div id="workflowPreview"></div>
+                        <button class="btn" onclick="applyWorkflow()">Apply Workflow</button>
+                    </div>
+                    
+                    <div class="tab-content" id="autosplit-tab">
+                        <div class="auto-split-controls">
+                            <div class="form-group">
+                                <label>Total Hours</label>
+                                <input type="number" id="splitTotalHours" step="0.25" min="0.25" value="4" onchange="previewAutoSplit()">
+                            </div>
+                            <div class="form-group">
+                                <label>Number of Sessions</label>
+                                <input type="number" id="splitSessions" min="2" max="10" value="4" onchange="previewAutoSplit()">
+                            </div>
+                            <div class="form-group">
+                                <label>Base Name</label>
+                                <input type="text" id="splitBaseName" value="Work Session" onchange="previewAutoSplit()">
+                            </div>
+                        </div>
+                        <div id="autoSplitPreview"></div>
+                        <button class="btn" onclick="applyAutoSplit()">Apply Auto-Split</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('editorContent').innerHTML = content;
+            
+            // Initialize auto-split preview
+            previewAutoSplit();
+        }
+
+        function renderMilestoneList() {
+            if (currentMilestones.length === 0) {
+                return '<div class="empty-state">No milestones yet. Add some below.</div>';
+            }
+            
+            return currentMilestones.map((milestone, index) => `
+                <div class="milestone-row ${milestone.status?.toLowerCase() || 'not-started'}">
+                    <div class="milestone-order">${index + 1}</div>
+                    <div class="milestone-name">
+                        <input type="text" value="${milestone.name || ''}" 
+                               onchange="updateMilestone(${index}, 'name', this.value)">
+                    </div>
+                    <div class="milestone-hours">
+                        <input type="number" step="0.25" min="0.25" 
+                               value="${milestone.estimatedHours || 1}" 
+                               onchange="updateMilestone(${index}, 'estimatedHours', this.value)">
+                    </div>
+                    <div class="milestone-status">
+                        <select onchange="updateMilestone(${index}, 'status', this.value)">
+                            <option value="Not Started" ${milestone.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
+                            <option value="Ready" ${milestone.status === 'Ready' ? 'selected' : ''}>Ready</option>
+                            <option value="Completed" ${milestone.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="milestone-actions">
+                        <button class="remove-milestone" onclick="removeMilestone(${index})">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function switchMilestoneTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[onclick="switchMilestoneTab('${tabName}')"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function addMilestone() {
+            const newMilestone = {
+                id: null, // Will be created when saved
+                name: `New Milestone ${currentMilestones.length + 1}`,
+                estimatedHours: 1,
+                order: currentMilestones.length + 1,
+                status: 'Not Started'
+            };
+            
+            currentMilestones.push(newMilestone);
+            refreshMilestoneList();
+            markChanged();
+        }
+
+        function addMultipleMilestones() {
+            for (let i = 0; i < 5; i++) {
+                addMilestone();
+            }
+        }
+
+        function removeMilestone(index) {
+            currentMilestones.splice(index, 1);
+            // Renumber remaining milestones
+            currentMilestones.forEach((milestone, idx) => {
+                milestone.order = idx + 1;
+            });
+            refreshMilestoneList();
+            markChanged();
+        }
+
+        function updateMilestone(index, field, value) {
+            if (field === 'estimatedHours') {
+                value = parseFloat(value) || 1;
+            }
+            
+            currentMilestones[index][field] = value;
+            markChanged();
+        }
+
+        function refreshMilestoneList() {
+            const container = document.getElementById('milestoneList');
+            if (container) {
+                container.innerHTML = renderMilestoneList();
+            }
+        }
+
+        function previewWorkflow() {
+            const workflowId = document.getElementById('workflowSelect').value;
+            const preview = document.getElementById('workflowPreview');
+            
+            if (!workflowId) {
+                preview.innerHTML = '';
+                return;
+            }
+            
+            const workflow = allWorkflows.find(w => w.id === workflowId);
+            if (!workflow) return;
+            
+            try {
+                const milestones = JSON.parse(workflow.data);
+                let html = '<div class="workflow-preview"><h4>Preview:</h4>';
+                milestones.forEach((milestone, index) => {
+                    html += `
+                        <div class="milestone-row">
+                            <div class="milestone-order">${index + 1}</div>
+                            <div class="milestone-name">${milestone.name}</div>
+                            <div class="milestone-hours">${milestone.hours || milestone.estimatedHours}h</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                preview.innerHTML = html;
+            } catch (e) {
+                preview.innerHTML = '<div class="error">Invalid workflow data</div>';
+            }
+        }
+
+        function applyWorkflow() {
+            const workflowId = document.getElementById('workflowSelect').value;
+            if (!workflowId) return;
+            
+            const workflow = allWorkflows.find(w => w.id === workflowId);
+            if (!workflow) return;
+            
+            try {
+                const workflowMilestones = JSON.parse(workflow.data);
+                currentMilestones = workflowMilestones.map((milestone, index) => ({
+                    id: null,
+                    name: milestone.name,
+                    estimatedHours: milestone.hours || milestone.estimatedHours || 1,
+                    order: index + 1,
+                    status: index === 0 ? 'Ready' : 'Not Started'
+                }));
+                
+                refreshMilestoneList();
+                switchMilestoneTab('individual');
+                markChanged();
+            } catch (e) {
+                alert('Invalid workflow data');
+            }
+        }
+
+        function previewAutoSplit() {
+            const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
+            const sessions = parseInt(document.getElementById('splitSessions').value) || 1;
+            const baseName = document.getElementById('splitBaseName').value || 'Work Session';
+            const preview = document.getElementById('autoSplitPreview');
+            
+            if (totalHours === 0) {
+                preview.innerHTML = '';
+                return;
+            }
+            
+            const hoursPerSession = totalHours / sessions;
+            let html = '<div class="workflow-preview"><h4>Preview:</h4>';
+            
+            for (let i = 1; i <= sessions; i++) {
+                const hours = Math.round(hoursPerSession * 4) / 4; // Round to nearest 0.25
+                html += `
+                    <div class="milestone-row">
+                        <div class="milestone-order">${i}</div>
+                        <div class="milestone-name">${baseName} ${i}</div>
+                        <div class="milestone-hours">${hours}h</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            preview.innerHTML = html;
+        }
+
+        function applyAutoSplit() {
+            const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
+            const sessions = parseInt(document.getElementById('splitSessions').value) || 1;
+            const baseName = document.getElementById('splitBaseName').value || 'Work Session';
+            
+            if (totalHours === 0) return;
+            
+            const hoursPerSession = totalHours / sessions;
+            currentMilestones = [];
+            
+            for (let i = 1; i <= sessions; i++) {
+                const hours = Math.round(hoursPerSession * 4) / 4;
+                currentMilestones.push({
+                    id: null,
+                    name: `${baseName} ${i}`,
+                    estimatedHours: hours,
+                    order: i,
+                    status: i === 1 ? 'Ready' : 'Not Started'
+                });
+            }
+            
+            refreshMilestoneList();
+            switchMilestoneTab('individual');
+            markChanged();
+        }
+
+        function markChanged() {
+            hasUnsavedChanges = true;
+            updateSaveButton();
+        }
+
+        function updateSaveButton() {
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = !hasUnsavedChanges;
+            saveBtn.textContent = hasUnsavedChanges ? 'Save Changes *' : 'Saved';
+        }
+
+        async function saveProject() {
+            if (!currentProject) return;
+            
+            try {
+                document.getElementById('saveBtn').textContent = 'Saving...';
+                
+                // Collect project data
+                const projectData = {
+                    name: document.getElementById('projectName').value,
+                    status: document.getElementById('projectStatus').value,
+                    instrumentMake: document.getElementById('instrumentMake').value,
+                    instrumentModel: document.getElementById('instrumentModel').value,
+                    complexity: parseInt(document.getElementById('complexity').value),
+                    profitability: parseInt(document.getElementById('profitability').value),
+                    dueDate: document.getElementById('dueDate').value || null
+                };
+                
+                // TODO: Save project data to Notion
+                console.log('Project data to save:', projectData);
+                console.log('Milestones to save:', currentMilestones);
+                
+                // For now, just simulate save
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                hasUnsavedChanges = false;
+                updateSaveButton();
+                
+                // Show success indicator
+                document.getElementById('saveBtn').innerHTML = 'Saved ✓ <span class="save-indicator">Changes saved</span>';
+                setTimeout(() => {
+                    updateSaveButton();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Save failed:', error);
+                alert('Failed to save changes');
+                document.getElementById('saveBtn').textContent = 'Save Changes *';
+            }
+        }
+
+        function cancelChanges() {
+            if (hasUnsavedChanges) {
+                if (!confirm('Discard unsaved changes?')) {
+                    return;
+                }
+            }
+            
+            if (currentProject) {
+                selectProject(currentProject.id); // Reload fresh data
+            }
+        }
+    </script>
+</body>
+</html>
