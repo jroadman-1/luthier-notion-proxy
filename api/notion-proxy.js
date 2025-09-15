@@ -315,62 +315,50 @@ async function createMilestones(res, notion, milestonesDbId, data) {
 async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
   const { completedMilestones } = data || {};
 
+  // 1) Validate payload
   if (!Array.isArray(completedMilestones) || completedMilestones.length === 0) {
     return res.status(400).json({ success: false, message: 'No completed milestones provided.' });
   }
 
-  // Dedupe projects so we only stamp "Last Worked" once per project
-  const projectIds = new Set();
-
-  // Build milestone updates
-  const milestoneUpdates = completedMilestones.map(({ milestoneId, projectId, actualHours }) => {
-    if (!milestoneId || !projectId || typeof actualHours !== 'number') {
-      throw new Error('Each item must include milestoneId, projectId, and numeric actualHours.');
-    }
-    projectIds.add(projectId);
-
-    return notion.pages.update({
-      page_id: milestoneId,
-      properties: {
-        // Make sure these property names match your Notion schema exactly
-        'Status': { select: { name: 'Completed' } },
-        'Actual Hours': { number: actualHours }
-      }
-    });
-  });
-
-  // Project "Last Worked" updates (one per project)
-  // Use full ISO timestamp; Notion accepts date or datetime. If you prefer date-only, use .split('T')[0]
-  const nowISO = new Date().toISOString();
-  const projectUpdates = Array.from(projectIds).map(projectId =>
-    notion.pages.update({
-      page_id: projectId,
-      properties: {
-        'Last Worked': { date: { start: nowISO } }
-        // If you want date-only:
-        // 'Last Worked': { date: { start: new Date().toISOString().split('T')[0] } }
-      }
-    })
-  );
-
   try {
-    const results = await Promise.all([...milestoneUpdates, ...projectUpdates]);
+    // 2) Build milestone updates + collect affected project IDs
+    const projectIds = new Set();
+    const milestoneUpdates = completedMilestones.map(({ milestoneId, projectId, actualHours }) => {
+      if (!milestoneId || !projectId || typeof actualHours !== 'number') {
+        throw new Error('Each item must include milestoneId, projectId, and numeric actualHours.');
+      }
+      projectIds.add(projectId);
 
-    
+      return notion.pages.update({
+        page_id: milestoneId,
+        properties: {
+          'Status': { select: { name: 'Completed' } },
+          'Actual Hours': { number: actualHours }
+        }
+      });
+    });
 
-    // Optional: build a summary of what was updated
-    const updatedMilestones = completedMilestones.map(m => m.milestoneId);
-    const updatedProjects = Array.from(projectIds);
+    // 3) Build project updates: stamp "Last Worked" for each affected project
+    const nowISO = new Date().toISOString();
+    const projectUpdates = Array.from(projectIds).map(projectId =>
+      notion.pages.update({
+        page_id: projectId,
+        properties: { 'Last Worked': { date: { start: nowISO } } }
+      })
+    );
 
+    // 4) Execute all updates
+    await Promise.all([...milestoneUpdates, ...projectUpdates]);
+
+    // 5) Respond with a summary (and echo lastWorked for immediate UI sync)
     return res.json({
       success: true,
       message: 'Progress saved successfully.',
-      updatedMilestones,
-      updatedProjects,
+      updatedMilestones: completedMilestones.map(m => m.milestoneId),
+      updatedProjects: Array.from(projectIds),
       lastWorked: nowISO
     });
   } catch (error) {
-    // Surface Notion API error details if available
     const detail = error?.body ? JSON.stringify(error.body) : error.message;
     return res.status(500).json({ success: false, message: `Failed to save progress: ${detail}` });
   }
@@ -688,8 +676,8 @@ function mapProject(page) {
     name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
     instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
     instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
-    complexity: parseRatingValue(props.Complexity?.select?.name),
-    profitability: parseRatingValue(props.Profitability?.select?.name),
+    complexity: p['Complexity (Num)']?.number ?? 3,
+    profitability: p['Profitability (Num)']?.number ?? null,
     status: props.Status?.select?.name ?? 'Unknown',
     dueDate: props['Due Date']?.date?.start ?? null,
     lastWorked: props['Last Worked']?.date?.start ?? null,
