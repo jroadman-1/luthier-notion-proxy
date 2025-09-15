@@ -277,7 +277,7 @@ function getDaysSinceWorked(project, today) {
         const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
         const daysSinceWorked = getDaysSinceWorked(task.project, today);
-        
+
         const overdue = daysUntilDue < 0;
         const dueUrgencyBuffered = overdue ? 1 : clamp((dueBufferDays - daysUntilDue) / dueBufferDays, 0, 1);
         const complexityScore = ((task.project.complexity || 3) / 5);
@@ -405,7 +405,17 @@ function getDaysSinceWorked(project, today) {
             item.daysUntilDue <= 3 ? '🔥 Due soon' :
             item.daysUntilDue <= 7 ? '📅 Due this week' : '✅ On track';
 
-          const workedText = item.daysSinceWorked ? (item.daysSinceWorked > 7 ? `⏰ ${item.daysSinceWorked} days since worked` : '') : '';
+          const dsw = item.daysSinceWorked ?? null;
+const workedText =
+  dsw === null
+    ? '' // unknown
+    : dsw === 0
+      ? '🟢 touched today'
+      : dsw === 1
+        ? '⏰ 1 day since worked'
+        : `⏰ ${dsw} days since worked`;
+
+
           const complexClass = item.isComplex ? 'complex' : '';
           const timeClass = item.isComplex ? 'complex' : '';
           const completedClass = item.milestone.status === 'Completed' ? 'completed' : '';
