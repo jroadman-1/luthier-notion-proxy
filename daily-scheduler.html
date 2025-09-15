@@ -252,6 +252,21 @@ function getDaysSinceWorked(project, today) {
   return Math.max(0, Math.floor((today - ref) / (1000 * 60 * 60 * 24)));
 }
 
+// Calendar-day difference ignoring time-of-day
+function daysUntilDueCalendar(dueStr) {
+  if (!dueStr) return 9999; // no due date = very far away
+
+  const today = new Date();
+  // strip time: compare midnights
+  const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const due = new Date(dueStr);
+  const startDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+
+  const ms = startDue - startToday;
+  return Math.round(ms / (1000 * 60 * 60 * 24)); // negative if overdue
+}
+
     // ---------------------------
     // Scoring with Sliders (no profitability)
     // ---------------------------
@@ -268,7 +283,7 @@ function getDaysSinceWorked(project, today) {
 
       const scored = readyTasks.map(task => {
         const dueDate = task.project.dueDate ? new Date(task.project.dueDate) : new Date(Date.now() + 14*24*60*60*1000);
-        const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        const daysUntilDue = daysUntilDueCalendar(task.project.dueDate);
 
        const rawDSW = getDaysSinceWorked(task.project, today);
        const daysSinceWorked = rawDSW ?? 0; 
