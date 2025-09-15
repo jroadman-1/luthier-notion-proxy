@@ -667,28 +667,38 @@ async function deleteWorkflow(res, notion, workflowsDbId, data) {
   }
 }
 
+function parseIntSafe(v) {
+  const n = typeof v === 'number' ? v : parseInt(String(v ?? '').trim(), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
 // Mapping functions
 function mapProject(page) {
-  const props = page.properties;
-  
+  const props = page.properties;  // <-- use ONE name consistently
+
   return {
     id: page.id,
-    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
+    name: props['Name']?.title?.[0]?.plain_text ?? 'Untitled',
     instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
     instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
-    complexity: p['Complexity (Num)']?.number ?? 3,
-    profitability: p['Profitability (Num)']?.number ?? null,
-    status: props.Status?.select?.name ?? 'Unknown',
+    status: props['Status']?.select?.name ?? 'Unknown',
     dueDate: props['Due Date']?.date?.start ?? null,
+
+    // numeric fields (you said these are now Number properties)
+    complexity: props['Complexity (Num)']?.number ?? 3,
+    profitability: props['Profitability (Num)']?.number ?? null,
+
+    // dates for “days since worked”
     lastWorked: props['Last Worked']?.date?.start ?? null,
+   
+    dateCreated: props['Date Created']?.date?.start ?? null,   // your custom date
+    createdTime: page.created_time,                            // Notion system created timestamp
 
-    dateCreated: props['Date Created']?.date?.start ?? null, 
-    createdTime: page.created_time,
-
+    // rollups / formulas you already use
+    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
     totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
     completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
-    progress: props['Progress %']?.formula?.number ?? 0,
-    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0
+    progress: props['Progress %']?.formula?.number ?? 0
   };
 }
 
