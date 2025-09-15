@@ -1,5 +1,49 @@
 // /api/notion-proxy.js - Complete system API
-const { Client } = require('@notionhq/client');
+const { Client }
+
+// Debug function to check project database schema
+async function debugProjectSchema(res, notion, projectsDbId) {
+  try {
+    console.log('Debugging project database schema...');
+    
+    const database = await notion.databases.retrieve({
+      database_id: projectsDbId
+    });
+    
+    const properties = Object.keys(database.properties).map(key => ({
+      name: key,
+      type: database.properties[key].type,
+      config: database.properties[key]
+    }));
+    
+    console.log('Project database properties:', properties);
+    
+    // Also get a sample project to see actual data
+    const sampleResponse = await notion.databases.query({
+      database_id: projectsDbId,
+      page_size: 1
+    });
+    
+    let sampleData = null;
+    if (sampleResponse.results.length > 0) {
+      const sampleProject = sampleResponse.results[0];
+      sampleData = {
+        id: sampleProject.id,
+        properties: Object.keys(sampleProject.properties).reduce((acc, key) => {
+          acc[key] = sampleProject.properties[key];
+          return acc;
+        }, {})
+      };
+    }
+    
+    return res.json({ 
+      databaseProperties: properties,
+      sampleProject: sampleData 
+    });
+  } catch (error) {
+    console.error('Debug project schema error:', error);
+    return res.json({ error: error.message });
+  } = require('@notionhq/client');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
