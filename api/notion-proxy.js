@@ -356,6 +356,8 @@ async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
   try {
     const results = await Promise.all([...milestoneUpdates, ...projectUpdates]);
 
+    
+
     // Optional: build a summary of what was updated
     const updatedMilestones = completedMilestones.map(m => m.milestoneId);
     const updatedProjects = Array.from(projectIds);
@@ -365,6 +367,7 @@ async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
       message: 'Progress saved successfully.',
       updatedMilestones,
       updatedProjects
+      lastWorked: nowISO
     });
   } catch (error) {
     // Surface Notion API error details if available
