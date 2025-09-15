@@ -435,6 +435,30 @@
             document.getElementById('debugMilestoneCount').textContent = allMilestones.length;
         }
 
+        async function debugMilestones() {
+            try {
+                const response = await fetch(`${API_URL}?action=debug-milestones`);
+                const data = await response.json();
+                console.log('Milestone debug data:', data);
+                alert('Milestone debug data logged to console. Check browser console for details.');
+            } catch (error) {
+                console.error('Debug milestones failed:', error);
+                alert('Debug failed: ' + error.message);
+            }
+        }
+
+        async function debugProjectSchema() {
+            try {
+                const response = await fetch(`${API_URL}?action=debug-project-schema`);
+                const data = await response.json();
+                console.log('Project schema debug data:', data);
+                alert('Project schema data logged to console. Check browser console for details.');
+            } catch (error) {
+                console.error('Debug project schema failed:', error);
+                alert('Debug failed: ' + error.message);
+            }
+        }
+
         function logDebug(type, data) {
             console.log(`[${type}]`, data);
             if (debugMode) {
@@ -475,21 +499,29 @@
                 const data = await dataResponse.json();
                 logDebug('RESPONSE', data);
                 
-                // Handle workflows response (may fail, that's ok)
+                // Handle workflows response
                 let workflows = { workflows: [] };
                 if (workflowsResponse.ok) {
                     workflows = await workflowsResponse.json();
+                    console.log('Workflows loaded:', workflows);
                 } else {
-                    console.warn('Workflows API failed, continuing without workflows');
+                    const errorText = await workflowsResponse.text();
+                    console.warn('Workflows API failed:', workflowsResponse.status, errorText);
+                    showMessage('Workflows could not be loaded, continuing without them', 'info');
                 }
                 
                 allProjects = data.projects || [];
                 allMilestones = data.milestones || [];
                 allWorkflows = workflows.workflows || [];
                 
+                console.log('Data loaded:');
+                console.log('- Projects:', allProjects.length);
+                console.log('- Milestones:', allMilestones.length);
+                console.log('- Workflows:', allWorkflows.length);
+                
                 updateDebugInfo();
                 displayProjectsList();
-                showMessage(`Loaded ${allProjects.length} projects successfully`, 'success');
+                showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
                 
             } catch (error) {
                 console.error('Failed to refresh projects:', error);
@@ -497,7 +529,7 @@
                 
                 const errorMsg = `Failed to load projects: ${error.message}`;
                 document.getElementById('projectsList').innerHTML = 
-                    `<div class="error">${errorMsg}</div>`;
+                    `<div class="error">${errorMsg}<br><br>Check the browser console for details.</div>`;
                 showMessage(errorMsg, 'error');
             }
         }
