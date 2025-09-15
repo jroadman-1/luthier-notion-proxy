@@ -138,13 +138,29 @@ async function getAllData(res, notion, projectsDbId, milestonesDbId) {
 
 // Get workflow templates
 async function getWorkflows(res, notion, workflowsDbId) {
+  console.log('getWorkflows called with workflowsDbId:', workflowsDbId);
+  
   if (!workflowsDbId) {
     console.log('No workflows database ID provided');
-    return res.json({ workflows: [] });
+    return res.json({ workflows: [], error: 'No workflows database ID configured' });
   }
   
   try {
-    console.log('Fetching workflows from database:', workflowsDbId);
+    console.log('Attempting to fetch workflows from database:', workflowsDbId);
+    
+    // First, try to retrieve the database info to verify access
+    try {
+      const dbInfo = await notion.databases.retrieve({
+        database_id: workflowsDbId
+      });
+      console.log('Workflows database found:', dbInfo.title?.[0]?.plain_text || 'Untitled');
+    } catch (dbError) {
+      console.error('Cannot access workflows database:', dbError.message);
+      return res.json({ 
+        workflows: [], 
+        error: `Cannot access workflows database: ${dbError.message}` 
+      });
+    }
     
     let allWorkflows = [];
     let hasMore = true;
@@ -157,10 +173,13 @@ async function getWorkflows(res, notion, workflowsDbId) {
         start_cursor: nextCursor
       });
       
+      console.log(`Fetched ${response.results.length} workflows (batch)`);
       allWorkflows = allWorkflows.concat(response.results);
       hasMore = response.has_more;
       nextCursor = response.next_cursor;
     }
+    
+    console.log(`Total workflows retrieved: ${allWorkflows.length}`);
     
     const workflows = allWorkflows.map(page => {
       const workflow = {
@@ -168,15 +187,23 @@ async function getWorkflows(res, notion, workflowsDbId) {
         name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
         data: page.properties?.Data?.rich_text?.[0]?.plain_text ?? '[]'
       };
-      console.log('Mapped workflow:', workflow);
+      console.log('Mapped workflow:', workflow.name, 'data length:', workflow.data.length);
       return workflow;
     });
     
     console.log(`Returning ${workflows.length} workflows`);
     return res.json({ workflows });
   } catch (error) {
-    console.error('Error fetching workflows:', error);
-    return res.json({ workflows: [], error: error.message });
+    console.error('Error fetching workflows:', {
+      message: error.message,
+      code: error.code,
+      status: error.status
+    });
+    return res.json({ 
+      workflows: [], 
+      error: `Failed to fetch workflows: ${error.message}`,
+      errorCode: error.code 
+    });
   }
 }
 
