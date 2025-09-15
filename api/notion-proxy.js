@@ -312,7 +312,7 @@ async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
   }
 }
 
-// Update project information - FIXED VERSION
+// Update project information - FIXED VERSION with better debugging
 async function updateProject(res, notion, projectsDbId, data) {
   const { projectId, ...updates } = data;
   
@@ -323,48 +323,71 @@ async function updateProject(res, notion, projectsDbId, data) {
     
     if (updates.name) {
       properties.Name = { title: [{ text: { content: updates.name } }] };
+      console.log('Setting Name:', updates.name);
     }
     if (updates.status) {
       properties.Status = { select: { name: updates.status } };
+      console.log('Setting Status:', updates.status);
     }
     if (updates.instrumentMake !== undefined) {
       properties['Instrument Make'] = { 
         rich_text: [{ text: { content: updates.instrumentMake || '' } }] 
       };
+      console.log('Setting Instrument Make:', updates.instrumentMake);
     }
     if (updates.instrumentModel !== undefined) {
       properties['Instrument Model'] = { 
         rich_text: [{ text: { content: updates.instrumentModel || '' } }] 
       };
+      console.log('Setting Instrument Model:', updates.instrumentModel);
     }
     if (updates.complexity !== undefined) {
-      const complexityValue = `${updates.complexity}-${['Simple','Easy','Moderate','Complex','Very Complex'][updates.complexity-1]}`;
+      const complexityOptions = ['Simple','Easy','Moderate','Complex','Very Complex'];
+      const complexityValue = `${updates.complexity}-${complexityOptions[updates.complexity-1]}`;
       properties.Complexity = { select: { name: complexityValue } };
+      console.log('Setting Complexity:', complexityValue);
     }
     if (updates.profitability !== undefined) {
-      const profitabilityValue = `${updates.profitability}-${['Low','Below Average','Standard','Good','Excellent'][updates.profitability-1]}`;
+      const profitabilityOptions = ['Low','Below Average','Standard','Good','Excellent'];
+      const profitabilityValue = `${updates.profitability}-${profitabilityOptions[updates.profitability-1]}`;
       properties.Profitability = { select: { name: profitabilityValue } };
+      console.log('Setting Profitability:', profitabilityValue);
     }
     if (updates.dueDate !== undefined) {
       if (updates.dueDate === null || updates.dueDate === '') {
         properties['Due Date'] = { date: null };
+        console.log('Clearing Due Date');
       } else {
         properties['Due Date'] = { date: { start: updates.dueDate } };
+        console.log('Setting Due Date:', updates.dueDate);
       }
     }
 
-    console.log('Updating properties:', JSON.stringify(properties, null, 2));
+    console.log('Final properties to update:', JSON.stringify(properties, null, 2));
 
-    await notion.pages.update({
+    const updateResult = await notion.pages.update({
       page_id: projectId,
       properties
     });
 
-    console.log('Project update successful');
+    console.log('Project update successful, updated page:', updateResult.id);
     return res.json({ success: true, message: 'Project updated successfully' });
+    
   } catch (error) {
-    console.error('Project update error:', error);
-    throw new Error(`Failed to update project: ${error.message}`);
+    console.error('Project update error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      body: error.body
+    });
+    
+    // Return the detailed error to help debug
+    return res.status(500).json({ 
+      error: 'Project update failed', 
+      detail: error.message,
+      code: error.code,
+      notionError: error.body 
+    });
   }
 }
 
