@@ -148,7 +148,53 @@ async function deleteWorkflow(res, notion, workflowsDbId, data) {
   } catch (error) {
     console.error('Failed to delete workflow:', error);
     throw new Error(`Failed to delete workflow: ${error.message}`);
+  }
+}
+
+// Mapping functions
+function mapProject(page) {
+  const props = page.properties;
+  
+  return {
+    id: page.id,
+    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
+    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
+    complexity: parseRatingValue(props.Complexity?.select?.name),
+    profitability: parseRatingValue(props.Profitability?.select?.name),
+    status: props.Status?.select?.name ?? 'Unknown',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    lastWorked: props['Last Worked']?.date?.start ?? null,
+    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
+    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
+    progress: props['Progress %']?.formula?.number ?? 0,
+    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0
   };
+}
+
+function mapMilestone(page) {
+  const props = page.properties;
+  
+  return {
+    id: page.id,
+    projectId: props['Work Order']?.relation?.[0]?.id || null,
+    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
+    estimatedHours: props['Estimated Hours']?.number ?? 1,
+    actualHours: props['Actual Hours']?.number ?? 0,
+    order: props['Order (Sequence)']?.number ?? 1,
+    status: props.Status?.select?.name ?? 'Not Started',
+    milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    notes: props.Notes?.rich_text?.[0]?.plain_text ?? ''
+  };
+}
+
+function parseRatingValue(ratingStr) {
+  if (!ratingStr) return 3;
+  if (typeof ratingStr === 'number') return ratingStr;
+  const match = ratingStr.match(/^(\d+)-/);
+  return match ? parseInt(match[1]) : 3;
+};
 
 async function handleGet(req, res, notion) {
   const { action } = req.query;
