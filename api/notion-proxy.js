@@ -313,48 +313,63 @@ async function createMilestones(res, notion, milestonesDbId, data) {
 
 // Save progress (completed milestones and actual hours)
 async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
-  const { completedMilestones } = data;
-  
+  const { completedMilestones } = data || {};
+
+  if (!Array.isArray(completedMilestones) || completedMilestones.length === 0) {
+    return res.status(400).json({ success: false, message: 'No completed milestones provided.' });
+  }
+
+  // Dedupe projects so we only stamp "Last Worked" once per project
+  const projectIds = new Set();
+
+  // Build milestone updates
+  const milestoneUpdates = completedMilestones.map(({ milestoneId, projectId, actualHours }) => {
+    if (!milestoneId || !projectId || typeof actualHours !== 'number') {
+      throw new Error('Each item must include milestoneId, projectId, and numeric actualHours.');
+    }
+    projectIds.add(projectId);
+
+    return notion.pages.update({
+      page_id: milestoneId,
+      properties: {
+        // Make sure these property names match your Notion schema exactly
+        'Status': { select: { name: 'Completed' } },
+        'Actual Hours': { number: actualHours }
+      }
+    });
+  });
+
+  // Project "Last Worked" updates (one per project)
+  // Use full ISO timestamp; Notion accepts date or datetime. If you prefer date-only, use .split('T')[0]
+  const nowISO = new Date().toISOString();
+  const projectUpdates = Array.from(projectIds).map(projectId =>
+    notion.pages.update({
+      page_id: projectId,
+      properties: {
+        'Last Worked': { date: { start: nowISO } }
+        // If you want date-only:
+        // 'Last Worked': { date: { start: new Date().toISOString().split('T')[0] } }
+      }
+    })
+  );
+
   try {
-    const updates = [];
-    const projectUpdates = new Set();
-    
-    for (const completion of completedMilestones) {
-      const milestoneUpdate = notion.pages.update({
-        page_id: completion.milestoneId,
-        properties: {
-          'Status': {
-            select: { name: 'Completed' }
-          },
-          'Actual Hours': {
-            number: completion.actualHours
-          }
-        }
-      });
-      
-      updates.push(milestoneUpdate);
-      projectUpdates.add(completion.projectId);
-    }
-    
-    const today = new Date().toISOString().split('T')[0];
-    for (const projectId of projectUpdates) {
-      const projectUpdate = notion.pages.update({
-        page_id: projectId,
-        properties: {
-          'Last Worked': {
-            date: { start: today }
-          }
-        }
-      });
-      
-      updates.push(projectUpdate);
-    }
-    
-    await Promise.all(updates);
-    
-    return res.json({ success: true, message: 'Progress saved successfully' });
+    const results = await Promise.all([...milestoneUpdates, ...projectUpdates]);
+
+    // Optional: build a summary of what was updated
+    const updatedMilestones = completedMilestones.map(m => m.milestoneId);
+    const updatedProjects = Array.from(projectIds);
+
+    return res.json({
+      success: true,
+      message: 'Progress saved successfully.',
+      updatedMilestones,
+      updatedProjects
+    });
   } catch (error) {
-    throw new Error(`Failed to save progress: ${error.message}`);
+    // Surface Notion API error details if available
+    const detail = error?.body ? JSON.stringify(error.body) : error.message;
+    return res.status(500).json({ success: false, message: `Failed to save progress: ${detail}` });
   }
 }
 
