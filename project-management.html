@@ -971,6 +971,21 @@
                 logDebug('SAVE_PROJECT', projectData);
                 logDebug('SAVE_MILESTONES', currentMilestones);
                 
+                // Save project details first
+                const projectResponse = await fetch(`${API_URL}?action=update-project`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(projectData)
+                });
+                
+                if (!projectResponse.ok) {
+                    const errorText = await projectResponse.text();
+                    throw new Error(`Failed to save project: ${errorText}`);
+                }
+                
+                const projectResult = await projectResponse.json();
+                logDebug('PROJECT_SAVE_RESULT', projectResult);
+                
                 // Save milestones
                 const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
                     method: 'POST',
