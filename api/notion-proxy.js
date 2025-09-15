@@ -693,6 +693,10 @@ function mapProject(page) {
     status: props.Status?.select?.name ?? 'Unknown',
     dueDate: props['Due Date']?.date?.start ?? null,
     lastWorked: props['Last Worked']?.date?.start ?? null,
+
+    dateCreated: props['Date Created']?.date?.start ?? null, 
+    createdTime: page.created_time,
+
     totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
     completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
     progress: props['Progress %']?.formula?.number ?? 0,
