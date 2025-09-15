@@ -344,10 +344,13 @@
         tryAdd(t);
       }
 
-      // Step 1: Guarantee at least one quick win if time & available
-      if (totalHours < availableHours && quickWins.length) {
-        for (const t of quickWins) { if (tryAdd(t)) break; }
-      }
+      // Step 1: Schedule all quick wins that are due within the buffer window
+if (totalHours < availableHours && quickWins.length) {
+  const dueBufferDays = parseInt(document.getElementById('dueBuffer').value) || 2;
+  quickWins
+    .filter(t => t.daysUntilDue <= dueBufferDays) // due today or tomorrow
+    .forEach(t => { if (totalHours < availableHours) tryAdd(t); });
+}
 
       // Step 2: Fill day while targeting complex percentage
       let guard = 0;
