@@ -238,6 +238,26 @@
       return milestonesData.filter(m => m.projectId === projectId && m.status !== 'Completed').length;
     }
 
+// --- NEW: robust days-since-worked helper ---
+function getDaysSinceWorked(project, today) {
+  // try lastWorked first
+  const parse = d => (d ? new Date(d) : null);
+  const lastWorked = parse(project.lastWorked);
+
+  // sensible fallbacks if lastWorked is missing:
+  // intakeDate > createdTime > createdAt > created
+  const intake = parse(project.intakeDate || project.intake_date);
+  const created =
+    parse(project.createdTime) ||
+    parse(project.createdAt) ||
+    parse(project.created);
+
+  const refDate = lastWorked || intake || created;
+  if (!refDate) return 0;                 // default to "fresh" instead of 30
+  const days = Math.floor((today - refDate) / (1000 * 60 * 60 * 24));
+  return Math.max(0, days);
+}
+
     // ---------------------------
     // Scoring with Sliders (no profitability)
     // ---------------------------
@@ -256,9 +276,8 @@
         const dueDate = task.project.dueDate ? new Date(task.project.dueDate) : new Date(Date.now() + 14*24*60*60*1000);
         const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
-        const lastWorked = task.project.lastWorked ? new Date(task.project.lastWorked) : null;
-        const daysSinceWorked = lastWorked ? Math.floor((today - lastWorked) / (1000 * 60 * 60 * 24)) : 30;
-
+        const daysSinceWorked = getDaysSinceWorked(task.project, today);
+        
         const overdue = daysUntilDue < 0;
         const dueUrgencyBuffered = overdue ? 1 : clamp((dueBufferDays - daysUntilDue) / dueBufferDays, 0, 1);
         const complexityScore = ((task.project.complexity || 3) / 5);
@@ -344,13 +363,10 @@
         tryAdd(t);
       }
 
-      // Step 1: Schedule all quick wins that are due within the buffer window
-if (totalHours < availableHours && quickWins.length) {
-  const dueBufferDays = parseInt(document.getElementById('dueBuffer').value) || 2;
-  quickWins
-    .filter(t => t.daysUntilDue <= dueBufferDays) // due today or tomorrow
-    .forEach(t => { if (totalHours < availableHours) tryAdd(t); });
-}
+      // Step 1: Guarantee at least one quick win if time & available
+      if (totalHours < availableHours && quickWins.length) {
+        for (const t of quickWins) { if (tryAdd(t)) break; }
+      }
 
       // Step 2: Fill day while targeting complex percentage
       let guard = 0;
