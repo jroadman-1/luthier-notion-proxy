@@ -514,6 +514,7 @@ if (totalHours < availableHours && quickWins.length) {
     .filter(t => t.daysUntilDue <= dueBufferDays) // due today or tomorrow
     .forEach(t => { if (totalHours < availableHours) tryAdd(t); });
 }
+}
 
   // STEP 2: Fill the day while nudging toward complex % target
   // We'll alternate preference based on whether we're below or above the complex target.
