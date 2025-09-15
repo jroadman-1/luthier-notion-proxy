@@ -238,24 +238,19 @@
       return milestonesData.filter(m => m.projectId === projectId && m.status !== 'Completed').length;
     }
 
-// --- NEW: robust days-since-worked helper ---
+// Robust days-since-worked using several fallbacks
 function getDaysSinceWorked(project, today) {
-  // try lastWorked first
   const parse = d => (d ? new Date(d) : null);
   const lastWorked = parse(project.lastWorked);
-
-  // sensible fallbacks if lastWorked is missing:
-  // intakeDate > createdTime > createdAt > created
   const intake = parse(project.intakeDate || project.intake_date);
   const created =
     parse(project.createdTime) ||
     parse(project.createdAt) ||
     parse(project.created);
 
-  const refDate = lastWorked || intake || created;
-  if (!refDate) return 0;                 // default to "fresh" instead of 30
-  const days = Math.floor((today - refDate) / (1000 * 60 * 60 * 24));
-  return Math.max(0, days);
+  const ref = lastWorked || intake || created;
+  if (!ref) return 0;               // treat as fresh if unknown
+  return Math.max(0, Math.floor((today - ref) / (1000 * 60 * 60 * 24)));
 }
 
     // ---------------------------
