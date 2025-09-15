@@ -459,6 +459,22 @@
             }
         }
 
+        async function testAPI() {
+            try {
+                const response = await fetch(`${API_URL}?action=test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test: true })
+                });
+                const data = await response.json();
+                console.log('API test result:', data);
+                alert('API test successful! Check console for details.');
+            } catch (error) {
+                console.error('API test failed:', error);
+                alert('API test failed: ' + error.message);
+            }
+        }
+
         function logDebug(type, data) {
             console.log(`[${type}]`, data);
             if (debugMode) {
