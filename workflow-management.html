@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Management - Luthier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 140px);
+        }
+        
+        .workflows-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .workflows-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .workflow-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .workflow-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .workflow-item.active {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .workflow-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        
+        .workflow-details {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .workflow-editor {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .editor-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+            font-family: monospace;
+        }
+        
+        .milestones-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background: #fafafa;
+            margin-bottom: 15px;
+        }
+        
+        .milestone-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #2196f3;
+        }
+        
+        .milestone-order {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .milestone-name {
+            flex: 1;
+        }
+        
+        .milestone-name input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            font-size: 14px;
+        }
+        
+        .milestone-hours {
+            width: 80px;
+        }
+        
+        .milestone-hours input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .milestone-actions {
+            width: 60px;
+        }
+        
+        .remove-milestone {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background: #1976d2;
+        }
+        
+        .btn.success {
+            background: #4caf50;
+        }
+        
+        .btn.secondary {
+            background: #6c757d;
+        }
+        
+        .btn.danger {
+            background: #ff5252;
+        }
+        
+        .btn.small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .json-preview {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Workflow Management</h1>
+        <p>Create and manage workflow templates for guitar projects</p>
+    </div>
+
+    <div class="main-container">
+        <!-- Workflows List -->
+        <div class="workflows-list">
+            <div class="workflows-header">
+                Workflows
+                <button class="btn small" onclick="createNewWorkflow()">New</button>
+            </div>
+            <div id="workflowsList">
+                <div class="loading">Loading workflows...</div>
+            </div>
+        </div>
+
+        <!-- Workflow Editor -->
+        <div class="workflow-editor">
+            <div class="editor-header">
+                <h2 id="editorTitle">Select or create a workflow</h2>
+                <div>
+                    <button class="btn success" onclick="saveWorkflow()" id="saveBtn" disabled>Save Changes</button>
+                    <button class="btn secondary" onclick="cancelChanges()">Cancel</button>
+                    <button class="btn danger" onclick="deleteWorkflow()" id="deleteBtn" disabled>Delete</button>
+                </div>
+            </div>
+            
+            <div class="editor-content" id="editorContent">
+                <div class="empty-state">
+                    <h3>Select a workflow to edit</h3>
+                    <p>Click on a workflow from the list or create a new one to get started.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/notion-proxy';
+        
+        let allWorkflows = [];
+        let currentWorkflow = null;
+        let currentMilestones = [];
+        let hasUnsavedChanges = false;
+        let isNewWorkflow = false;
+
+        // Initialize
+        window.onload = function() {
+            refreshWorkflows();
+        };
+
+        async function refreshWorkflows() {
+            try {
+                showMessage('Loading workflows...', 'info');
+                
+                const response = await fetch(`${API_URL}?action=workflows`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to load workflows: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                allWorkflows = data.workflows || [];
+                
+                console.log('Loaded workflows:', allWorkflows);
+                displayWorkflowsList();
+                showMessage(`Loaded ${allWorkflows.length} workflows`, 'success');
+                
+            } catch (error) {
+                console.error('Failed to refresh workflows:', error);
+                document.getElementById('workflowsList').innerHTML = 
+                    `<div class="error">Failed to load workflows: ${error.message}</div>`;
+                showMessage('Failed to load workflows', 'error');
+            }
+        }
+
+        function displayWorkflowsList() {
+            const container = document.getElementById('workflowsList');
+            
+            if (allWorkflows.length === 0) {
+                container.innerHTML = '<div class="empty-state">No workflows found<br><button class="btn small" onclick="createNewWorkflow()">Create First Workflow</button></div>';
+                return;
+            }
+            
+            let html = '';
+            allWorkflows.forEach(workflow => {
+                const isActive = currentWorkflow && currentWorkflow.id === workflow.id;
+                const milestoneCount = getMilestoneCount(workflow.data);
+                
+                html += `
+                    <div class="workflow-item ${isActive ? 'active' : ''}" onclick="selectWorkflow('${workflow.id}')">
+                        <div class="workflow-name">${escapeHtml(workflow.name)}</div>
+                        <div class="workflow-details">${milestoneCount} milestones</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function getMilestoneCount(data) {
+            try {
+                const milestones = JSON.parse(data || '[]');
+                return milestones.length;
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function createNewWorkflow() {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Continue anyway?')) {
+                    return;
+                }
+            }
+            
+            currentWorkflow = {
+                id: null,
+                name: 'New Workflow',
+                data: '[]'
+            };
+            
+            currentMilestones = [];
+            isNewWorkflow = true;
+            
+            displayWorkflowEditor();
+            displayWorkflowsList();
+            
+            hasUnsavedChanges = true;
+            updateSaveButton();
+        }
+
+        function selectWorkflow(workflowId) {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Continue anyway?')) {
+                    return;
+                }
+            }
+            
+            currentWorkflow = allWorkflows.find(w => w.id === workflowId);
+            if (!currentWorkflow) return;
+            
+            // Parse milestones from workflow data
+            try {
+                currentMilestones = JSON.parse(currentWorkflow.data || '[]');
+                // Ensure proper order
+                currentMilestones.sort((a, b) => (a.order || 0) - (b.order || 0));
+            } catch (e) {
+                console.error('Failed to parse workflow data:', e);
+                currentMilestones = [];
+            }
+            
+            isNewWorkflow = false;
+            displayWorkflowEditor();
+            displayWorkflowsList();
+            
+            hasUnsavedChanges = false;
+            updateSaveButton();
+        }
+
+        function displayWorkflowEditor() {
+            if (!currentWorkflow) return;
+            
+            document.getElementById('editorTitle').textContent = currentWorkflow.name;
+            
+            const content = `
+                <div class="form-section">
+                    <h3>Workflow Details</h3>
+                    <div class="form-group">
+                        <label>Workflow Name</label>
+                        <input type="text" id="workflowName" value="${escapeHtml(currentWorkflow.name || '')}" onchange="markChanged()">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Milestones</h3>
+                    <div class="milestones-list" id="milestonesList">
+                        ${renderMilestonesList()}
+                    </div>
+                    <button class="btn" onclick="addMilestone()">Add Milestone</button>
+                    <button class="btn secondary" onclick="addMultipleMilestones()">Add 5 More</button>
+                </div>
+
+                <div class="form-section">
+                    <h3>JSON Preview</h3>
+                    <div class="json-preview" id="jsonPreview">${generateJSON()}</div>
+                </div>
+            `;
+            
+            document.getElementById('editorContent').innerHTML = content;
+        }
+
+        function renderMilestonesList() {
+            if (currentMilestones.length === 0) {
+                return '<div class="empty-state">No milestones yet. Add some below.</div>';
+            }
+            
+            return currentMilestones.map((milestone, index) => `
+                <div class="milestone-row">
+                    <div class="milestone-order">${index + 1}</div>
+                    <div class="milestone-name">
+                        <input type="text" value="${escapeHtml(milestone.name || '')}" 
+                               onchange="updateMilestone(${index}, 'name', this.value)"
+                               placeholder="Milestone name">
+                    </div>
+                    <div class="milestone-hours">
+                        <input type="number" step="0.25" min="0.25" 
+                               value="${milestone.estimatedHours || 1}" 
+                               onchange="updateMilestone(${index}, 'estimatedHours', this.value)"
+                               placeholder="Hours">
+                    </div>
+                    <div class="milestone-actions">
+                        <button class="remove-milestone" onclick="removeMilestone(${index})">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addMilestone() {
+            const newMilestone = {
+                name: '',
+                estimatedHours: 1,
+                order: currentMilestones.length + 1
+            };
+            
+            currentMilestones.push(newMilestone);
+            refreshMilestonesList();
+            markChanged();
+        }
+
+        function addMultipleMilestones() {
+            for (let i = 0; i < 5; i++) {
+                addMilestone();
+            }
+        }
+
+        function removeMilestone(index) {
+            currentMilestones.splice(index, 1);
+            // Renumber remaining milestones
+            currentMilestones.forEach((milestone, idx) => {
+                milestone.order = idx + 1;
+            });
+            refreshMilestonesList();
+            markChanged();
+        }
+
+        function updateMilestone(index, field, value) {
+            if (field === 'estimatedHours') {
+                value = parseFloat(value) || 1;
+            }
+            
+            currentMilestones[index][field] = value;
+            refreshMilestonesList();
+            markChanged();
+        }
+
+        function refreshMilestonesList() {
+            const container = document.getElementById('milestonesList');
+            if (container) {
+                container.innerHTML = renderMilestonesList();
+            }
+            updateJsonPreview();
+        }
+
+        function updateJsonPreview() {
+            const preview = document.getElementById('jsonPreview');
+            if (preview) {
+                preview.textContent = generateJSON();
+            }
+        }
+
+        function generateJSON() {
+            return JSON.stringify(currentMilestones, null, 2);
+        }
+
+        function markChanged() {
+            hasUnsavedChanges = true;
+            updateSaveButton();
+            updateJsonPreview();
+        }
+
+        function updateSaveButton() {
+            const saveBtn = document.getElementById('saveBtn');
+            const deleteBtn = document.getElementById('deleteBtn');
+            
+            if (saveBtn) {
+                saveBtn.disabled = !hasUnsavedChanges;
+                saveBtn.textContent = hasUnsavedChanges ? 'Save Changes *' : 'Saved';
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.disabled = isNewWorkflow;
+            }
+        }
+
+        async function saveWorkflow() {
+            if (!currentWorkflow) return;
+            
+            try {
+                document.getElementById('saveBtn').textContent = 'Saving...';
+                
+                const workflowData = {
+                    name: document.getElementById('workflowName').value,
+                    data: generateJSON()
+                };
+                
+                if (!isNewWorkflow) {
+                    workflowData.id = currentWorkflow.id;
+                }
+                
+                console.log('Saving workflow:', workflowData);
+                
+                const action = isNewWorkflow ? 'create-workflow' : 'update-workflow';
+                const method = isNewWorkflow ? 'POST' : 'PUT';
+                
+                const response = await fetch(`${API_URL}?action=${action}`, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(workflowData)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to save workflow: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('Save result:', result);
+                
+                // Update current workflow with returned data
+                if (isNewWorkflow && result.workflow) {
+                    currentWorkflow.id = result.workflow.id;
+                    isNewWorkflow = false;
+                }
+                
+                hasUnsavedChanges = false;
+                updateSaveButton();
+                
+                showMessage('Workflow saved successfully', 'success');
+                await refreshWorkflows();
+                
+            } catch (error) {
+                console.error('Save failed:', error);
+                showMessage('Failed to save workflow: ' + error.message, 'error');
+                document.getElementById('saveBtn').textContent = 'Save Changes *';
+            }
+        }
+
+        async function deleteWorkflow() {
+            if (!currentWorkflow || isNewWorkflow) return;
+            
+            if (!confirm(`Are you sure you want to delete "${currentWorkflow.name}"? This cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}?action=delete-workflow`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: currentWorkflow.id })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to delete workflow: ${errorText}`);
+                }
+                
+                showMessage('Workflow deleted successfully', 'success');
+                
+                // Clear editor
+                currentWorkflow = null;
+                currentMilestones = [];
+                hasUnsavedChanges = false;
+                
+                document.getElementById('editorContent').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Workflow deleted</h3>
+                        <p>Select another workflow or create a new one.</p>
+                    </div>
+                `;
+                
+                await refreshWorkflows();
+                
+            } catch (error) {
+                console.error('Delete failed:', error);
+                showMessage('Failed to delete workflow: ' + error.message, 'error');
+            }
+        }
+
+        function cancelChanges() {
+            if (hasUnsavedChanges) {
+                if (!confirm('Discard unsaved changes?')) {
+                    return;
+                }
+            }
+            
+            if (isNewWorkflow) {
+                // Clear editor for new workflow
+                currentWorkflow = null;
+                currentMilestones = [];
+                isNewWorkflow = false;
+                document.getElementById('editorContent').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Select or create a workflow</h3>
+                        <p>Click on a workflow from the list or create a new one to get started.</p>
+                    </div>
+                `;
+            } else if (currentWorkflow) {
+                // Reload existing workflow
+                selectWorkflow(currentWorkflow.id);
+            }
+            
+            displayWorkflowsList();
+        }
+
+        function showMessage(message, type = 'info') {
+            let msgEl = document.getElementById('globalMessage');
+            if (!msgEl) {
+                msgEl = document.createElement('div');
+                msgEl.id = 'globalMessage';
+                msgEl.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 10px; border-radius: 4px; z-index: 1000; max-width: 300px;';
+                document.body.appendChild(msgEl);
+            }
+            
+            msgEl.textContent = message;
+            msgEl.className = type;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (msgEl.parentNode) {
+                        msgEl.parentNode.removeChild(msgEl);
+                    }
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
