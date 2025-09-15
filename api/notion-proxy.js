@@ -3,7 +3,7 @@ const { Client } = require('@notionhq/client');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -24,6 +24,8 @@ module.exports = async (req, res) => {
         return await handlePost(req, res, notion);
       case 'PUT':
         return await handlePut(req, res, notion);
+      case 'DELETE':
+        return await handleDelete(req, res, notion);
       default:
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -35,165 +37,6 @@ module.exports = async (req, res) => {
       detail: err?.message || String(err)
     });
   }
-}
-
-// Create new workflow
-async function createWorkflow(res, notion, workflowsDbId, data) {
-  const { name, data: workflowData } = data;
-  
-  console.log('Creating workflow:', { name, dataLength: workflowData?.length });
-  
-  if (!workflowsDbId) {
-    return res.status(500).json({ error: 'Workflows database not configured' });
-  }
-  
-  try {
-    // Validate the workflow data is valid JSON
-    try {
-      JSON.parse(workflowData || '[]');
-    } catch (e) {
-      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
-    }
-    
-    const response = await notion.pages.create({
-      parent: { database_id: workflowsDbId },
-      properties: {
-        'Name': {
-          title: [{ text: { content: name || 'Untitled Workflow' } }]
-        },
-        'Data': {
-          rich_text: [{ text: { content: workflowData || '[]' } }]
-        }
-      }
-    });
-    
-    const createdWorkflow = {
-      id: response.id,
-      name: name || 'Untitled Workflow',
-      data: workflowData || '[]'
-    };
-    
-    console.log('Workflow created successfully:', createdWorkflow.id);
-    return res.json({ success: true, workflow: createdWorkflow });
-  } catch (error) {
-    console.error('Failed to create workflow:', error);
-    throw new Error(`Failed to create workflow: ${error.message}`);
-  }
-}
-
-// Update existing workflow
-async function updateWorkflow(res, notion, workflowsDbId, data) {
-  const { id, name, data: workflowData } = data;
-  
-  console.log('Updating workflow:', { id, name, dataLength: workflowData?.length });
-  
-  if (!workflowsDbId) {
-    return res.status(500).json({ error: 'Workflows database not configured' });
-  }
-  
-  if (!id) {
-    return res.status(400).json({ error: 'Workflow ID is required for update' });
-  }
-  
-  try {
-    // Validate the workflow data is valid JSON
-    try {
-      JSON.parse(workflowData || '[]');
-    } catch (e) {
-      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
-    }
-    
-    await notion.pages.update({
-      page_id: id,
-      properties: {
-        'Name': {
-          title: [{ text: { content: name || 'Untitled Workflow' } }]
-        },
-        'Data': {
-          rich_text: [{ text: { content: workflowData || '[]' } }]
-        }
-      }
-    });
-    
-    console.log('Workflow updated successfully:', id);
-    return res.json({ success: true, message: 'Workflow updated successfully' });
-  } catch (error) {
-    console.error('Failed to update workflow:', error);
-    throw new Error(`Failed to update workflow: ${error.message}`);
-  }
-}
-
-// Delete workflow
-async function deleteWorkflow(res, notion, workflowsDbId, data) {
-  const { id } = data;
-  
-  console.log('Deleting workflow:', id);
-  
-  if (!workflowsDbId) {
-    return res.status(500).json({ error: 'Workflows database not configured' });
-  }
-  
-  if (!id) {
-    return res.status(400).json({ error: 'Workflow ID is required for deletion' });
-  }
-  
-  try {
-    await notion.pages.update({
-      page_id: id,
-      archived: true
-    });
-    
-    console.log('Workflow deleted successfully:', id);
-    return res.json({ success: true, message: 'Workflow deleted successfully' });
-  } catch (error) {
-    console.error('Failed to delete workflow:', error);
-    throw new Error(`Failed to delete workflow: ${error.message}`);
-  }
-}
-
-// Mapping functions
-function mapProject(page) {
-  const props = page.properties;
-  
-  return {
-    id: page.id,
-    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
-    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
-    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
-    complexity: parseRatingValue(props.Complexity?.select?.name),
-    profitability: parseRatingValue(props.Profitability?.select?.name),
-    status: props.Status?.select?.name ?? 'Unknown',
-    dueDate: props['Due Date']?.date?.start ?? null,
-    lastWorked: props['Last Worked']?.date?.start ?? null,
-    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
-    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
-    progress: props['Progress %']?.formula?.number ?? 0,
-    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0
-  };
-}
-
-function mapMilestone(page) {
-  const props = page.properties;
-  
-  return {
-    id: page.id,
-    projectId: props['Work Order']?.relation?.[0]?.id || null,
-    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
-    estimatedHours: props['Estimated Hours']?.number ?? 1,
-    actualHours: props['Actual Hours']?.number ?? 0,
-    order: props['Order (Sequence)']?.number ?? 1,
-    status: props.Status?.select?.name ?? 'Not Started',
-    milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
-    dueDate: props['Due Date']?.date?.start ?? null,
-    notes: props.Notes?.rich_text?.[0]?.plain_text ?? ''
-  };
-}
-
-function parseRatingValue(ratingStr) {
-  if (!ratingStr) return 3;
-  if (typeof ratingStr === 'number') return ratingStr;
-  const match = ratingStr.match(/^(\d+)-/);
-  return match ? parseInt(match[1]) : 3;
 };
 
 async function handleGet(req, res, notion) {
@@ -213,7 +56,7 @@ async function handleGet(req, res, notion) {
 async function handlePost(req, res, notion) {
   const { action } = req.query;
   const data = req.body;
-  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID } = process.env;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
   
   switch (action) {
     case 'create-milestones':
@@ -222,6 +65,8 @@ async function handlePost(req, res, notion) {
       return await saveProgress(res, notion, NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, data);
     case 'save-milestones':
       return await saveMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'create-workflow':
+      return await createWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
     default:
       return res.status(400).json({ error: 'Invalid action' });
   }
@@ -230,13 +75,28 @@ async function handlePost(req, res, notion) {
 async function handlePut(req, res, notion) {
   const { action } = req.query;
   const data = req.body;
-  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID } = process.env;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
   
   switch (action) {
     case 'update-milestone':
       return await updateMilestone(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
     case 'update-project':
       return await updateProject(res, notion, NOTION_DATABASE_ID, data);
+    case 'update-workflow':
+      return await updateWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
+
+async function handleDelete(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'delete-workflow':
+      return await deleteWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
     default:
       return res.status(400).json({ error: 'Invalid action' });
   }
@@ -684,6 +544,120 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
     });
   } catch (error) {
     throw new Error(`Failed to save milestones: ${error.message}`);
+  }
+}
+
+// Create new workflow
+async function createWorkflow(res, notion, workflowsDbId, data) {
+  const { name, data: workflowData } = data;
+  
+  console.log('Creating workflow:', { name, dataLength: workflowData?.length });
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  try {
+    // Validate the workflow data is valid JSON
+    try {
+      JSON.parse(workflowData || '[]');
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
+    }
+    
+    const response = await notion.pages.create({
+      parent: { database_id: workflowsDbId },
+      properties: {
+        'Name': {
+          title: [{ text: { content: name || 'Untitled Workflow' } }]
+        },
+        'Data': {
+          rich_text: [{ text: { content: workflowData || '[]' } }]
+        }
+      }
+    });
+    
+    const createdWorkflow = {
+      id: response.id,
+      name: name || 'Untitled Workflow',
+      data: workflowData || '[]'
+    };
+    
+    console.log('Workflow created successfully:', createdWorkflow.id);
+    return res.json({ success: true, workflow: createdWorkflow });
+  } catch (error) {
+    console.error('Failed to create workflow:', error);
+    throw new Error(`Failed to create workflow: ${error.message}`);
+  }
+}
+
+// Update existing workflow
+async function updateWorkflow(res, notion, workflowsDbId, data) {
+  const { id, name, data: workflowData } = data;
+  
+  console.log('Updating workflow:', { id, name, dataLength: workflowData?.length });
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Workflow ID is required for update' });
+  }
+  
+  try {
+    // Validate the workflow data is valid JSON
+    try {
+      JSON.parse(workflowData || '[]');
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
+    }
+    
+    await notion.pages.update({
+      page_id: id,
+      properties: {
+        'Name': {
+          title: [{ text: { content: name || 'Untitled Workflow' } }]
+        },
+        'Data': {
+          rich_text: [{ text: { content: workflowData || '[]' } }]
+        }
+      }
+    });
+    
+    console.log('Workflow updated successfully:', id);
+    return res.json({ success: true, message: 'Workflow updated successfully' });
+  } catch (error) {
+    console.error('Failed to update workflow:', error);
+    throw new Error(`Failed to update workflow: ${error.message}`);
+  }
+}
+
+// Delete workflow
+async function deleteWorkflow(res, notion, workflowsDbId, data) {
+  const { id } = data;
+  
+  console.log('Deleting workflow:', id);
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Workflow ID is required for deletion' });
+  }
+  
+  try {
+    await notion.pages.update({
+      page_id: id,
+      archived: true
+    });
+    
+    console.log('Workflow deleted successfully:', id);
+    return res.json({ success: true, message: 'Workflow deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete workflow:', error);
+    throw new Error(`Failed to delete workflow: ${error.message}`);
   }
 }
 
