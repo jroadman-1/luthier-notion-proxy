@@ -507,14 +507,12 @@ function balanceComplexity(prioritizedTasks, availableHoursInput) {
     tryAdd(t);
   }
 
-  // Step 1: Schedule all quick wins that are due within the buffer window
-if (totalHours < availableHours && quickWins.length) {
-  const dueBufferDays = parseInt(document.getElementById('dueBuffer').value) || 2;
-  quickWins
-    .filter(t => t.daysUntilDue <= dueBufferDays) // due today or tomorrow
-    .forEach(t => { if (totalHours < availableHours) tryAdd(t); });
-}
-}
+  // STEP 1: Guarantee at least ONE quick win if available and we still have time
+  if (totalHours < availableHours && quickWins.length) {
+    for (const t of quickWins) {
+      if (tryAdd(t)) break;
+    }
+  }
 
   // STEP 2: Fill the day while nudging toward complex % target
   // We'll alternate preference based on whether we're below or above the complex target.
