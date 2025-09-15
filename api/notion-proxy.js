@@ -98,7 +98,11 @@ async function handlePost(req, res, notion) {
   const data = req.body;
   const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID } = process.env;
   
+  console.log('POST request:', action, 'with data keys:', Object.keys(data || {}));
+  
   switch (action) {
+    case 'test':
+      return res.json({ success: true, message: 'API is working', timestamp: new Date().toISOString() });
     case 'create-milestones':
       return await createMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
     case 'save-progress':
