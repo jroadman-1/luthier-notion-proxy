@@ -366,7 +366,7 @@ async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
       success: true,
       message: 'Progress saved successfully.',
       updatedMilestones,
-      updatedProjects
+      updatedProjects,
       lastWorked: nowISO
     });
   } catch (error) {
