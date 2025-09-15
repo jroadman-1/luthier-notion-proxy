@@ -549,6 +549,7 @@
                                         <span class="complexity-badge complexity-${item.project.complexity}">C${item.project.complexity}</span>
                                         <span class="profitability-badge profitability-${item.project.profitability}">P${item.project.profitability}</span>
                                         ${dueText} • Priority: ${item.priority.toFixed(2)} ${workedText}
+                                        <br><small style="color: #aaa;">Due: ${item.debugInfo?.dueDateUrgency || '0.000'} | Profit: ${item.debugInfo?.profitabilityScore || '0.000'} | Complex: ${item.debugInfo?.complexityScore || '0.000'} | Days: ${item.debugInfo?.daysWorkedScore || '0.000'}</small>
                                     </div>
                                     <div class="milestone-name">
                                         Milestone: ${item.milestone.name}
