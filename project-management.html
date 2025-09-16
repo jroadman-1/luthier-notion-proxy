@@ -749,8 +749,13 @@
             
             document.getElementById('editorContent').innerHTML = content;
             
-            // Initialize auto-split preview
+            // Initialize auto-split preview and drag-and-drop
             previewAutoSplit();
+            
+            // Set up drag and drop for milestones if they exist
+            setTimeout(() => {
+                setupDragAndDrop();
+            }, 100);
         }
 
         function renderMilestoneList() {
@@ -761,13 +766,7 @@
             return currentMilestones.map((milestone, index) => `
                 <div class="milestone-row ${milestone.status?.toLowerCase().replace(' ', '-') || 'not-started'}" 
                      draggable="true" 
-                     data-milestone-index="${index}"
-                     ondragstart="handleDragStart(event)"
-                     ondragover="handleDragOver(event)"
-                     ondrop="handleDrop(event)"
-                     ondragend="handleDragEnd(event)"
-                     ondragenter="handleDragEnter(event)"
-                     ondragleave="handleDragLeave(event)">
+                     data-milestone-index="${index}">
                     <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
                     <div class="milestone-order">${index + 1}</div>
                     <div class="milestone-name">
@@ -846,7 +845,21 @@
             const container = document.getElementById('milestoneList');
             if (container) {
                 container.innerHTML = renderMilestoneList();
+                setupDragAndDrop();
             }
+        }
+
+        function setupDragAndDrop() {
+            const milestoneRows = document.querySelectorAll('.milestone-row[draggable="true"]');
+            
+            milestoneRows.forEach(row => {
+                row.addEventListener('dragstart', handleDragStart);
+                row.addEventListener('dragover', handleDragOver);
+                row.addEventListener('drop', handleDrop);
+                row.addEventListener('dragend', handleDragEnd);
+                row.addEventListener('dragenter', handleDragEnter);
+                row.addEventListener('dragleave', handleDragLeave);
+            });
         }
 
         function previewWorkflow() {
