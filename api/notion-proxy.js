@@ -106,7 +106,11 @@ async function handleDelete(req, res, notion) {
 
 // Create new project
 async function createProject(res, notion, projectsDbId, data) {
-  const { name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate } = data;
+  const { 
+    name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate,
+    neckReliefBefore, before1stString1stFret, before1stString12thFret, before6thString1stFret, before6thString12thFret,
+    neckReliefAfter, after1stString1stFret, after1stString12thFret, after6thString1stFret, after6thString12thFret
+  } = data;
   
   console.log('Creating new project:', { name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate });
   
@@ -145,6 +149,38 @@ async function createProject(res, notion, projectsDbId, data) {
     
     if (profitability !== undefined) {
       properties['Profitability'] = { number: profitability };
+    }
+    
+    // Add measurement fields if provided
+    if (neckReliefBefore !== undefined && neckReliefBefore !== null) {
+      properties['Neck Relief Before'] = { number: neckReliefBefore };
+    }
+    if (before1stString1stFret !== undefined && before1stString1stFret !== null) {
+      properties['Before 1st string at 1st fret'] = { number: before1stString1stFret };
+    }
+    if (before1stString12thFret !== undefined && before1stString12thFret !== null) {
+      properties['Before 1st string at 12th fret'] = { number: before1stString12thFret };
+    }
+    if (before6thString1stFret !== undefined && before6thString1stFret !== null) {
+      properties['Before 6th string at 1st fret'] = { number: before6thString1stFret };
+    }
+    if (before6thString12thFret !== undefined && before6thString12thFret !== null) {
+      properties['Before 6th string at 12th fret'] = { number: before6thString12thFret };
+    }
+    if (neckReliefAfter !== undefined && neckReliefAfter !== null) {
+      properties['Neck Relief After'] = { number: neckReliefAfter };
+    }
+    if (after1stString1stFret !== undefined && after1stString1stFret !== null) {
+      properties['After 1st string at 1st fret'] = { number: after1stString1stFret };
+    }
+    if (after1stString12thFret !== undefined && after1stString12thFret !== null) {
+      properties['After 1st string at 12th fret'] = { number: after1stString12thFret };
+    }
+    if (after6thString1stFret !== undefined && after6thString1stFret !== null) {
+      properties['After 6th string at 1st fret'] = { number: after6thString1stFret };
+    }
+    if (after6thString12thFret !== undefined && after6thString12thFret !== null) {
+      properties['After 6th string at 12th fret'] = { number: after6thString12thFret };
     }
     
     if (dueDate) {
@@ -500,6 +536,48 @@ async function updateProject(res, notion, projectsDbId, data) {
       }
     }
 
+    // Add measurement fields
+    if (updates.neckReliefBefore !== undefined) {
+      properties['Neck Relief Before'] = updates.neckReliefBefore !== null ? { number: updates.neckReliefBefore } : { number: null };
+      console.log('Setting Neck Relief Before:', updates.neckReliefBefore);
+    }
+    if (updates.before1stString1stFret !== undefined) {
+      properties['Before 1st string at 1st fret'] = updates.before1stString1stFret !== null ? { number: updates.before1stString1stFret } : { number: null };
+      console.log('Setting Before 1st string at 1st fret:', updates.before1stString1stFret);
+    }
+    if (updates.before1stString12thFret !== undefined) {
+      properties['Before 1st string at 12th fret'] = updates.before1stString12thFret !== null ? { number: updates.before1stString12thFret } : { number: null };
+      console.log('Setting Before 1st string at 12th fret:', updates.before1stString12thFret);
+    }
+    if (updates.before6thString1stFret !== undefined) {
+      properties['Before 6th string at 1st fret'] = updates.before6thString1stFret !== null ? { number: updates.before6thString1stFret } : { number: null };
+      console.log('Setting Before 6th string at 1st fret:', updates.before6thString1stFret);
+    }
+    if (updates.before6thString12thFret !== undefined) {
+      properties['Before 6th string at 12th fret'] = updates.before6thString12thFret !== null ? { number: updates.before6thString12thFret } : { number: null };
+      console.log('Setting Before 6th string at 12th fret:', updates.before6thString12thFret);
+    }
+    if (updates.neckReliefAfter !== undefined) {
+      properties['Neck Relief After'] = updates.neckReliefAfter !== null ? { number: updates.neckReliefAfter } : { number: null };
+      console.log('Setting Neck Relief After:', updates.neckReliefAfter);
+    }
+    if (updates.after1stString1stFret !== undefined) {
+      properties['After 1st string at 1st fret'] = updates.after1stString1stFret !== null ? { number: updates.after1stString1stFret } : { number: null };
+      console.log('Setting After 1st string at 1st fret:', updates.after1stString1stFret);
+    }
+    if (updates.after1stString12thFret !== undefined) {
+      properties['After 1st string at 12th fret'] = updates.after1stString12thFret !== null ? { number: updates.after1stString12thFret } : { number: null };
+      console.log('Setting After 1st string at 12th fret:', updates.after1stString12thFret);
+    }
+    if (updates.after6thString1stFret !== undefined) {
+      properties['After 6th string at 1st fret'] = updates.after6thString1stFret !== null ? { number: updates.after6thString1stFret } : { number: null };
+      console.log('Setting After 6th string at 1st fret:', updates.after6thString1stFret);
+    }
+    if (updates.after6thString12thFret !== undefined) {
+      properties['After 6th string at 12th fret'] = updates.after6thString12thFret !== null ? { number: updates.after6thString12thFret } : { number: null };
+      console.log('Setting After 6th string at 12th fret:', updates.after6thString12thFret);
+    }
+
     console.log('Final properties to update:', JSON.stringify(properties, null, 2));
 
     const updateResult = await notion.pages.update({
@@ -778,6 +856,18 @@ function mapProject(page) {
    
     dateCreated: props['Date Created']?.date?.start ?? null,   // your custom date
     createdTime: page.created_time,                            // Notion system created timestamp
+
+    // measurement fields
+    neckReliefBefore: props['Neck Relief Before']?.number ?? null,
+    before1stString1stFret: props['Before 1st string at 1st fret']?.number ?? null,
+    before1stString12thFret: props['Before 1st string at 12th fret']?.number ?? null,
+    before6thString1stFret: props['Before 6th string at 1st fret']?.number ?? null,
+    before6thString12thFret: props['Before 6th string at 12th fret']?.number ?? null,
+    neckReliefAfter: props['Neck Relief After']?.number ?? null,
+    after1stString1stFret: props['After 1st string at 1st fret']?.number ?? null,
+    after1stString12thFret: props['After 1st string at 12th fret']?.number ?? null,
+    after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
+    after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
 
     // rollups / formulas you already use
     totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
