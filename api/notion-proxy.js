@@ -59,6 +59,8 @@ async function handlePost(req, res, notion) {
   const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
   
   switch (action) {
+    case 'create-project':
+      return await createProject(res, notion, NOTION_DATABASE_ID, data);
     case 'create-milestones':
       return await createMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
     case 'save-progress':
@@ -99,6 +101,97 @@ async function handleDelete(req, res, notion) {
       return await deleteWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
     default:
       return res.status(400).json({ error: 'Invalid action' });
+  }
+}
+
+// Create new project
+async function createProject(res, notion, projectsDbId, data) {
+  const { name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate } = data;
+  
+  console.log('Creating new project:', { name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate });
+  
+  try {
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Project name is required' });
+    }
+    
+    // Build the properties object for the new project
+    const properties = {
+      'Name': {
+        title: [{ text: { content: name.trim() } }]
+      },
+      'Status': {
+        select: { name: status || 'On The Bench' }
+      }
+    };
+    
+    // Add optional fields if provided
+    if (instrumentMake !== undefined) {
+      properties['Instrument Make'] = { 
+        rich_text: [{ text: { content: instrumentMake || '' } }] 
+      };
+    }
+    
+    if (instrumentModel !== undefined) {
+      properties['Instrument Model'] = { 
+        rich_text: [{ text: { content: instrumentModel || '' } }] 
+      };
+    }
+    
+    if (complexity !== undefined) {
+      const complexityOptions = ['Simple','Easy','Moderate','Complex','Very Complex'];
+      const complexityValue = `${complexity}-${complexityOptions[complexity-1]}`;
+      properties['Complexity'] = { select: { name: complexityValue } };
+    }
+    
+    if (profitability !== undefined) {
+      const profitabilityOptions = ['Low','Below Average','Standard','Good','Excellent'];
+      const profitabilityValue = `${profitability}-${profitabilityOptions[profitability-1]}`;
+      properties['Profitability'] = { select: { name: profitabilityValue } };
+    }
+    
+    if (dueDate) {
+      properties['Due Date'] = { date: { start: dueDate } };
+    }
+    
+    // Set the current date for "Date Created" if the field exists
+    const nowISO = new Date().toISOString().split('T')[0]; // Just the date part
+    properties['Date Created'] = { date: { start: nowISO } };
+    
+    console.log('Creating project with properties:', JSON.stringify(properties, null, 2));
+    
+    // Create the project in Notion
+    const response = await notion.pages.create({
+      parent: { database_id: projectsDbId },
+      properties
+    });
+    
+    console.log('Project created successfully:', response.id);
+    
+    // Map the response to our project format
+    const createdProject = mapProject(response);
+    
+    return res.json({ 
+      success: true, 
+      message: 'Project created successfully',
+      project: createdProject
+    });
+    
+  } catch (error) {
+    console.error('Project creation error:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      body: error.body
+    });
+    
+    return res.status(500).json({ 
+      error: 'Failed to create project', 
+      detail: error.message,
+      code: error.code,
+      notionError: error.body 
+    });
   }
 }
 
@@ -688,7 +781,7 @@ function mapProject(page) {
     complexity: props['Complexity (Num)']?.number ?? 3,
     profitability: props['Profitability (Num)']?.number ?? null,
 
-    // dates for “days since worked”
+    // dates for "days since worked"
     lastWorked: props['Last Worked']?.date?.start ?? null,
    
     dateCreated: props['Date Created']?.date?.start ?? null,   // your custom date
