@@ -203,23 +203,12 @@
             background: white;
             border-radius: 4px;
             border-left: 3px solid #ddd;
-            cursor: grab;
-            transition: all 0.2s ease;
-        }
-        
-        .milestone-row:active {
-            cursor: grabbing;
+            position: relative;
         }
         
         .milestone-row.dragging {
             opacity: 0.5;
-            transform: rotate(5deg);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        
-        .milestone-row.drag-over {
-            border-top: 3px solid #2196f3;
-            margin-top: 8px;
+            z-index: 1000;
         }
         
         .drag-handle {
@@ -229,14 +218,41 @@
             width: 20px;
             text-align: center;
             user-select: none;
+            padding: 4px;
         }
         
         .drag-handle:hover {
             color: #666;
+            background: #f0f0f0;
+            border-radius: 3px;
         }
         
         .drag-handle:active {
             cursor: grabbing;
+        }
+        
+        .milestone-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .move-up, .move-down {
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .move-up:hover, .move-down:hover {
+            background: #1976d2;
+        }
+        
+        .move-up:disabled, .move-down:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
         
         .milestone-row.ready {
@@ -749,13 +765,8 @@
             
             document.getElementById('editorContent').innerHTML = content;
             
-            // Initialize auto-split preview and drag-and-drop
+            // Initialize auto-split preview
             previewAutoSplit();
-            
-            // Set up drag and drop for milestones if they exist
-            setTimeout(() => {
-                initializeDragAndDrop();
-            }, 100);
         }
 
         function renderMilestoneList() {
