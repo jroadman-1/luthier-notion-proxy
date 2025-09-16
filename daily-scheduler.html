@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Luthier Daily Scheduler — Fresh Build</title>
+  <title>Luthier Daily Scheduler</title>
   <style>
     :root {
       --bg: #f5f5f5;
@@ -183,7 +183,7 @@
     }
 
     // ---------------------------
-    // Task Selection Helpers
+    // Task Selection (original behavior)
     // ---------------------------
     function getReadyMilestones() {
       if (!isDataLoaded || projectsData.length === 0) return [];
@@ -215,21 +215,21 @@
     }
 
     // ---------------------------
-    // NEW Helpers for Scoring
+    // Helpers for scoring / dates
     // ---------------------------
     function clamp(x, min, max) { return Math.max(min, Math.min(max, x)); }
 
     function totalProjectHours(projectId) {
-  const list = milestonesData.filter(m => m.projectId === projectId && m.status !== 'Completed');
-  return list.reduce((acc, m) => acc + (m.estimatedHours || 0), 0);
-}
+      const list = milestonesData.filter(m => m.projectId === projectId && m.status !== 'Completed');
+      return list.reduce((acc, m) => acc + (m.estimatedHours || 0), 0);
+    }
 
     function isQuickWin(task) {
-  const c = Number(task.project.complexity) || 3;   // numeric 1–5
-  if (c >= 4) return false;                         // only C1–C3 qualify
-  const totalHrs = totalProjectHours(task.project.id);
-  return totalHrs <= 2;                             // ≤ 2h project total
-}
+      const c = Number(task.project.complexity) || 3;   // numeric 1–5
+      if (c >= 4) return false;                         // only C1–C3 qualify
+      const totalHrs = totalProjectHours(task.project.id);
+      return totalHrs <= 2;                             // ≤ 2h project total
+    }
 
     function remainingComplexMilestones(projectId) {
       const project = projectsData.find(p => p.id === projectId);
@@ -238,47 +238,28 @@
       return milestonesData.filter(m => m.projectId === projectId && m.status !== 'Completed').length;
     }
 
-// Robust days-since-worked using Last Worked → Intake → Date Created → created_time
-function getDaysSinceWorked(project, today) {
-  const parse = d => (d ? new Date(d) : null);
+    // Calendar-day difference ignoring time-of-day
+    function daysUntilDueCalendar(dueStr) {
+      if (!dueStr) return 9999; // no due date = far away
+      const t = new Date();
+      const today0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+      const d = new Date(dueStr);
+      const due0 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return Math.round((due0 - today0) / (1000 * 60 * 60 * 24)); // negative if overdue
+    }
 
-  const lastWorked  = parse(project.lastWorked);
-  const intake      = parse(project.intakeDate || project.intake_date);
-  const dateCreated = parse(project.dateCreated);          // <-- from API mapping
-  const createdTime = parse(project.createdTime);          // <-- from API mapping
-
-  const ref = lastWorked || intake || dateCreated || createdTime;
-  if (!ref) return null;                                   // unknown (don’t fake “today”)
-  return Math.max(0, Math.floor((today - ref) / (1000 * 60 * 60 * 24)));
-}
-
-// Calendar-day difference ignoring time-of-day drift
-function daysUntilDueCalendar(dueStr) {
-  if (!dueStr) return 9999; // no due date = far away
-  const t = new Date();
-  const today0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
-
-  const d = new Date(dueStr);
-  const due0 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-  return Math.round((due0 - today0) / (1000 * 60 * 60 * 24)); // negative if overdue
-}
-
-// Build days-since-worked from a real baseline
-function getDaysSinceWorked(project, today) {
-  const parse = s => (s ? new Date(s) : null);
-
-  const ref = parse(project.lastWorked)
-           || parse(project.intakeDate)
-           || parse(project.dateCreated)
-           || parse(project.createdTime);
-
-  if (!ref) return null;  // unknown baseline
-  return Math.max(0, Math.floor((today - ref) / (1000 * 60 * 60 * 24)));
-}
+    function getDaysSinceWorked(project, today) {
+      const parse = s => (s ? new Date(s) : null);
+      const ref = parse(project.lastWorked)
+               || parse(project.intakeDate)
+               || parse(project.dateCreated)
+               || parse(project.createdTime);
+      if (!ref) return null;  // unknown baseline
+      return Math.max(0, Math.floor((today - ref) / (1000 * 60 * 60 * 24)));
+    }
 
     // ---------------------------
-    // Scoring with Sliders (no profitability)
+    // Scoring with Sliders (existing math preserved)
     // ---------------------------
     function calculatePriorities(readyTasks) {
       const today = new Date();
@@ -292,17 +273,13 @@ function getDaysSinceWorked(project, today) {
       const W = { due: w_due / w_sum, complex: w_complex / w_sum, age: w_age / w_sum, quick: w_quick / w_sum };
 
       const scored = readyTasks.map(task => {
-        const dueDate = task.project.dueDate ? new Date(task.project.dueDate) : new Date(Date.now() + 14*24*60*60*1000);
         const daysUntilDue = daysUntilDueCalendar(task.project.dueDate);
-
-       const rawDSW = getDaysSinceWorked(task.project, today);
-       const daysSinceWorked = rawDSW ?? 0; 
-        
+        const rawDSW = getDaysSinceWorked(task.project, today);
+        const daysSinceWorked = rawDSW ?? 0;
 
         const overdue = daysUntilDue < 0;
         const dueUrgencyBuffered = overdue ? 1 : clamp((dueBufferDays - daysUntilDue) / dueBufferDays, 0, 1);
         const complexityScore = ((task.project.complexity || 3) / 5);
-        
         const neglectBoost = clamp(daysSinceWorked / 14, 0, 1);
         const quickWinBoost = isQuickWin(task) ? 1 : 0;
 
@@ -318,9 +295,9 @@ function getDaysSinceWorked(project, today) {
           W.age * neglectBoost +
           W.quick * quickWinBoost;
 
-        // small nudge to spread complex work earlier (acts like +0..0.15)
+        // small nudge to spread complex work earlier
         score += 0.15 * distributionFactor;
-        if (overdue) score += 2.0; // hard jump
+        if (overdue) score += 2.0; // strong jump for overdue
 
         return {
           ...task,
@@ -337,7 +314,7 @@ function getDaysSinceWorked(project, today) {
     }
 
     // ---------------------------
-    // New balancing / packing
+    // Packing (existing behavior)
     // ---------------------------
     function balanceComplexity(prioritizedTasks, availableHoursInput) {
       const reservePct = parseInt(document.getElementById('reservePercentage').value) || 15;
@@ -358,7 +335,6 @@ function getDaysSinceWorked(project, today) {
         if (h <= 0) return false;
         if (totalHours + h > availableHours + 1e-6) return false;
 
-        // Cooldown: avoid multiple complex milestones from same project unless overdue or we still need complex
         if (task.isComplex && complexProjectsScheduled.has(task.project.id) && !task.overdue) {
           const needMoreComplex = complexHours < (availableHours * complexTargetPct) - 1e-6;
           if (!needMoreComplex) return false;
@@ -385,12 +361,12 @@ function getDaysSinceWorked(project, today) {
         tryAdd(t);
       }
 
-      // Step 1: Guarantee at least one quick win if time & available
+      // Step 1: Guarantee at least one quick win if available
       if (totalHours < availableHours && quickWins.length) {
         for (const t of quickWins) { if (tryAdd(t)) break; }
       }
 
-      // Step 2: Fill day while targeting complex percentage
+      // Step 2: Fill while targeting complex %
       let guard = 0;
       while (totalHours < availableHours && guard++ < 500) {
         const needComplex = complexHours < (availableHours * complexTargetPct) - 1e-6;
@@ -402,10 +378,42 @@ function getDaysSinceWorked(project, today) {
           for (const t of simple) { if (tryAdd(t)) { picked = true; break; } }
           if (!picked) { for (const t of complex) { if (tryAdd(t)) { picked = true; break; } } }
         }
-        if (!picked) break; // nothing fits
+        if (!picked) break;
       }
 
       return { schedule, totalHours, complexHours, availableHours };
+    }
+
+    // ---------------------------
+    // NEW: Overdue expansion (minimal patch)
+    // ---------------------------
+    function isProjectOverdue(project) {
+      const days = daysUntilDueCalendar(project?.dueDate);
+      return typeof days === 'number' && days < 0 && project?.status !== 'Done';
+    }
+
+    function getOverdueRemainingMilestones() {
+      if (!isDataLoaded || projectsData.length === 0) return [];
+      const tasks = [];
+      const overdueProjects = projectsData.filter(isProjectOverdue);
+
+      overdueProjects.forEach(project => {
+        const remaining = milestonesData
+          .filter(m => m.projectId === project.id && m.status !== 'Completed')
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+        remaining.forEach(m => tasks.push({ milestone: m, project }));
+      });
+
+      return tasks;
+    }
+
+    function dedupeByMilestone(arr) {
+      const seen = new Set();
+      const out = [];
+      for (const x of arr) {
+        if (!seen.has(x.milestone.id)) { seen.add(x.milestone.id); out.push(x); }
+      }
+      return out;
     }
 
     // ---------------------------
@@ -428,12 +436,11 @@ function getDaysSinceWorked(project, today) {
             item.daysUntilDue <= 7 ? '📅 Due this week' : '✅ On track';
 
           const dsw = (typeof item.daysSinceWorked === 'number') ? item.daysSinceWorked : null;
-const workedText =
-  dsw === null ? '' :
-  dsw === 0    ? '🟢 touched today' :
-  dsw === 1    ? '⏰ 1 day since worked' :
-                 `⏰ ${dsw} days since worked`;
-
+          const workedText =
+            dsw === null ? '' :
+            dsw === 0    ? '🟢 touched today' :
+            dsw === 1    ? '⏰ 1 day since worked' :
+                           `⏰ ${dsw} days since worked`;
 
           const complexClass = item.isComplex ? 'complex' : '';
           const timeClass = item.isComplex ? 'complex' : '';
@@ -576,21 +583,38 @@ const workedText =
     }
 
     // ---------------------------
-    // Orchestration
+    // Orchestration (patched to include overdue series)
     // ---------------------------
     async function generateSchedule() {
       if (!isDataLoaded) { const ok = await loadDataFromAPI(); if (!ok) return; }
+
       const availableHoursInput = parseFloat(document.getElementById('availableHours').value) || 8;
+
       const ready = getReadyMilestones();
-      if (!ready.length) {
+      const overdueAll = getOverdueRemainingMilestones();
+      const candidate = dedupeByMilestone([...overdueAll, ...ready]);
+
+      if (!candidate.length) {
         document.getElementById('scheduleOutput').innerHTML = `
           <div class="milestone-item">
-            <div class="milestone-title">🎯 No ready milestones found</div>
-            <div class="milestone-details">${projectsData.length === 0 ? 'No projects with status "On The Bench" found.' : 'All milestones are either completed or waiting for previous tasks to finish.'}</div>
+            <div class="milestone-title">🎯 No ready or overdue milestones found</div>
+            <div class="milestone-details">${projectsData.length === 0 ? 'No projects with status "On The Bench" found.' : 'All milestones are either completed or blocked.'}</div>
           </div>`;
         return;
       }
-      const prioritized = calculatePriorities(ready);
+
+      // Score using your existing math
+      let prioritized = calculatePriorities(candidate);
+
+      // Hard rule: overdue first; within the SAME overdue project, keep milestone.order
+      prioritized = prioritized.sort((a, b) => {
+        if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+        if (a.overdue && b.overdue && a.project.id === b.project.id) {
+          return (a.milestone.order || 0) - (b.milestone.order || 0);
+        }
+        return b.score - a.score; // otherwise existing priority
+      });
+
       const result = balanceComplexity(prioritized, availableHoursInput);
       displaySchedule(result, result.availableHours);
     }
