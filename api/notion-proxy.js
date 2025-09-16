@@ -140,15 +140,11 @@ async function createProject(res, notion, projectsDbId, data) {
     }
     
     if (complexity !== undefined) {
-      const complexityOptions = ['Simple','Easy','Moderate','Complex','Very Complex'];
-      const complexityValue = `${complexity}-${complexityOptions[complexity-1]}`;
-      properties['Complexity'] = { select: { name: complexityValue } };
+      properties['Complexity'] = { number: complexity };
     }
     
     if (profitability !== undefined) {
-      const profitabilityOptions = ['Low','Below Average','Standard','Good','Excellent'];
-      const profitabilityValue = `${profitability}-${profitabilityOptions[profitability-1]}`;
-      properties['Profitability'] = { select: { name: profitabilityValue } };
+      properties['Profitability'] = { number: profitability };
     }
     
     if (dueDate) {
@@ -487,16 +483,12 @@ async function updateProject(res, notion, projectsDbId, data) {
       console.log('Setting Instrument Model:', updates.instrumentModel);
     }
     if (updates.complexity !== undefined) {
-      const complexityOptions = ['Simple','Easy','Moderate','Complex','Very Complex'];
-      const complexityValue = `${updates.complexity}-${complexityOptions[updates.complexity-1]}`;
-      properties.Complexity = { select: { name: complexityValue } };
-      console.log('Setting Complexity:', complexityValue);
+      properties['Complexity'] = { number: updates.complexity };
+      console.log('Setting Complexity:', updates.complexity);
     }
     if (updates.profitability !== undefined) {
-      const profitabilityOptions = ['Low','Below Average','Standard','Good','Excellent'];
-      const profitabilityValue = `${updates.profitability}-${profitabilityOptions[updates.profitability-1]}`;
-      properties.Profitability = { select: { name: profitabilityValue } };
-      console.log('Setting Profitability:', profitabilityValue);
+      properties['Profitability'] = { number: updates.profitability };
+      console.log('Setting Profitability:', updates.profitability);
     }
     if (updates.dueDate !== undefined) {
       if (updates.dueDate === null || updates.dueDate === '') {
@@ -777,9 +769,9 @@ function mapProject(page) {
     status: props['Status']?.select?.name ?? 'Unknown',
     dueDate: props['Due Date']?.date?.start ?? null,
 
-    // numeric fields (you said these are now Number properties)
-    complexity: props['Complexity (Num)']?.number ?? 3,
-    profitability: props['Profitability (Num)']?.number ?? null,
+    // numeric fields (now just simple number properties)
+    complexity: props['Complexity']?.number ?? 3,
+    profitability: props['Profitability']?.number ?? 3,
 
     // dates for "days since worked"
     lastWorked: props['Last Worked']?.date?.start ?? null,
