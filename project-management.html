@@ -1,772 +1,1229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Project Management - Luthier</title>
-  <style>
-    body{
-      font-family: Arial, sans-serif;max-width:1400px;margin:0 auto;padding:20px;background:#f5f5f5
-    }
-    .header{background:#2c3e50;color:#fff;padding:20px;border-radius:8px;text-align:center;margin-bottom:20px}
-    .main-container{display:grid;grid-template-columns:300px 1fr;gap:20px;height:calc(100vh - 140px)}
-    .projects-list{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);overflow-y:auto}
-    .projects-header{padding:15px;border-bottom:1px solid #eee;font-weight:bold;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px}
-    .header-buttons{display:flex;gap:5px}
-    .project-item{padding:12px 15px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:.2s}
-    .project-item:hover{background:#f8f9fa}
-    .project-item.active{background:#e3f2fd;border-left:4px solid #2196f3}
-    .project-item.new-project{background:#f0f8ff;border-left:4px solid #4caf50;font-style:italic}
-    .project-name{font-weight:bold;color:#2c3e50;margin-bottom:4px}
-    .project-details{font-size:12px;color:#666}
-    .project-editor{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);display:flex;flex-direction:column}
-    .editor-header{padding:20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
-    .editor-content{flex:1;padding:20px;overflow-y:auto}
-    .form-section{margin-bottom:30px}
-    .form-section h3{margin:0 0 15px;color:#2c3e50}
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px}
-    .form-group{margin-bottom:15px}
-    .form-group.full-width{grid-column:1 / -1}
-    .form-group label{display:block;font-weight:bold;margin-bottom:5px;color:#333}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box}
-    .form-group textarea{height:80px;resize:vertical}
-    .tabs{display:flex;border-bottom:2px solid #e9ecef;margin-bottom:20px}
-    .tab{padding:12px 24px;cursor:pointer;border:none;background:none;font-size:14px;font-weight:bold;color:#666;border-bottom:2px solid transparent}
-    .tab.active{color:#2196f3;border-bottom-color:#2196f3}
-    .tab-content{display:none}
-    .tab-content.active{display:block}
-    .milestone-list{max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:10px;background:#fafafa}
-    .milestone-row{display:flex;align-items:center;gap:10px;padding:8px;margin-bottom:5px;background:#fff;border-radius:4px;border-left:3px solid #ddd;position:relative}
-    .milestone-row.dragging{opacity:.5;z-index:1000}
-    .milestone-row.over{outline:2px dashed #2196f3}
-    .milestone-row.ready{border-left-color:#4caf50}
-    .milestone-row.completed{border-left-color:#2196f3;opacity:.7}
-    .milestone-row.not-started{border-left-color:#bbb}
-    .drag-handle{cursor:grab;color:#999;font-size:16px;width:20px;text-align:center;user-select:none;padding:4px}
-    .drag-handle:hover{color:#666;background:#f0f0f0;border-radius:3px}
-    .drag-handle:active{cursor:grabbing}
-    .milestone-order{width:30px;text-align:center;font-weight:bold;color:#666;font-size:12px}
-    .milestone-name{flex:1}
-    .milestone-name input{width:100%;border:none;background:transparent;padding:4px;font-size:14px}
-    .milestone-hours{width:80px}
-    .milestone-hours input{width:100%;border:none;background:transparent;padding:4px;text-align:center;font-size:14px}
-    .milestone-status{width:100px}
-    .milestone-status select{width:100%;border:none;background:transparent;padding:2px;font-size:12px}
-    .milestone-actions{display:flex;gap:5px;width:60px}
-    .remove-milestone{background:#ff5252;color:#fff;border:none;border-radius:3px;padding:4px 8px;cursor:pointer;font-size:11px}
-    .btn{background:#2196f3;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;font-size:14px;margin-right:10px;margin-bottom:10px}
-    .btn:hover{background:#1976d2}
-    .btn.success{background:#4caf50}
-    .btn.secondary{background:#6c757d}
-    .btn.danger{background:#ff5252}
-    .btn.small{padding:5px 10px;font-size:12px}
-    .workflow-selector{margin-bottom:15px}
-    .workflow-preview{background:#f8f9fa;padding:15px;border-radius:4px;margin-top:10px}
-    .auto-split-controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:15px}
-    .loading,.empty-state{text-align:center;padding:40px;color:#666}
-    .save-indicator{color:#4caf50;font-size:12px;margin-left:10px}
-    .error{background:#f8d7da;color:#721c24;padding:10px;border-radius:4px;margin:10px 0}
-    .success{background:#d4edda;color:#155724;padding:10px;border-radius:4px;margin:10px 0}
-    .new-project-indicator{background:#e8f5e8;color:#2e7d32;padding:10px;border-radius:4px;margin-bottom:15px;border-left:4px solid #4caf50}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management - Luthier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .main-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: calc(100vh - 140px);
+        }
+        
+        .projects-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .projects-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .project-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .project-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .project-item.active {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .project-item.new-project {
+            background: #f0f8ff;
+            border-left: 4px solid #4caf50;
+            font-style: italic;
+        }
+        
+        .project-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        
+        .project-details {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .project-editor {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .editor-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            color: #2196f3;
+            border-bottom-color: #2196f3;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .milestone-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background: #fafafa;
+        }
+        
+        .milestone-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #ddd;
+            position: relative;
+        }
+        
+        .milestone-row.dragging {
+            opacity: 0.5;
+            z-index: 1000;
+        }
+        
+        .drag-handle {
+            cursor: grab;
+            color: #999;
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            user-select: none;
+            padding: 4px;
+        }
+        
+        .drag-handle:hover {
+            color: #666;
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        .milestone-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .move-up, .move-down {
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .move-up:hover, .move-down:hover {
+            background: #1976d2;
+        }
+        
+        .move-up:disabled, .move-down:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .milestone-row.ready {
+            border-left-color: #4caf50;
+        }
+        
+        .milestone-row.completed {
+            border-left-color: #2196f3;
+            opacity: 0.7;
+        }
+        
+        .milestone-order {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .milestone-name {
+            flex: 1;
+        }
+        
+        .milestone-name input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            font-size: 14px;
+        }
+        
+        .milestone-hours {
+            width: 80px;
+        }
+        
+        .milestone-hours input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .milestone-status {
+            width: 100px;
+        }
+        
+        .milestone-status select {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 2px;
+            font-size: 12px;
+        }
+        
+        .milestone-actions {
+            width: 60px;
+        }
+        
+        .remove-milestone {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background: #1976d2;
+        }
+        
+        .btn.success {
+            background: #4caf50;
+        }
+        
+        .btn.secondary {
+            background: #6c757d;
+        }
+        
+        .btn.danger {
+            background: #ff5252;
+        }
+        
+        .btn.small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .workflow-selector {
+            margin-bottom: 15px;
+        }
+        
+        .workflow-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        .auto-split-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .save-indicator {
+            color: #4caf50;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .new-project-indicator {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4caf50;
+        }
+    </style>
 </head>
 <body>
-  <div class="header">
-    <h1>🎸 Project Management</h1>
-    <p>Manage projects and milestones</p>
-  </div>
-
-  <div class="main-container">
-    <!-- Projects List -->
-    <div class="projects-list">
-      <div class="projects-header">
-        Projects
-        <div class="header-buttons">
-          <button class="btn small success" onclick="createNewProject()">New</button>
-          <button class="btn small" onclick="refreshProjects()">Refresh</button>
-        </div>
-      </div>
-      <div id="projectsList">
-        <div class="loading">Loading projects...</div>
-      </div>
+    <div class="header">
+        <h1>🎸 Project Management</h1>
+        <p>Manage projects and milestones</p>
     </div>
 
-    <!-- Project Editor -->
-    <div class="project-editor">
-      <div class="editor-header">
-        <h2 id="editorTitle">Select a project</h2>
-        <div>
-          <button class="btn success" onclick="saveProject()" id="saveBtn" disabled>Save Changes</button>
-          <button class="btn secondary" onclick="cancelChanges()">Cancel</button>
-        </div>
-      </div>
+    <div class="main-container">
+        <!-- Projects List -->
+        <div class="projects-list">
+            <div class="projects-header">
+                Projects
+                <div class="header-buttons">
+                    <button class="btn small success" onclick="createNewProject()">New</button>
+                    <button class="btn small" onclick="refreshProjects()">Refresh</button>
+                </div>
 
-      <div class="editor-content" id="editorContent">
-        <div class="empty-state">
-          <h3>Select a project to edit</h3>
-          <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Configuration - Update this to match your Vercel deployment
-    const API_URL = '/api/notion-proxy';
-
-    let allProjects = [];
-    let allMilestones = [];
-    let allWorkflows = [];
-    let currentProject = null;
-    let currentMilestones = [];
-    let hasUnsavedChanges = false;
-    let isNewProject = false;
-
-    // Initialize
-    window.onload = function () {
-      refreshProjects();
-    };
-
-    async function refreshProjects() {
-      try {
-        showMessage('Loading projects...', 'info');
-
-        const [dataResponse, workflowsResponse] = await Promise.all([
-          fetch(API_URL),
-          fetch(`${API_URL}?action=workflows`)
-        ]);
-
-        if (!dataResponse.ok) {
-          const errorText = await dataResponse.text();
-          throw new Error(`Data API failed with ${dataResponse.status}: ${errorText}`);
-        }
-
-        const data = await dataResponse.json();
-
-        let workflows = { workflows: [] };
-        if (workflowsResponse.ok) {
-          workflows = await workflowsResponse.json();
-        } else {
-          const errorText = await workflowsResponse.text();
-          console.warn('Workflows API failed:', workflowsResponse.status, errorText);
-          showMessage('Workflows could not be loaded, continuing without them', 'info');
-        }
-
-        allProjects = data.projects || [];
-        allMilestones = data.milestones || [];
-        allWorkflows = workflows.workflows || [];
-
-        displayProjectsList();
-        showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
-      } catch (error) {
-        console.error('Failed to refresh projects:', error);
-        const errorMsg = `Failed to load projects: ${error.message}`;
-        document.getElementById('projectsList').innerHTML =
-          `<div class="error">${errorMsg}<br><br>Check the browser console for details.</div>`;
-        showMessage(errorMsg, 'error');
-      }
-    }
-
-    function createNewProject() {
-      if (hasUnsavedChanges && !confirm('You have unsaved changes. Continue anyway?')) return;
-
-      currentProject = {
-        id: null,
-        name: 'New Project',
-        instrumentMake: '',
-        instrumentModel: '',
-        status: 'On The Bench',
-        complexity: 3,
-        profitability: 3,
-        dueDate: null,
-        totalEstimatedHour: 0,
-        totalMilestones: 0,
-        completedMilestones: 0,
-        progress: 0
-      };
-
-      currentMilestones = [];
-      isNewProject = true;
-      hasUnsavedChanges = true;
-
-      displayProjectEditor();
-      displayProjectsList();
-      updateSaveButton();
-    }
-
-    function showMessage(message, type = 'info') {
-      let msgEl = document.getElementById('globalMessage');
-      if (!msgEl) {
-        msgEl = document.createElement('div');
-        msgEl.id = 'globalMessage';
-        msgEl.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 10px; border-radius: 4px; z-index: 1000; max-width: 300px;';
-        document.body.appendChild(msgEl);
-      }
-      msgEl.textContent = message;
-      msgEl.className = type;
-
-      if (type === 'success') {
-        setTimeout(() => {
-          if (msgEl.parentNode) msgEl.parentNode.removeChild(msgEl);
-        }, 3000);
-      }
-    }
-
-    function displayProjectsList() {
-      const container = document.getElementById('projectsList');
-      let html = '';
-
-      if (isNewProject && currentProject) {
-        html += `
-          <div class="project-item new-project active">
-            <div class="project-name">${escapeHtml(currentProject.name)} (New)</div>
-            <div class="project-details">Unsaved new project</div>
-          </div>
-        `;
-      }
-
-      if (allProjects.length === 0 && !isNewProject) {
-        container.innerHTML = '<div class="empty-state">No projects found</div>';
-        return;
-      }
-
-      allProjects.forEach(project => {
-        const isActive = !isNewProject && currentProject && currentProject.id === project.id;
-        html += `
-          <div class="project-item ${isActive ? 'active' : ''}" onclick="selectProject('${project.id}')">
-            <div class="project-name">${escapeHtml(project.name)}</div>
-            <div class="project-details">
-              ${escapeHtml(project.instrumentMake)} ${escapeHtml(project.instrumentModel)} • 
-              ${project.totalMilestones || 0} milestones
+        <div class="form-section">
+          <h3 onclick="toggleMeasurements()" style="cursor: pointer; display: flex; align-items: center; gap: 10px;">
+            <span id="measurementsToggle">▶</span>
+            Measurements (Before/After)
+          </h3>
+          <div id="measurementsSection" style="display: none;">
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <h4 style="margin: 0 0 15px 0; color: #666; font-size: 14px;">Before Measurements</h4>
+              </div>
+              <div class="form-group">
+                <label>Neck Relief Before</label>
+                <input type="number" step="0.001" id="neckReliefBefore" 
+                       value="${currentProject.neckReliefBefore || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 1st Fret</label>
+                <input type="number" step="0.001" id="before1stString1stFret" 
+                       value="${currentProject.before1stString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 12th Fret</label>
+                <input type="number" step="0.001" id="before1stString12thFret" 
+                       value="${currentProject.before1stString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 1st Fret</label>
+                <input type="number" step="0.001" id="before6thString1stFret" 
+                       value="${currentProject.before6thString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 12th Fret</label>
+                <input type="number" step="0.001" id="before6thString12thFret" 
+                       value="${currentProject.before6thString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group"></div>
+              
+              <div class="form-group full-width">
+                <h4 style="margin: 20px 0 15px 0; color: #666; font-size: 14px;">After Measurements</h4>
+              </div>
+              <div class="form-group">
+                <label>Neck Relief After</label>
+                <input type="number" step="0.001" id="neckReliefAfter" 
+                       value="${currentProject.neckReliefAfter || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 1st Fret</label>
+                <input type="number" step="0.001" id="after1stString1stFret" 
+                       value="${currentProject.after1stString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 12th Fret</label>
+                <input type="number" step="0.001" id="after1stString12thFret" 
+                       value="${currentProject.after1stString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 1st Fret</label>
+                <input type="number" step="0.001" id="after6thString1stFret" 
+                       value="${currentProject.after6thString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 12th Fret</label>
+                <input type="number" step="0.001" id="after6thString12thFret" 
+                       value="${currentProject.after6thString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
             </div>
           </div>
-        `;
-      });
+        </div>
+            </div>
+            <div id="projectsList">
+                <div class="loading">Loading projects...</div>
+            </div>
+        </div>
 
-      container.innerHTML = html;
-    }
+        <!-- Project Editor -->
+        <div class="project-editor">
+            <div class="editor-header">
+                <h2 id="editorTitle">Select a project</h2>
+                <div>
+                    <button class="btn success" onclick="saveProject()" id="saveBtn" disabled>Save Changes</button>
+                    <button class="btn secondary" onclick="cancelChanges()">Cancel</button>
+                </div>
+            </div>
+            
+            <div class="editor-content" id="editorContent">
+                <div class="empty-state">
+                    <h3>Select a project to edit</h3>
+                    <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    function escapeHtml(text) {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    <script>
+        // Configuration - Update this to match your Vercel deployment
+        const API_URL = '/api/notion-proxy';
+        
+        let allProjects = [];
+        let allMilestones = [];
+        let allWorkflows = [];
+        let currentProject = null;
+        let currentMilestones = [];
+        let hasUnsavedChanges = false;
+        let isNewProject = false;
+        let draggedMilestoneIndex = null;
 
-    async function selectProject(projectId) {
-      if (hasUnsavedChanges && !confirm('You have unsaved changes. Continue anyway?')) return;
+        // Initialize
+        window.onload = function() {
+            refreshProjects();
+        };
 
-      currentProject = allProjects.find(p => p.id === projectId);
-      if (!currentProject) {
-        showMessage('Project not found', 'error');
-        return;
+        async function refreshProjects() {
+            try {
+                showMessage('Loading projects...', 'info');
+                
+                const [dataResponse, workflowsResponse] = await Promise.all([
+                    fetch(API_URL),
+                    fetch(`${API_URL}?action=workflows`)
+                ]);
+                
+                if (!dataResponse.ok) {
+                    const errorText = await dataResponse.text();
+                    throw new Error(`Data API failed with ${dataResponse.status}: ${errorText}`);
+                }
+                
+                const data = await dataResponse.json();
+                
+                // Handle workflows response
+                let workflows = { workflows: [] };
+                if (workflowsResponse.ok) {
+                    workflows = await workflowsResponse.json();
+                    console.log('Workflows loaded:', workflows);
+                } else {
+                    const errorText = await workflowsResponse.text();
+                    console.warn('Workflows API failed:', workflowsResponse.status, errorText);
+                    showMessage('Workflows could not be loaded, continuing without them', 'info');
+                }
+                
+                allProjects = data.projects || [];
+                allMilestones = data.milestones || [];
+                allWorkflows = workflows.workflows || [];
+                
+                console.log('Data loaded:');
+                console.log('- Projects:', allProjects.length);
+                console.log('- Milestones:', allMilestones.length);
+                console.log('- Workflows:', allWorkflows.length);
+                
+                displayProjectsList();
+                showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
+                
+            } catch (error) {
+                console.error('Failed to refresh projects:', error);
+                
+                const errorMsg = `Failed to load projects: ${error.message}`;
+                document.getElementById('projectsList').innerHTML = 
+                    `<div class="error">${errorMsg}<br><br>Check the browser console for details.</div>`;
+                showMessage(errorMsg, 'error');
+            }
+        }
+
+        function createNewProject() {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Continue anyway?')) {
+                    return;
+                }
+            }
+
+            // Create a new project object
+            currentProject = {
+                id: null, // Will be assigned when saved
+                name: 'New Project',
+                instrumentMake: '',
+                instrumentModel: '',
+                status: 'On The Bench',
+                complexity: 3,
+                profitability: 3,
+                dueDate: null,
+                totalEstimatedHour: 0,
+                totalMilestones: 0,
+                completedMilestones: 0,
+                progress: 0
+            };
+
+            currentMilestones = [];
+            isNewProject = true;
+            hasUnsavedChanges = true;
+
+            displayProjectEditor();
+            displayProjectsList(); // Refresh to show new project indicator
+            updateSaveButton();
+        }
+
+        function showMessage(message, type = 'info') {
+            // Create or update a message element
+            let msgEl = document.getElementById('globalMessage');
+            if (!msgEl) {
+                msgEl = document.createElement('div');
+                msgEl.id = 'globalMessage';
+                msgEl.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 10px; border-radius: 4px; z-index: 1000; max-width: 300px;';
+                document.body.appendChild(msgEl);
+            }
+            
+            msgEl.textContent = message;
+            msgEl.className = type;
+            
+            // Auto-hide after 3 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    if (msgEl.parentNode) {
+                        msgEl.parentNode.removeChild(msgEl);
+                    }
+                }, 3000);
+            }
+        }
+
+        function displayProjectsList() {
+            const container = document.getElementById('projectsList');
+            
+            let html = '';
+            
+            // Show new project indicator if we're creating one
+            if (isNewProject && currentProject) {
+                html += `
+                    <div class="project-item new-project active">
+                        <div class="project-name">${escapeHtml(currentProject.name)} (New)</div>
+                        <div class="project-details">Unsaved new project</div>
+                    </div>
+                `;
+            }
+            
+            if (allProjects.length === 0 && !isNewProject) {
+                container.innerHTML = '<div class="empty-state">No projects found</div>';
+                return;
+            }
+            
+            allProjects.forEach(project => {
+                const isActive = !isNewProject && currentProject && currentProject.id === project.id;
+                html += `
+                    <div class="project-item ${isActive ? 'active' : ''}" onclick="selectProject('${project.id}')">
+                        <div class="project-name">${escapeHtml(project.name)}</div>
+                        <div class="project-details">
+                            ${escapeHtml(project.instrumentMake)} ${escapeHtml(project.instrumentModel)} • 
+                            ${project.totalMilestones || 0} milestones
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function selectProject(projectId) {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Continue anyway?')) {
+                    return;
+                }
+            }
+            
+            currentProject = allProjects.find(p => p.id === projectId);
+            if (!currentProject) {
+                showMessage('Project not found', 'error');
+                return;
+            }
+            
+            isNewProject = false;
+            
+            // Load milestones for this project
+            loadProjectMilestones(projectId);
+            
+            displayProjectEditor();
+            displayProjectsList(); // Refresh to show active state
+            
+            hasUnsavedChanges = false;
+            updateSaveButton();
+        }
+
+        function toggleMeasurements() {
+      const section = document.getElementById('measurementsSection');
+      const toggle = document.getElementById('measurementsToggle');
+      
+      if (section.style.display === 'none') {
+        section.style.display = 'block';
+        toggle.textContent = '▼';
+      } else {
+        section.style.display = 'none';
+        toggle.textContent = '▶';
       }
-
-      isNewProject = false;
-      loadProjectMilestones(projectId);
-
-      displayProjectEditor();
-      displayProjectsList();
-
-      hasUnsavedChanges = false;
-      updateSaveButton();
     }
 
     function loadProjectMilestones(projectId) {
-      currentMilestones = allMilestones
-        .filter(m => m.projectId === projectId)
-        .sort((a, b) => a.order - b.order);
-    }
-
-    function displayProjectEditor() {
-      if (!currentProject) return;
-
-      document.getElementById('editorTitle').textContent = isNewProject ? 'New Project' : currentProject.name;
-
-      let content = '';
-      if (isNewProject) {
-        content += `
-          <div class="new-project-indicator">
-            <strong>Creating New Project</strong><br>
-            Fill in the details below and click "Save Changes" to create this project in Notion.
-          </div>
-        `;
-      }
-
-      content += `
-        <div class="form-section">
-          <h3>Project Details</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Project Name</label>
-              <input type="text" id="projectName" value="${escapeHtml(currentProject.name || '')}" onchange="markChanged()">
-            </div>
-            <div class="form-group">
-              <label>Status</label>
-              <select id="projectStatus" onchange="markChanged()">
-                <option value="On The Bench" ${currentProject.status === 'On The Bench' ? 'selected' : ''}>On The Bench</option>
-                <option value="Waiting" ${currentProject.status === 'Waiting' ? 'selected' : ''}>Waiting</option>
-                <option value="Done" ${currentProject.status === 'Done' ? 'selected' : ''}>Done</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Instrument Make</label>
-              <input type="text" id="instrumentMake" value="${escapeHtml(currentProject.instrumentMake || '')}" onchange="markChanged()">
-            </div>
-            <div class="form-group">
-              <label>Instrument Model</label>
-              <input type="text" id="instrumentModel" value="${escapeHtml(currentProject.instrumentModel || '')}" onchange="markChanged()">
-            </div>
-            <div class="form-group">
-              <label>Complexity (1-5)</label>
-              <select id="complexity" onchange="markChanged()">
-                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.complexity || 3) === n ? 'selected' : ''}>${n} - ${['Simple','Easy','Moderate','Complex','Very Complex'][n-1]}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Profitability (1-5)</label>
-              <select id="profitability" onchange="markChanged()">
-                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.profitability || 3) === n ? 'selected' : ''}>${n} - ${['Low','Below Average','Standard','Good','Excellent'][n-1]}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Due Date</label>
-              <input type="date" id="dueDate" value="${currentProject.dueDate || ''}" onchange="markChanged()">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Milestones</h3>
-          <div class="tabs">
-            <button class="tab active" onclick="switchMilestoneTab('individual')">Individual Entry</button>
-            <button class="tab" onclick="switchMilestoneTab('workflow')">Workflow Templates</button>
-            <button class="tab" onclick="switchMilestoneTab('autosplit')">Auto-Split Time</button>
-          </div>
-
-          <div class="tab-content active" id="individual-tab">
-            <div class="milestone-list" id="milestoneList">
-              ${renderMilestoneList()}
-            </div>
-            <button class="btn" onclick="addMilestone()">Add Milestone</button>
-            <button class="btn secondary" onclick="addMultipleMilestones()">Add 5 More</button>
-          </div>
-
-          <div class="tab-content" id="workflow-tab">
-            <div class="workflow-selector">
-              <label>Select Workflow Template:</label>
-              <select id="workflowSelect" onchange="previewWorkflow()">
-                <option value="">Choose a workflow...</option>
-                ${allWorkflows.map(w => `<option value="${w.id}">${escapeHtml(w.name)}</option>`).join('')}
-              </select>
-            </div>
-            <div id="workflowPreview"></div>
-            <button class="btn" onclick="applyWorkflow()">Apply Workflow</button>
-          </div>
-
-          <div class="tab-content" id="autosplit-tab">
-            <div class="auto-split-controls">
-              <div class="form-group">
-                <label>Total Hours</label>
-                <input type="number" id="splitTotalHours" step="0.25" min="0.25" value="4" onchange="previewAutoSplit()">
-              </div>
-              <div class="form-group">
-                <label>Number of Sessions</label>
-                <input type="number" id="splitSessions" min="2" max="10" value="4" onchange="previewAutoSplit()">
-              </div>
-              <div class="form-group">
-                <label>Base Name</label>
-                <input type="text" id="splitBaseName" value="Work Session" onchange="previewAutoSplit()">
-              </div>
-            </div>
-            <div id="autoSplitPreview"></div>
-            <button class="btn" onclick="applyAutoSplit()">Apply Auto-Split</button>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('editorContent').innerHTML = content;
-
-      // Make sure DnD is active on FIRST render
-      setupDragAndDrop();
-
-      // Initialize auto-split preview
-      previewAutoSplit();
-    }
-
-    function renderMilestoneList() {
-      if (currentMilestones.length === 0) {
-        return '<div class="empty-state">No milestones yet. Add some below.</div>';
-      }
-
-      return currentMilestones.map((milestone, index) => `
-        <div class="milestone-row ${ (milestone.status || 'Not Started').toLowerCase().replace(' ', '-') }"
-             draggable="true"
-             data-milestone-index="${index}">
-          <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
-          <div class="milestone-order">${index + 1}</div>
-          <div class="milestone-name">
-            <input type="text" value="${escapeHtml(milestone.name || '')}"
-                   onchange="updateMilestone(${index}, 'name', this.value)">
-          </div>
-          <div class="milestone-hours">
-            <input type="number" step="0.25" min="0.25"
-                   value="${milestone.estimatedHours || 1}"
-                   onchange="updateMilestone(${index}, 'estimatedHours', this.value)">
-          </div>
-          <div class="milestone-status">
-            <select onchange="updateMilestone(${index}, 'status', this.value)">
-              <option value="Not Started" ${milestone.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
-              <option value="Ready" ${milestone.status === 'Ready' ? 'selected' : ''}>Ready</option>
-              <option value="Completed" ${milestone.status === 'Completed' ? 'selected' : ''}>Completed</option>
-            </select>
-          </div>
-          <div class="milestone-actions">
-            <button class="remove-milestone" onclick="removeMilestone(${index})">×</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function switchMilestoneTab(tabName) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      document.querySelector(`[onclick="switchMilestoneTab('${tabName}')"]`).classList.add('active');
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.getElementById(`${tabName}-tab`).classList.add('active');
-    }
-
-    function addMilestone() {
-      const newMilestone = {
-        id: null,
-        name: `New Milestone ${currentMilestones.length + 1}`,
-        estimatedHours: 1,
-        order: currentMilestones.length + 1,
-        status: 'Not Started'
-      };
-      currentMilestones.push(newMilestone);
-      refreshMilestoneList();
-      markChanged();
-    }
-
-    // Batched add (avoids 5 re-renders)
-    function addMultipleMilestones() {
-      const start = currentMilestones.length;
-      for (let i = 0; i < 5; i++) {
-        currentMilestones.push({
-          id: null,
-          name: `New Milestone ${start + i + 1}`,
-          estimatedHours: 1,
-          order: start + i + 1,
-          status: 'Not Started'
-        });
-      }
-      refreshMilestoneList();
-      markChanged();
-    }
-
-    function removeMilestone(index) {
-      currentMilestones.splice(index, 1);
-      currentMilestones.forEach((m, i) => m.order = i + 1);
-      refreshMilestoneList();
-      markChanged();
-    }
-
-    function updateMilestone(index, field, value) {
-      if (field === 'estimatedHours') value = parseFloat(value) || 1;
-      currentMilestones[index][field] = value;
-      markChanged();
-    }
-
-    function refreshMilestoneList() {
-      const container = document.getElementById('milestoneList');
-      if (container) {
-        container.innerHTML = renderMilestoneList();
-        setupDragAndDrop();
-      }
-    }
-
-    // ========= Drag & Drop Handlers =========
-    let dragSrcIndex = null;
-
-    function handleDragStart(e) {
-      dragSrcIndex = parseInt(this.dataset.milestoneIndex, 10);
-      this.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(dragSrcIndex));
-    }
-
-    function handleDragOver(e) {
-      e.preventDefault(); // allow drop
-      e.dataTransfer.dropEffect = 'move';
-    }
-
-    function handleDragEnter() {
-      this.classList.add('over');
-    }
-
-    function handleDragLeave() {
-      this.classList.remove('over');
-    }
-
-    function handleDrop(e) {
-      e.preventDefault();
-      this.classList.remove('over');
-
-      const from = dragSrcIndex ?? parseInt(e.dataTransfer.getData('text/plain'), 10);
-      const to = parseInt(this.dataset.milestoneIndex, 10);
-
-      if (Number.isNaN(from) || Number.isNaN(to) || from === to) return;
-
-      const [moved] = currentMilestones.splice(from, 1);
-      currentMilestones.splice(to, 0, moved);
-      currentMilestones.forEach((m, i) => (m.order = i + 1));
-
-      refreshMilestoneList();
-      markChanged();
-    }
-
-    function handleDragEnd() {
-      this.classList.remove('dragging');
-      dragSrcIndex = null;
-      document.querySelectorAll('.milestone-row').forEach(el => el.classList.remove('over'));
-    }
-
-    function setupDragAndDrop() {
-      const rows = document.querySelectorAll('.milestone-row[draggable="true"]');
-      rows.forEach(row => {
-        row.addEventListener('dragstart', handleDragStart);
-        row.addEventListener('dragover', handleDragOver);
-        row.addEventListener('drop', handleDrop);
-        row.addEventListener('dragend', handleDragEnd);
-        row.addEventListener('dragenter', handleDragEnter);
-        row.addEventListener('dragleave', handleDragLeave);
-
-        // Make dragging easier if user grabs anywhere on row (not just handle)
-        row.addEventListener('mousedown', (e) => {
-          const isHandle = e.target.classList.contains('drag-handle');
-          if (!isHandle) return; // restrict to handle for precision
-        });
-      });
-    }
-    // =======================================
-
-    function previewWorkflow() {
-      const workflowId = document.getElementById('workflowSelect').value;
-      const preview = document.getElementById('workflowPreview');
-      if (!workflowId) { preview.innerHTML = ''; return; }
-
-      const workflow = allWorkflows.find(w => w.id === workflowId);
-      if (!workflow) return;
-
-      try {
-        const milestones = JSON.parse(workflow.data);
-        let html = '<div class="workflow-preview"><h4>Preview:</h4>';
-        milestones.forEach((ms, i) => {
-          html += `
-            <div class="milestone-row">
-              <div class="milestone-order">${i + 1}</div>
-              <div class="milestone-name">${escapeHtml(ms.name)}</div>
-              <div class="milestone-hours">${ms.hours || ms.estimatedHours}h</div>
-            </div>
-          `;
-        });
-        html += '</div>';
-        preview.innerHTML = html;
-      } catch {
-        preview.innerHTML = '<div class="error">Invalid workflow data</div>';
-      }
-    }
-
-    function applyWorkflow() {
-      const workflowId = document.getElementById('workflowSelect').value;
-      if (!workflowId) return;
-      const workflow = allWorkflows.find(w => w.id === workflowId);
-      if (!workflow) return;
-
-      try {
-        const template = JSON.parse(workflow.data);
-        currentMilestones = template.map((ms, i) => ({
-          id: null,
-          name: ms.name,
-          estimatedHours: ms.hours || ms.estimatedHours || 1,
-          order: i + 1,
-          status: i === 0 ? 'Ready' : 'Not Started'
-        }));
-        refreshMilestoneList();
-        switchMilestoneTab('individual');
-        markChanged();
-      } catch {
-        showMessage('Invalid workflow data', 'error');
-      }
-    }
-
-    function previewAutoSplit() {
-      const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
-      const sessions   = parseInt(document.getElementById('splitSessions').value) || 1;
-      const baseName   = document.getElementById('splitBaseName').value || 'Work Session';
-      const preview    = document.getElementById('autoSplitPreview');
-
-      if (totalHours === 0) { preview.innerHTML = ''; return; }
-
-      const hoursPerSession = totalHours / sessions;
-      let html = '<div class="workflow-preview"><h4>Preview:</h4>';
-
-      for (let i = 1; i <= sessions; i++) {
-        const hours = Math.round(hoursPerSession * 4) / 4;
-        html += `
-          <div class="milestone-row">
-            <div class="milestone-order">${i}</div>
-            <div class="milestone-name">${escapeHtml(baseName)} ${i}</div>
-            <div class="milestone-hours">${hours}h</div>
-          </div>
-        `;
-      }
-      html += '</div>';
-      preview.innerHTML = html;
-    }
-
-    function applyAutoSplit() {
-      const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
-      const sessions   = parseInt(document.getElementById('splitSessions').value) || 1;
-      const baseName   = document.getElementById('splitBaseName').value || 'Work Session';
-      if (totalHours === 0) return;
-
-      const hoursPerSession = totalHours / sessions;
-      currentMilestones = [];
-      for (let i = 1; i <= sessions; i++) {
-        const hours = Math.round(hoursPerSession * 4) / 4;
-        currentMilestones.push({
-          id: null,
-          name: `${baseName} ${i}`,
-          estimatedHours: hours,
-          order: i,
-          status: i === 1 ? 'Ready' : 'Not Started'
-        });
-      }
-      refreshMilestoneList();
-      switchMilestoneTab('individual');
-      markChanged();
-    }
-
-    function markChanged() {
-      hasUnsavedChanges = true;
-      updateSaveButton();
-    }
-
-    function updateSaveButton() {
-      const saveBtn = document.getElementById('saveBtn');
-      if (!saveBtn) return;
-      saveBtn.disabled = !hasUnsavedChanges;
-      saveBtn.textContent = hasUnsavedChanges ? 'Save Changes *' : 'Saved';
-    }
-
-    async function saveProject() {
-      if (!currentProject) return;
-
-      try {
-        document.getElementById('saveBtn').textContent = 'Saving...';
-
-        const projectData = {
-          name: document.getElementById('projectName').value,
-          status: document.getElementById('projectStatus').value,
-          instrumentMake: document.getElementById('instrumentMake').value,
-          instrumentModel: document.getElementById('instrumentModel').value,
-          complexity: parseInt(document.getElementById('complexity').value),
-          profitability: parseInt(document.getElementById('profitability').value),
-          dueDate: document.getElementById('dueDate').value || null
-        };
-
-        let projectResult;
-
-        if (isNewProject) {
-          const createResponse = await fetch(`${API_URL}?action=create-project`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(projectData)
-          });
-          if (!createResponse.ok) {
-            const errorText = await createResponse.text();
-            throw new Error(`Failed to create project: ${errorText}`);
-          }
-          projectResult = await createResponse.json();
-          if (projectResult.success && projectResult.project) {
-            currentProject.id = projectResult.project.id;
-            isNewProject = false;
-            allProjects.push(projectResult.project);
-            showMessage('Project created successfully', 'success');
-          } else {
-            throw new Error('Failed to create project: Invalid response');
-          }
-        } else {
-          projectData.projectId = currentProject.id;
-          const updateResponse = await fetch(`${API_URL}?action=update-project`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(projectData)
-          });
-          if (!updateResponse.ok) {
-            const errorText = await updateResponse.text();
-            throw new Error(`Failed to update project: ${errorText}`);
-          }
-          projectResult = await updateResponse.json();
-          showMessage('Project updated successfully', 'success');
+            // Filter milestones for this project from already loaded data
+            currentMilestones = allMilestones
+                .filter(m => m.projectId === projectId)
+                .sort((a, b) => a.order - b.order);
         }
 
-        if (currentMilestones.length > 0) {
-          const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId: currentProject.id,
-              milestones: currentMilestones
-            })
-          });
-          if (!milestoneResponse.ok) {
-            const errorText = await milestoneResponse.text();
-            throw new Error(`Failed to save milestones: ${errorText}`);
-          }
-          await milestoneResponse.json();
+        function displayProjectEditor() {
+            if (!currentProject) return;
+            
+            document.getElementById('editorTitle').textContent = isNewProject ? 'New Project' : currentProject.name;
+            
+            let content = '';
+            
+            if (isNewProject) {
+                content += `
+                    <div class="new-project-indicator">
+                        <strong>Creating New Project</strong><br>
+                        Fill in the details below and click "Save Changes" to create this project in Notion.
+                    </div>
+                `;
+            }
+            
+            content += `
+                <div class="form-section">
+                    <h3>Project Details</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Project Name</label>
+                            <input type="text" id="projectName" value="${escapeHtml(currentProject.name || '')}" onchange="markChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="projectStatus" onchange="markChanged()">
+                                <option value="On The Bench" ${currentProject.status === 'On The Bench' ? 'selected' : ''}>On The Bench</option>
+                                <option value="Waiting" ${currentProject.status === 'Waiting' ? 'selected' : ''}>Waiting</option>
+                                <option value="Done" ${currentProject.status === 'Done' ? 'selected' : ''}>Done</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Instrument Make</label>
+                            <input type="text" id="instrumentMake" value="${escapeHtml(currentProject.instrumentMake || '')}" onchange="markChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label>Instrument Model</label>
+                            <input type="text" id="instrumentModel" value="${escapeHtml(currentProject.instrumentModel || '')}" onchange="markChanged()">
+                        </div>
+                        <div class="form-group">
+                            <label>Complexity (1-5)</label>
+                            <select id="complexity" onchange="markChanged()">
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.complexity || 3) === n ? 'selected' : ''}>${n} - ${['Simple','Easy','Moderate','Complex','Very Complex'][n-1]}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Profitability (1-5)</label>
+                            <select id="profitability" onchange="markChanged()">
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.profitability || 3) === n ? 'selected' : ''}>${n} - ${['Low','Below Average','Standard','Good','Excellent'][n-1]}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="date" id="dueDate" value="${currentProject.dueDate || ''}" onchange="markChanged()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Milestones</h3>
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchMilestoneTab('individual')">Individual Entry</button>
+                        <button class="tab" onclick="switchMilestoneTab('workflow')">Workflow Templates</button>
+                        <button class="tab" onclick="switchMilestoneTab('autosplit')">Auto-Split Time</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="individual-tab">
+                        <div class="milestone-list" id="milestoneList">
+                            ${renderMilestoneList()}
+                        </div>
+                        <button class="btn" onclick="addMilestone()">Add Milestone</button>
+                        <button class="btn secondary" onclick="addMultipleMilestones()">Add 5 More</button>
+                    </div>
+                    
+                    <div class="tab-content" id="workflow-tab">
+                        <div class="workflow-selector">
+                            <label>Select Workflow Template:</label>
+                            <select id="workflowSelect" onchange="previewWorkflow()">
+                                <option value="">Choose a workflow...</option>
+                                ${allWorkflows.map(w => `<option value="${w.id}">${escapeHtml(w.name)}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div id="workflowPreview"></div>
+                        <button class="btn" onclick="applyWorkflow()">Apply Workflow</button>
+                    </div>
+                    
+                    <div class="tab-content" id="autosplit-tab">
+                        <div class="auto-split-controls">
+                            <div class="form-group">
+                                <label>Total Hours</label>
+                                <input type="number" id="splitTotalHours" step="0.25" min="0.25" value="4" onchange="previewAutoSplit()">
+                            </div>
+                            <div class="form-group">
+                                <label>Number of Sessions</label>
+                                <input type="number" id="splitSessions" min="2" max="10" value="4" onchange="previewAutoSplit()">
+                            </div>
+                            <div class="form-group">
+                                <label>Base Name</label>
+                                <input type="text" id="splitBaseName" value="Work Session" onchange="previewAutoSplit()">
+                            </div>
+                        </div>
+                        <div id="autoSplitPreview"></div>
+                        <button class="btn" onclick="applyAutoSplit()">Apply Auto-Split</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('editorContent').innerHTML = content;
+            
+            // Initialize auto-split preview
+            previewAutoSplit();
         }
 
-        hasUnsavedChanges = false;
-        updateSaveButton();
+        function renderMilestoneList() {
+            if (currentMilestones.length === 0) {
+                return '<div class="empty-state">No milestones yet. Add some below.</div>';
+            }
+            
+            return currentMilestones.map((milestone, index) => `
+                <div class="milestone-row ${milestone.status?.toLowerCase().replace(' ', '-') || 'not-started'}" 
+                     draggable="true" 
+                     data-milestone-index="${index}">
+                    <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
+                    <div class="milestone-order">${index + 1}</div>
+                    <div class="milestone-name">
+                        <input type="text" value="${escapeHtml(milestone.name || '')}" 
+                               onchange="updateMilestone(${index}, 'name', this.value)">
+                    </div>
+                    <div class="milestone-hours">
+                        <input type="number" step="0.25" min="0.25" 
+                               value="${milestone.estimatedHours || 1}" 
+                               onchange="updateMilestone(${index}, 'estimatedHours', this.value)">
+                    </div>
+                    <div class="milestone-status">
+                        <select onchange="updateMilestone(${index}, 'status', this.value)">
+                            <option value="Not Started" ${milestone.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
+                            <option value="Ready" ${milestone.status === 'Ready' ? 'selected' : ''}>Ready</option>
+                            <option value="Completed" ${milestone.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="milestone-actions">
+                        <button class="remove-milestone" onclick="removeMilestone(${index})">×</button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-        document.getElementById('saveBtn').innerHTML = 'Saved ✓ <span class="save-indicator">Changes saved</span>';
-        setTimeout(() => updateSaveButton(), 2000);
+        function switchMilestoneTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[onclick="switchMilestoneTab('${tabName}')"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
 
-        document.getElementById('editorTitle').textContent = projectData.name;
-        await refreshProjects();
+        function addMilestone() {
+            const newMilestone = {
+                id: null, // Will be created when saved
+                name: `New Milestone ${currentMilestones.length + 1}`,
+                estimatedHours: 1,
+                order: currentMilestones.length + 1,
+                status: 'Not Started'
+            };
+            
+            currentMilestones.push(newMilestone);
+            refreshMilestoneList();
+            markChanged();
+        }
 
-      } catch (error) {
-        console.error('Save failed:', error);
-        showMessage('Failed to save changes: ' + error.message, 'error');
-        document.getElementById('saveBtn').textContent = 'Save Changes *';
-      }
-    }
+        function addMultipleMilestones() {
+            for (let i = 0; i < 5; i++) {
+                addMilestone();
+            }
+        }
 
-    function cancelChanges() {
-      if (hasUnsavedChanges && !confirm('Discard unsaved changes?')) return;
+        function removeMilestone(index) {
+            currentMilestones.splice(index, 1);
+            // Renumber remaining milestones
+            currentMilestones.forEach((milestone, idx) => {
+                milestone.order = idx + 1;
+            });
+            refreshMilestoneList();
+            markChanged();
+        }
 
-      if (isNewProject) {
-        currentProject = null;
-        currentMilestones = [];
-        isNewProject = false;
+        function updateMilestone(index, field, value) {
+            if (field === 'estimatedHours') {
+                value = parseFloat(value) || 1;
+            }
+            
+            currentMilestones[index][field] = value;
+            markChanged();
+        }
 
-        document.getElementById('editorContent').innerHTML = `
-          <div class="empty-state">
-            <h3>Select a project to edit</h3>
-            <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
-          </div>
-        `;
-        document.getElementById('editorTitle').textContent = 'Select a project';
-        displayProjectsList();
-      } else if (currentProject) {
-        selectProject(currentProject.id);
-      }
+        function refreshMilestoneList() {
+            const container = document.getElementById('milestoneList');
+            if (container) {
+                container.innerHTML = renderMilestoneList();
+                setupDragAndDrop();
+            }
+        }
 
-      hasUnsavedChanges = false;
-      updateSaveButton();
-    }
-  </script>
+        function setupDragAndDrop() {
+            const milestoneRows = document.querySelectorAll('.milestone-row[draggable="true"]');
+            
+            milestoneRows.forEach(row => {
+                row.addEventListener('dragstart', handleDragStart);
+                row.addEventListener('dragover', handleDragOver);
+                row.addEventListener('drop', handleDrop);
+                row.addEventListener('dragend', handleDragEnd);
+                row.addEventListener('dragenter', handleDragEnter);
+                row.addEventListener('dragleave', handleDragLeave);
+            });
+        }
+
+        function previewWorkflow() {
+            const workflowId = document.getElementById('workflowSelect').value;
+            const preview = document.getElementById('workflowPreview');
+            
+            if (!workflowId) {
+                preview.innerHTML = '';
+                return;
+            }
+            
+            const workflow = allWorkflows.find(w => w.id === workflowId);
+            if (!workflow) return;
+            
+            try {
+                const milestones = JSON.parse(workflow.data);
+                let html = '<div class="workflow-preview"><h4>Preview:</h4>';
+                milestones.forEach((milestone, index) => {
+                    html += `
+                        <div class="milestone-row">
+                            <div class="milestone-order">${index + 1}</div>
+                            <div class="milestone-name">${escapeHtml(milestone.name)}</div>
+                            <div class="milestone-hours">${milestone.hours || milestone.estimatedHours}h</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                preview.innerHTML = html;
+            } catch (e) {
+                preview.innerHTML = '<div class="error">Invalid workflow data</div>';
+            }
+        }
+
+        function applyWorkflow() {
+            const workflowId = document.getElementById('workflowSelect').value;
+            if (!workflowId) return;
+            
+            const workflow = allWorkflows.find(w => w.id === workflowId);
+            if (!workflow) return;
+            
+            try {
+                const workflowMilestones = JSON.parse(workflow.data);
+                currentMilestones = workflowMilestones.map((milestone, index) => ({
+                    id: null,
+                    name: milestone.name,
+                    estimatedHours: milestone.hours || milestone.estimatedHours || 1,
+                    order: index + 1,
+                    status: index === 0 ? 'Ready' : 'Not Started'
+                }));
+                
+                refreshMilestoneList();
+                switchMilestoneTab('individual');
+                markChanged();
+            } catch (e) {
+                showMessage('Invalid workflow data', 'error');
+            }
+        }
+
+        function previewAutoSplit() {
+            const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
+            const sessions = parseInt(document.getElementById('splitSessions').value) || 1;
+            const baseName = document.getElementById('splitBaseName').value || 'Work Session';
+            const preview = document.getElementById('autoSplitPreview');
+            
+            if (totalHours === 0) {
+                preview.innerHTML = '';
+                return;
+            }
+            
+            const hoursPerSession = totalHours / sessions;
+            let html = '<div class="workflow-preview"><h4>Preview:</h4>';
+            
+            for (let i = 1; i <= sessions; i++) {
+                const hours = Math.round(hoursPerSession * 4) / 4; // Round to nearest 0.25
+                html += `
+                    <div class="milestone-row">
+                        <div class="milestone-order">${i}</div>
+                        <div class="milestone-name">${escapeHtml(baseName)} ${i}</div>
+                        <div class="milestone-hours">${hours}h</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            preview.innerHTML = html;
+        }
+
+        function applyAutoSplit() {
+            const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
+            const sessions = parseInt(document.getElementById('splitSessions').value) || 1;
+            const baseName = document.getElementById('splitBaseName').value || 'Work Session';
+            
+            if (totalHours === 0) return;
+            
+            const hoursPerSession = totalHours / sessions;
+            currentMilestones = [];
+            
+            for (let i = 1; i <= sessions; i++) {
+                const hours = Math.round(hoursPerSession * 4) / 4;
+                currentMilestones.push({
+                    id: null,
+                    name: `${baseName} ${i}`,
+                    estimatedHours: hours,
+                    order: i,
+                    status: i === 1 ? 'Ready' : 'Not Started'
+                });
+            }
+            
+            refreshMilestoneList();
+            switchMilestoneTab('individual');
+            markChanged();
+        }
+
+        function markChanged() {
+            hasUnsavedChanges = true;
+            updateSaveButton();
+        }
+
+        function updateSaveButton() {
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn) {
+                saveBtn.disabled = !hasUnsavedChanges;
+                saveBtn.textContent = hasUnsavedChanges ? 'Save Changes *' : 'Saved';
+            }
+        }
+
+        async function saveProject() {
+            if (!currentProject) return;
+            
+            try {
+                document.getElementById('saveBtn').textContent = 'Saving...';
+                
+                // Collect project data
+                const projectData = {
+                    name: document.getElementById('projectName').value,
+                    status: document.getElementById('projectStatus').value,
+                    instrumentMake: document.getElementById('instrumentMake').value,
+                    instrumentModel: document.getElementById('instrumentModel').value,
+                    complexity: parseInt(document.getElementById('complexity').value),
+                    profitability: parseInt(document.getElementById('profitability').value),
+                    dueDate: document.getElementById('dueDate').value || null
+                };
+                
+                let projectResult;
+                
+                if (isNewProject) {
+                    // Create new project
+                    const createResponse = await fetch(`${API_URL}?action=create-project`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(projectData)
+                    });
+                    
+                    if (!createResponse.ok) {
+                        const errorText = await createResponse.text();
+                        throw new Error(`Failed to create project: ${errorText}`);
+                    }
+                    
+                    projectResult = await createResponse.json();
+                    
+                    if (projectResult.success && projectResult.project) {
+                        // Update current project with the new ID
+                        currentProject.id = projectResult.project.id;
+                        isNewProject = false;
+                        
+                        // Add to our local projects list
+                        allProjects.push(projectResult.project);
+                        
+                        showMessage('Project created successfully', 'success');
+                    } else {
+                        throw new Error('Failed to create project: Invalid response');
+                    }
+                } else {
+                    // Update existing project
+                    projectData.projectId = currentProject.id;
+                    
+                    const updateResponse = await fetch(`${API_URL}?action=update-project`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(projectData)
+                    });
+                    
+                    if (!updateResponse.ok) {
+                        const errorText = await updateResponse.text();
+                        throw new Error(`Failed to update project: ${errorText}`);
+                    }
+                    
+                    projectResult = await updateResponse.json();
+                    showMessage('Project updated successfully', 'success');
+                }
+                
+                // Save milestones if any exist
+                if (currentMilestones.length > 0) {
+                    const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            projectId: currentProject.id,
+                            milestones: currentMilestones
+                        })
+                    });
+                    
+                    if (!milestoneResponse.ok) {
+                        const errorText = await milestoneResponse.text();
+                        throw new Error(`Failed to save milestones: ${errorText}`);
+                    }
+                    
+                    const milestoneResult = await milestoneResponse.json();
+                    console.log('Milestones saved:', milestoneResult);
+                }
+                
+                hasUnsavedChanges = false;
+                updateSaveButton();
+                
+                // Show success indicator
+                document.getElementById('saveBtn').innerHTML = 'Saved ✓ <span class="save-indicator">Changes saved</span>';
+                setTimeout(() => {
+                    updateSaveButton();
+                }, 2000);
+                
+                // Update the project name in the header if it changed
+                document.getElementById('editorTitle').textContent = projectData.name;
+                
+                // Refresh the projects list to show updated data
+                await refreshProjects();
+                
+            } catch (error) {
+                console.error('Save failed:', error);
+                showMessage('Failed to save changes: ' + error.message, 'error');
+                document.getElementById('saveBtn').textContent = 'Save Changes *';
+            }
+        }
+
+        function cancelChanges() {
+            if (hasUnsavedChanges) {
+                if (!confirm('Discard unsaved changes?')) {
+                    return;
+                }
+            }
+            
+            if (isNewProject) {
+                // Clear the new project
+                currentProject = null;
+                currentMilestones = [];
+                isNewProject = false;
+                
+                document.getElementById('editorContent').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Select a project to edit</h3>
+                        <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
+                    </div>
+                `;
+                document.getElementById('editorTitle').textContent = 'Select a project';
+                
+                displayProjectsList();
+            } else if (currentProject) {
+                selectProject(currentProject.id); // Reload fresh data
+            }
+            
+            hasUnsavedChanges = false;
+            updateSaveButton();
+        }
+    </script>
 </body>
 </html>
