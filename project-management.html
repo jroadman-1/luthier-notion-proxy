@@ -764,6 +764,10 @@
             `;
             
             document.getElementById('editorContent').innerHTML = content;
+
+           
+            setupDragAndDrop();
+
             
             // Initialize auto-split preview
             previewAutoSplit();
@@ -872,6 +876,68 @@
                 row.addEventListener('dragleave', handleDragLeave);
             });
         }
+
+let dragSrcIndex = null;
+
+function handleDragStart(e) {
+  dragSrcIndex = parseInt(this.dataset.milestoneIndex, 10);
+  this.classList.add('dragging');
+  // Required for Firefox
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', String(dragSrcIndex));
+}
+
+function handleDragOver(e) {
+  // Needed to allow a drop
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDragEnter() {
+  this.classList.add('over');
+}
+
+function handleDragLeave() {
+  this.classList.remove('over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  this.classList.remove('over');
+
+  // From index (source)
+  const from = dragSrcIndex ?? parseInt(e.dataTransfer.getData('text/plain'), 10);
+  // To index (target)
+  const to = parseInt(this.dataset.milestoneIndex, 10);
+
+  if (Number.isNaN(from) || Number.isNaN(to) || from === to) {
+    return;
+  }
+
+  // Reorder the array
+  const [moved] = currentMilestones.splice(from, 1);
+  currentMilestones.splice(to, 0, moved);
+
+  // Renumber orders
+  currentMilestones.forEach((m, i) => (m.order = i + 1));
+
+  // Re-render and reattach listeners
+  refreshMilestoneList();
+  markChanged();
+}
+
+function handleDragEnd() {
+  this.classList.remove('dragging');
+  dragSrcIndex = null;
+  document.querySelectorAll('.milestone-row').forEach(el => el.classList.remove('over'));
+}
+
+
+
+
+
+
+        
 
         function previewWorkflow() {
             const workflowId = document.getElementById('workflowSelect').value;
