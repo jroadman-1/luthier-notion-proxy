@@ -506,7 +506,7 @@
       }
 
       return currentMilestones.map((milestone, index) => `
-        <div class="milestone-row ${ (milestone.status || 'Not Started').toLowerCase().replace(' ', '-') }"
+        <div class="milestone-row ${(milestone.status || 'Not Started').toLowerCase().replace(' ', '-')}"
              draggable="true"
              data-milestone-index="${index}">
           <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
