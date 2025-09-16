@@ -22,20 +22,6 @@
             margin-bottom: 20px;
         }
         
-        .debug-panel {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 4px;
-            padding: 10px;
-            margin-bottom: 20px;
-            font-family: monospace;
-            font-size: 12px;
-        }
-        
-        .debug-panel.hidden {
-            display: none;
-        }
-        
         .main-container {
             display: grid;
             grid-template-columns: 300px 1fr;
@@ -57,6 +43,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 5px;
         }
         
         .project-item {
@@ -73,6 +66,12 @@
         .project-item.active {
             background: #e3f2fd;
             border-left: 4px solid #2196f3;
+        }
+        
+        .project-item.new-project {
+            background: #f0f8ff;
+            border-left: 4px solid #4caf50;
+            font-style: italic;
         }
         
         .project-name {
@@ -358,22 +357,21 @@
             border-radius: 4px;
             margin: 10px 0;
         }
+
+        .new-project-indicator {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4caf50;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🎸 Project Management</h1>
         <p>Manage projects and milestones</p>
-        <button class="btn small" onclick="toggleDebug()">Toggle Debug</button>
-    </div>
-
-    <div class="debug-panel hidden" id="debugPanel">
-        <strong>Debug Info:</strong><br>
-        API URL: <span id="debugApiUrl"></span><br>
-        Last Request: <span id="debugLastRequest">None</span><br>
-        Last Response: <span id="debugLastResponse">None</span><br>
-        Projects Count: <span id="debugProjectCount">0</span><br>
-        Milestones Count: <span id="debugMilestoneCount">0</span><br>
     </div>
 
     <div class="main-container">
@@ -381,7 +379,10 @@
         <div class="projects-list">
             <div class="projects-header">
                 Projects
-                <button class="btn small" onclick="refreshProjects()">Refresh</button>
+                <div class="header-buttons">
+                    <button class="btn small success" onclick="createNewProject()">New</button>
+                    <button class="btn small" onclick="refreshProjects()">Refresh</button>
+                </div>
             </div>
             <div id="projectsList">
                 <div class="loading">Loading projects...</div>
@@ -401,7 +402,7 @@
             <div class="editor-content" id="editorContent">
                 <div class="empty-state">
                     <h3>Select a project to edit</h3>
-                    <p>Click on a project from the list to view and edit its details and milestones.</p>
+                    <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
                 </div>
             </div>
         </div>
@@ -417,84 +418,15 @@
         let currentProject = null;
         let currentMilestones = [];
         let hasUnsavedChanges = false;
-        let debugMode = false;
-
-        // Debug functions
-        function toggleDebug() {
-            debugMode = !debugMode;
-            const panel = document.getElementById('debugPanel');
-            panel.classList.toggle('hidden', !debugMode);
-            updateDebugInfo();
-        }
-
-        function updateDebugInfo() {
-            if (!debugMode) return;
-            
-            document.getElementById('debugApiUrl').textContent = API_URL;
-            document.getElementById('debugProjectCount').textContent = allProjects.length;
-            document.getElementById('debugMilestoneCount').textContent = allMilestones.length;
-        }
-
-        async function debugMilestones() {
-            try {
-                const response = await fetch(`${API_URL}?action=debug-milestones`);
-                const data = await response.json();
-                console.log('Milestone debug data:', data);
-                alert('Milestone debug data logged to console. Check browser console for details.');
-            } catch (error) {
-                console.error('Debug milestones failed:', error);
-                alert('Debug failed: ' + error.message);
-            }
-        }
-
-        async function debugProjectSchema() {
-            try {
-                const response = await fetch(`${API_URL}?action=debug-project-schema`);
-                const data = await response.json();
-                console.log('Project schema debug data:', data);
-                alert('Project schema data logged to console. Check browser console for details.');
-            } catch (error) {
-                console.error('Debug project schema failed:', error);
-                alert('Debug failed: ' + error.message);
-            }
-        }
-
-        async function testAPI() {
-            try {
-                const response = await fetch(`${API_URL}?action=test`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ test: true })
-                });
-                const data = await response.json();
-                console.log('API test result:', data);
-                alert('API test successful! Check console for details.');
-            } catch (error) {
-                console.error('API test failed:', error);
-                alert('API test failed: ' + error.message);
-            }
-        }
-
-        function logDebug(type, data) {
-            console.log(`[${type}]`, data);
-            if (debugMode) {
-                if (type === 'REQUEST') {
-                    document.getElementById('debugLastRequest').textContent = JSON.stringify(data);
-                } else if (type === 'RESPONSE') {
-                    document.getElementById('debugLastResponse').textContent = JSON.stringify(data).substring(0, 200) + '...';
-                }
-            }
-        }
+        let isNewProject = false;
 
         // Initialize
         window.onload = function() {
-            updateDebugInfo();
             refreshProjects();
         };
 
         async function refreshProjects() {
             try {
-                logDebug('REQUEST', { url: API_URL, method: 'GET' });
                 showMessage('Loading projects...', 'info');
                 
                 const [dataResponse, workflowsResponse] = await Promise.all([
@@ -502,18 +434,12 @@
                     fetch(`${API_URL}?action=workflows`)
                 ]);
                 
-                logDebug('RESPONSE', { 
-                    dataStatus: dataResponse.status, 
-                    workflowStatus: workflowsResponse.status 
-                });
-                
                 if (!dataResponse.ok) {
                     const errorText = await dataResponse.text();
                     throw new Error(`Data API failed with ${dataResponse.status}: ${errorText}`);
                 }
                 
                 const data = await dataResponse.json();
-                logDebug('RESPONSE', data);
                 
                 // Handle workflows response
                 let workflows = { workflows: [] };
@@ -535,19 +461,49 @@
                 console.log('- Milestones:', allMilestones.length);
                 console.log('- Workflows:', allWorkflows.length);
                 
-                updateDebugInfo();
                 displayProjectsList();
                 showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
                 
             } catch (error) {
                 console.error('Failed to refresh projects:', error);
-                logDebug('ERROR', error.message);
                 
                 const errorMsg = `Failed to load projects: ${error.message}`;
                 document.getElementById('projectsList').innerHTML = 
                     `<div class="error">${errorMsg}<br><br>Check the browser console for details.</div>`;
                 showMessage(errorMsg, 'error');
             }
+        }
+
+        function createNewProject() {
+            if (hasUnsavedChanges) {
+                if (!confirm('You have unsaved changes. Continue anyway?')) {
+                    return;
+                }
+            }
+
+            // Create a new project object
+            currentProject = {
+                id: null, // Will be assigned when saved
+                name: 'New Project',
+                instrumentMake: '',
+                instrumentModel: '',
+                status: 'On The Bench',
+                complexity: 3,
+                profitability: 3,
+                dueDate: null,
+                totalEstimatedHour: 0,
+                totalMilestones: 0,
+                completedMilestones: 0,
+                progress: 0
+            };
+
+            currentMilestones = [];
+            isNewProject = true;
+            hasUnsavedChanges = true;
+
+            displayProjectEditor();
+            displayProjectsList(); // Refresh to show new project indicator
+            updateSaveButton();
         }
 
         function showMessage(message, type = 'info') {
@@ -576,14 +532,25 @@
         function displayProjectsList() {
             const container = document.getElementById('projectsList');
             
-            if (allProjects.length === 0) {
+            let html = '';
+            
+            // Show new project indicator if we're creating one
+            if (isNewProject && currentProject) {
+                html += `
+                    <div class="project-item new-project active">
+                        <div class="project-name">${escapeHtml(currentProject.name)} (New)</div>
+                        <div class="project-details">Unsaved new project</div>
+                    </div>
+                `;
+            }
+            
+            if (allProjects.length === 0 && !isNewProject) {
                 container.innerHTML = '<div class="empty-state">No projects found</div>';
                 return;
             }
             
-            let html = '';
             allProjects.forEach(project => {
-                const isActive = currentProject && currentProject.id === project.id;
+                const isActive = !isNewProject && currentProject && currentProject.id === project.id;
                 html += `
                     <div class="project-item ${isActive ? 'active' : ''}" onclick="selectProject('${project.id}')">
                         <div class="project-name">${escapeHtml(project.name)}</div>
@@ -618,6 +585,8 @@
                 return;
             }
             
+            isNewProject = false;
+            
             // Load milestones for this project
             loadProjectMilestones(projectId);
             
@@ -633,16 +602,25 @@
             currentMilestones = allMilestones
                 .filter(m => m.projectId === projectId)
                 .sort((a, b) => a.order - b.order);
-                
-            logDebug('MILESTONES', { projectId, count: currentMilestones.length });
         }
 
         function displayProjectEditor() {
             if (!currentProject) return;
             
-            document.getElementById('editorTitle').textContent = currentProject.name;
+            document.getElementById('editorTitle').textContent = isNewProject ? 'New Project' : currentProject.name;
             
-            const content = `
+            let content = '';
+            
+            if (isNewProject) {
+                content += `
+                    <div class="new-project-indicator">
+                        <strong>Creating New Project</strong><br>
+                        Fill in the details below and click "Save Changes" to create this project in Notion.
+                    </div>
+                `;
+            }
+            
+            content += `
                 <div class="form-section">
                     <h3>Project Details</h3>
                     <div class="form-grid">
@@ -958,7 +936,6 @@
                 
                 // Collect project data
                 const projectData = {
-                    projectId: currentProject.id,
                     name: document.getElementById('projectName').value,
                     status: document.getElementById('projectStatus').value,
                     instrumentMake: document.getElementById('instrumentMake').value,
@@ -968,41 +945,73 @@
                     dueDate: document.getElementById('dueDate').value || null
                 };
                 
-                logDebug('SAVE_PROJECT', projectData);
-                logDebug('SAVE_MILESTONES', currentMilestones);
+                let projectResult;
                 
-                // Save project details first
-                const projectResponse = await fetch(`${API_URL}?action=update-project`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(projectData)
-                });
-                
-                if (!projectResponse.ok) {
-                    const errorText = await projectResponse.text();
-                    throw new Error(`Failed to save project: ${errorText}`);
+                if (isNewProject) {
+                    // Create new project
+                    const createResponse = await fetch(`${API_URL}?action=create-project`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(projectData)
+                    });
+                    
+                    if (!createResponse.ok) {
+                        const errorText = await createResponse.text();
+                        throw new Error(`Failed to create project: ${errorText}`);
+                    }
+                    
+                    projectResult = await createResponse.json();
+                    
+                    if (projectResult.success && projectResult.project) {
+                        // Update current project with the new ID
+                        currentProject.id = projectResult.project.id;
+                        isNewProject = false;
+                        
+                        // Add to our local projects list
+                        allProjects.push(projectResult.project);
+                        
+                        showMessage('Project created successfully', 'success');
+                    } else {
+                        throw new Error('Failed to create project: Invalid response');
+                    }
+                } else {
+                    // Update existing project
+                    projectData.projectId = currentProject.id;
+                    
+                    const updateResponse = await fetch(`${API_URL}?action=update-project`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(projectData)
+                    });
+                    
+                    if (!updateResponse.ok) {
+                        const errorText = await updateResponse.text();
+                        throw new Error(`Failed to update project: ${errorText}`);
+                    }
+                    
+                    projectResult = await updateResponse.json();
+                    showMessage('Project updated successfully', 'success');
                 }
                 
-                const projectResult = await projectResponse.json();
-                logDebug('PROJECT_SAVE_RESULT', projectResult);
-                
-                // Save milestones
-                const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        projectId: currentProject.id,
-                        milestones: currentMilestones
-                    })
-                });
-                
-                if (!milestoneResponse.ok) {
-                    const errorText = await milestoneResponse.text();
-                    throw new Error(`Failed to save milestones: ${errorText}`);
+                // Save milestones if any exist
+                if (currentMilestones.length > 0) {
+                    const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            projectId: currentProject.id,
+                            milestones: currentMilestones
+                        })
+                    });
+                    
+                    if (!milestoneResponse.ok) {
+                        const errorText = await milestoneResponse.text();
+                        throw new Error(`Failed to save milestones: ${errorText}`);
+                    }
+                    
+                    const milestoneResult = await milestoneResponse.json();
+                    console.log('Milestones saved:', milestoneResult);
                 }
-                
-                const milestoneResult = await milestoneResponse.json();
-                logDebug('MILESTONE_SAVE_RESULT', milestoneResult);
                 
                 hasUnsavedChanges = false;
                 updateSaveButton();
@@ -1013,14 +1022,14 @@
                     updateSaveButton();
                 }, 2000);
                 
-                showMessage('Changes saved successfully', 'success');
+                // Update the project name in the header if it changed
+                document.getElementById('editorTitle').textContent = projectData.name;
                 
                 // Refresh the projects list to show updated data
                 await refreshProjects();
                 
             } catch (error) {
                 console.error('Save failed:', error);
-                logDebug('SAVE_ERROR', error.message);
                 showMessage('Failed to save changes: ' + error.message, 'error');
                 document.getElementById('saveBtn').textContent = 'Save Changes *';
             }
@@ -1033,9 +1042,27 @@
                 }
             }
             
-            if (currentProject) {
+            if (isNewProject) {
+                // Clear the new project
+                currentProject = null;
+                currentMilestones = [];
+                isNewProject = false;
+                
+                document.getElementById('editorContent').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Select a project to edit</h3>
+                        <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
+                    </div>
+                `;
+                document.getElementById('editorTitle').textContent = 'Select a project';
+                
+                displayProjectsList();
+            } else if (currentProject) {
                 selectProject(currentProject.id); // Reload fresh data
             }
+            
+            hasUnsavedChanges = false;
+            updateSaveButton();
         }
     </script>
 </body>
