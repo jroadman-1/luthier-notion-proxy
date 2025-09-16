@@ -361,7 +361,7 @@
               <div class="form-group full-width">
                 <h4 style="margin: 0 0 15px 0; color: #666; font-size: 14px;">Before Measurements</h4>
               </div>
-              <div class="form-group">
+              <div class="form-group full-width">
                 <label>Neck Relief Before</label>
                 <input type="number" step="0.001" id="neckReliefBefore" 
                        value="${currentProject.neckReliefBefore || ''}" 
@@ -391,12 +391,11 @@
                        value="${currentProject.before6thString12thFret || ''}" 
                        onchange="markChanged()" placeholder="0.000">
               </div>
-              <div class="form-group"></div>
               
               <div class="form-group full-width">
                 <h4 style="margin: 20px 0 15px 0; color: #666; font-size: 14px;">After Measurements</h4>
               </div>
-              <div class="form-group">
+              <div class="form-group full-width">
                 <label>Neck Relief After</label>
                 <input type="number" step="0.001" id="neckReliefAfter" 
                        value="${currentProject.neckReliefAfter || ''}" 
