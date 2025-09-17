@@ -1131,4 +1131,3 @@ function parseRatingValue(ratingStr) {
   const match = ratingStr.match(/^(\d+)-/);
   return match ? parseInt(match[1]) : 3;
 }
-    
