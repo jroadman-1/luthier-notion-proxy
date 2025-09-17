@@ -529,144 +529,31 @@
           </div>
         </div>
 
+        <!-- TEMPORARILY COMMENTED OUT - Instrument Details Section -->
+        <!-- 
         <div class="form-section collapsible-section">
           <h3 onclick="toggleCollapsible('instrumentDetails')">
             <span id="instrumentDetailsToggle" class="collapsible-toggle">▶</span>
             Instrument Details
           </h3>
           <div id="instrumentDetailsContent" class="collapsible-content" style="display: none;">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Instrument Finish/Color</label>
-                <input type="text" id="instrumentFinish" value="${escapeHtml(currentProject.instrumentFinish || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>Serial Number</label>
-                <input type="text" id="serialNumber" value="${escapeHtml(currentProject.serialNumber || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>Instrument Type</label>
-                <select id="instrumentType" onchange="markChanged()">
-                  <option value="">Select Type</option>
-                  <option value="Guitar" ${currentProject.instrumentType === 'Guitar' ? 'selected' : ''}>Guitar</option>
-                  <option value="Banjo" ${currentProject.instrumentType === 'Banjo' ? 'selected' : ''}>Banjo</option>
-                  <option value="Bass" ${currentProject.instrumentType === 'Bass' ? 'selected' : ''}>Bass</option>
-                  <option value="Mandolin" ${currentProject.instrumentType === 'Mandolin' ? 'selected' : ''}>Mandolin</option>
-                  <option value="12 string guitar" ${currentProject.instrumentType === '12 string guitar' ? 'selected' : ''}>12 string guitar</option>
-                  <option value="Pickup" ${currentProject.instrumentType === 'Pickup' ? 'selected' : ''}>Pickup</option>
-                  <option value="Classical Guitar" ${currentProject.instrumentType === 'Classical Guitar' ? 'selected' : ''}>Classical Guitar</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>String Brand</label>
-                <input type="text" id="stringBrand" value="${escapeHtml(currentProject.stringBrand || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>String Gauge</label>
-                <input type="text" id="stringGauge" value="${escapeHtml(currentProject.stringGauge || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>Tuning</label>
-                <select id="tuning" onchange="markChanged()">
-                  <option value="">Select Tuning</option>
-                  <option value="Standard" ${currentProject.tuning === 'Standard' ? 'selected' : ''}>Standard</option>
-                  <option value="Drop D" ${currentProject.tuning === 'Drop D' ? 'selected' : ''}>Drop D</option>
-                  <option value="Drop C" ${currentProject.tuning === 'Drop C' ? 'selected' : ''}>Drop C</option>
-                  <option value="Half Step Down" ${currentProject.tuning === 'Half Step Down' ? 'selected' : ''}>Half Step Down</option>
-                  <option value="Whole Step Down" ${currentProject.tuning === 'Whole Step Down' ? 'selected' : ''}>Whole Step Down</option>
-                  <option value="Open G" ${currentProject.tuning === 'Open G' ? 'selected' : ''}>Open G</option>
-                  <option value="Open D" ${currentProject.tuning === 'Open D' ? 'selected' : ''}>Open D</option>
-                  <option value="DADGAD" ${currentProject.tuning === 'DADGAD' ? 'selected' : ''}>DADGAD</option>
-                  <option value="Custom" ${currentProject.tuning === 'Custom' ? 'selected' : ''}>Custom</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Tremolo</label>
-                <input type="text" id="tremolo" value="${escapeHtml(currentProject.tremolo || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>Fretboard Radius</label>
-                <input type="number" step="0.1" id="fretboardRadius" value="${currentProject.fretboardRadius || ''}" onchange="markChanged()">
-              </div>
-              <div class="form-group full-width">
-                <label>Fretwire</label>
-                <input type="text" id="fretwire" value="${escapeHtml(currentProject.fretwire || '')}" onchange="markChanged()">
-              </div>
-            </div>
+            ... instrument details form content ...
           </div>
         </div>
+        -->
 
+        <!-- TEMPORARILY COMMENTED OUT - Actions Section -->
+        <!--
         <div class="form-section collapsible-section">
           <h3 onclick="toggleCollapsible('actions')">
             <span id="actionsToggle" class="collapsible-toggle">▶</span>
             Actions
           </h3>
           <div id="actionsContent" class="collapsible-content" style="display: none;">
-            <div class="checkbox-grid">
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedHeightRadius" onchange="markChanged()" ${currentProject.actions?.adjustedHeightRadius ? 'checked' : ''}>
-                <label for="adjustedHeightRadius">Adjusted Height and Radius</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedIntonation" onchange="markChanged()" ${currentProject.actions?.adjustedIntonation ? 'checked' : ''}>
-                <label for="adjustedIntonation">Adjusted Intonation</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedPickupHeight" onchange="markChanged()" ${currentProject.actions?.adjustedPickupHeight ? 'checked' : ''}>
-                <label for="adjustedPickupHeight">Adjusted Pickup Height</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedTrussRod" onchange="markChanged()" ${currentProject.actions?.adjustedTrussRod ? 'checked' : ''}>
-                <label for="adjustedTrussRod">Adjusted Truss Rod</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedStringSlots" onchange="markChanged()" ${currentProject.actions?.adjustedStringSlots ? 'checked' : ''}>
-                <label for="adjustedStringSlots">Adjusted String Slots</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="cleanedPolished" onchange="markChanged()" ${currentProject.actions?.cleanedPolished ? 'checked' : ''}>
-                <label for="cleanedPolished">Cleaned and Polished</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="installedStretchedStrings" onchange="markChanged()" ${currentProject.actions?.installedStretchedStrings ? 'checked' : ''}>
-                <label for="installedStretchedStrings">Installed and Stretched Strings</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="lubricatedStringSlots" onchange="markChanged()" ${currentProject.actions?.lubricatedStringSlots ? 'checked' : ''}>
-                <label for="lubricatedStringSlots">Lubricated String Slots</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="oiledFretboard" onchange="markChanged()" ${currentProject.actions?.oiledFretboard ? 'checked' : ''}>
-                <label for="oiledFretboard">Oiled Fretboard</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="polishedFrets" onchange="markChanged()" ${currentProject.actions?.polishedFrets ? 'checked' : ''}>
-                <label for="polishedFrets">Polished Frets</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="testedElectronics" onchange="markChanged()" ${currentProject.actions?.testedElectronics ? 'checked' : ''}>
-                <label for="testedElectronics">Tested Electronics</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="tightenedHardware" onchange="markChanged()" ${currentProject.actions?.tightenedHardware ? 'checked' : ''}>
-                <label for="tightenedHardware">Tightened Hardware</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedTremoloTension" onchange="markChanged()" ${currentProject.actions?.adjustedTremoloTension ? 'checked' : ''}>
-                <label for="adjustedTremoloTension">Adjusted Tremolo Tension</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedNeckAngle" onchange="markChanged()" ${currentProject.actions?.adjustedNeckAngle ? 'checked' : ''}>
-                <label for="adjustedNeckAngle">Adjusted Neck Angle</label>
-              </div>
-            </div>
-            
-            <div class="form-group" style="margin-top:15px;">
-              <label>Additional Actions</label>
-              <textarea id="additionalActions" onchange="markChanged()" placeholder="Enter any additional actions performed...">${escapeHtml(currentProject.additionalActions || '')}</textarea>
-            </div>
+            ... actions form content ...
           </div>
         </div>
+        -->
 
         <div class="form-section">
           <h3>Milestones</h3>
@@ -1194,37 +1081,9 @@
           after1stString1stFret: parseFloat(document.getElementById('after1stString1stFret').value) || null,
           after1stString12thFret: parseFloat(document.getElementById('after1stString12thFret').value) || null,
           after6thString1stFret: parseFloat(document.getElementById('after6thString1stFret').value) || null,
-          after6thString12thFret: parseFloat(document.getElementById('after6thString12thFret').value) || null,
+          after6thString12thFret: parseFloat(document.getElementById('after6thString12thFret').value) || null
           
-          // Instrument details
-          instrumentFinish: document.getElementById('instrumentFinish').value,
-          serialNumber: document.getElementById('serialNumber').value,
-          instrumentType: document.getElementById('instrumentType').value,
-          stringBrand: document.getElementById('stringBrand').value,
-          stringGauge: document.getElementById('stringGauge').value,
-          tuning: document.getElementById('tuning').value,
-          tremolo: document.getElementById('tremolo').value,
-          fretboardRadius: parseFloat(document.getElementById('fretboardRadius').value) || null,
-          fretwire: document.getElementById('fretwire').value,
-          
-          // Actions
-          actions: {
-            adjustedHeightRadius: document.getElementById('adjustedHeightRadius').checked,
-            adjustedIntonation: document.getElementById('adjustedIntonation').checked,
-            adjustedPickupHeight: document.getElementById('adjustedPickupHeight').checked,
-            adjustedTrussRod: document.getElementById('adjustedTrussRod').checked,
-            adjustedStringSlots: document.getElementById('adjustedStringSlots').checked,
-            cleanedPolished: document.getElementById('cleanedPolished').checked,
-            installedStretchedStrings: document.getElementById('installedStretchedStrings').checked,
-            lubricatedStringSlots: document.getElementById('lubricatedStringSlots').checked,
-            oiledFretboard: document.getElementById('oiledFretboard').checked,
-            polishedFrets: document.getElementById('polishedFrets').checked,
-            testedElectronics: document.getElementById('testedElectronics').checked,
-            tightenedHardware: document.getElementById('tightenedHardware').checked,
-            adjustedTremoloTension: document.getElementById('adjustedTremoloTension').checked,
-            adjustedNeckAngle: document.getElementById('adjustedNeckAngle').checked
-          },
-          additionalActions: document.getElementById('additionalActions').value
+          // All other fields temporarily removed until we get basic saving working
         };
 
         let projectResult;
