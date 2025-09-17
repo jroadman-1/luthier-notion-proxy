@@ -107,12 +107,12 @@ async function handleDelete(req, res, notion) {
 // Create new project
 async function createProject(res, notion, projectsDbId, data) {
   const { 
-    name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate,
+    name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate, intakeNotes,
     neckReliefBefore, before1stString1stFret, before1stString12thFret, before6thString1stFret, before6thString12thFret,
     neckReliefAfter, after1stString1stFret, after1stString12thFret, after6thString1stFret, after6thString12thFret
   } = data;
   
-  console.log('Creating new project:', { name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate });
+  console.log('Creating new project:', { name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate, intakeNotes });
   
   try {
     // Validate required fields
@@ -149,6 +149,13 @@ async function createProject(res, notion, projectsDbId, data) {
     
     if (profitability !== undefined) {
       properties['Profitability'] = { number: profitability };
+    }
+
+    // Add Intake Notes field
+    if (intakeNotes !== undefined) {
+      properties['Intake Notes'] = { 
+        rich_text: [{ text: { content: intakeNotes || '' } }] 
+      };
     }
     
     // Add measurement fields if provided
@@ -535,6 +542,12 @@ async function updateProject(res, notion, projectsDbId, data) {
         console.log('Setting Due Date:', updates.dueDate);
       }
     }
+    if (updates.intakeNotes !== undefined) {
+      properties['Intake Notes'] = { 
+        rich_text: [{ text: { content: updates.intakeNotes || '' } }] 
+      };
+      console.log('Setting Intake Notes:', updates.intakeNotes);
+    }
 
     // Add measurement fields
     if (updates.neckReliefBefore !== undefined) {
@@ -711,192 +724,3 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
       success: true, 
       message: `Updated ${milestones.length} milestones, deleted ${toDelete.length} milestones`
     });
-  } catch (error) {
-    throw new Error(`Failed to save milestones: ${error.message}`);
-  }
-}
-
-// Create new workflow
-async function createWorkflow(res, notion, workflowsDbId, data) {
-  const { name, data: workflowData } = data;
-  
-  console.log('Creating workflow:', { name, dataLength: workflowData?.length });
-  
-  if (!workflowsDbId) {
-    return res.status(500).json({ error: 'Workflows database not configured' });
-  }
-  
-  try {
-    // Validate the workflow data is valid JSON
-    try {
-      JSON.parse(workflowData || '[]');
-    } catch (e) {
-      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
-    }
-    
-    const response = await notion.pages.create({
-      parent: { database_id: workflowsDbId },
-      properties: {
-        'Name': {
-          title: [{ text: { content: name || 'Untitled Workflow' } }]
-        },
-        'Data': {
-          rich_text: [{ text: { content: workflowData || '[]' } }]
-        }
-      }
-    });
-    
-    const createdWorkflow = {
-      id: response.id,
-      name: name || 'Untitled Workflow',
-      data: workflowData || '[]'
-    };
-    
-    console.log('Workflow created successfully:', createdWorkflow.id);
-    return res.json({ success: true, workflow: createdWorkflow });
-  } catch (error) {
-    console.error('Failed to create workflow:', error);
-    throw new Error(`Failed to create workflow: ${error.message}`);
-  }
-}
-
-// Update existing workflow
-async function updateWorkflow(res, notion, workflowsDbId, data) {
-  const { id, name, data: workflowData } = data;
-  
-  console.log('Updating workflow:', { id, name, dataLength: workflowData?.length });
-  
-  if (!workflowsDbId) {
-    return res.status(500).json({ error: 'Workflows database not configured' });
-  }
-  
-  if (!id) {
-    return res.status(400).json({ error: 'Workflow ID is required for update' });
-  }
-  
-  try {
-    // Validate the workflow data is valid JSON
-    try {
-      JSON.parse(workflowData || '[]');
-    } catch (e) {
-      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
-    }
-    
-    await notion.pages.update({
-      page_id: id,
-      properties: {
-        'Name': {
-          title: [{ text: { content: name || 'Untitled Workflow' } }]
-        },
-        'Data': {
-          rich_text: [{ text: { content: workflowData || '[]' } }]
-        }
-      }
-    });
-    
-    console.log('Workflow updated successfully:', id);
-    return res.json({ success: true, message: 'Workflow updated successfully' });
-  } catch (error) {
-    console.error('Failed to update workflow:', error);
-    throw new Error(`Failed to update workflow: ${error.message}`);
-  }
-}
-
-// Delete workflow
-async function deleteWorkflow(res, notion, workflowsDbId, data) {
-  const { id } = data;
-  
-  console.log('Deleting workflow:', id);
-  
-  if (!workflowsDbId) {
-    return res.status(500).json({ error: 'Workflows database not configured' });
-  }
-  
-  if (!id) {
-    return res.status(400).json({ error: 'Workflow ID is required for deletion' });
-  }
-  
-  try {
-    await notion.pages.update({
-      page_id: id,
-      archived: true
-    });
-    
-    console.log('Workflow deleted successfully:', id);
-    return res.json({ success: true, message: 'Workflow deleted successfully' });
-  } catch (error) {
-    console.error('Failed to delete workflow:', error);
-    throw new Error(`Failed to delete workflow: ${error.message}`);
-  }
-}
-
-function parseIntSafe(v) {
-  const n = typeof v === 'number' ? v : parseInt(String(v ?? '').trim(), 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-// Mapping functions
-function mapProject(page) {
-  const props = page.properties;  // <-- use ONE name consistently
-
-  return {
-    id: page.id,
-    name: props['Name']?.title?.[0]?.plain_text ?? 'Untitled',
-    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
-    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
-    status: props['Status']?.select?.name ?? 'Unknown',
-    dueDate: props['Due Date']?.date?.start ?? null,
-
-    // numeric fields (now just simple number properties)
-    complexity: props['Complexity']?.number ?? 3,
-    profitability: props['Profitability']?.number ?? 3,
-
-    // dates for "days since worked"
-    lastWorked: props['Last Worked']?.date?.start ?? null,
-   
-    dateCreated: props['Date Created']?.date?.start ?? null,   // your custom date
-    createdTime: page.created_time,                            // Notion system created timestamp
-
-    // measurement fields
-    neckReliefBefore: props['Neck Relief Before']?.number ?? null,
-    before1stString1stFret: props['Before 1st string at 1st fret']?.number ?? null,
-    before1stString12thFret: props['Before 1st string at 12th fret']?.number ?? null,
-    before6thString1stFret: props['Before 6th string at 1st fret']?.number ?? null,
-    before6thString12thFret: props['Before 6th string at 12th fret']?.number ?? null,
-    neckReliefAfter: props['Neck Relief After']?.number ?? null,
-    after1stString1stFret: props['After 1st string at 1st fret']?.number ?? null,
-    after1stString12thFret: props['After 1st string at 12th fret']?.number ?? null,
-    after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
-    after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
-
-    // rollups / formulas you already use
-    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
-    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
-    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
-    progress: props['Progress %']?.formula?.number ?? 0
-  };
-}
-
-function mapMilestone(page) {
-  const props = page.properties;
-  
-  return {
-    id: page.id,
-    projectId: props['Work Order']?.relation?.[0]?.id || null,
-    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
-    estimatedHours: props['Estimated Hours']?.number ?? 1,
-    actualHours: props['Actual Hours']?.number ?? 0,
-    order: props['Order (Sequence)']?.number ?? 1,
-    status: props.Status?.select?.name ?? 'Not Started',
-    milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
-    dueDate: props['Due Date']?.date?.start ?? null,
-    notes: props.Notes?.rich_text?.[0]?.plain_text ?? ''
-  };
-}
-
-function parseRatingValue(ratingStr) {
-  if (!ratingStr) return 3;
-  if (typeof ratingStr === 'number') return ratingStr;
-  const match = ratingStr.match(/^(\d+)-/);
-  return match ? parseInt(match[1]) : 3;
-}
