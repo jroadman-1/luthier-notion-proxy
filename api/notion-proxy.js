@@ -223,8 +223,7 @@ async function createProject(res, notion, projectsDbId, data) {
         rich_text: [{ text: { content: serialNumber || '' } }] 
       };
     }
-    // Temporarily comment out all new fields in createProject as well
-    /*
+    
     if (instrumentType !== undefined) {
       if (instrumentType === null || instrumentType === '') {
         properties['Instrument Type'] = { select: null };
@@ -232,7 +231,7 @@ async function createProject(res, notion, projectsDbId, data) {
         properties['Instrument Type'] = { select: { name: instrumentType } };
       }
     }
-    */
+    
     if (stringBrand !== undefined) {
       properties['String Brand'] = { 
         rich_text: [{ text: { content: stringBrand || '' } }] 
@@ -718,10 +717,12 @@ async function updateProject(res, notion, projectsDbId, data) {
       };
     }
     if (updates.instrumentType !== undefined) {
-      properties['Instrument Type'] = { 
-        rich_text: [{ text: { content: updates.instrumentType || '' } }] 
-      };
-    }
+  if (updates.instrumentType === null || updates.instrumentType === '') {
+    properties['Instrument Type'] = { select: null };
+  } else {
+    properties['Instrument Type'] = { select: { name: updates.instrumentType } };
+  }
+}
     if (updates.stringBrand !== undefined) {
       properties['String Brand'] = { 
         rich_text: [{ text: { content: updates.stringBrand || '' } }] 
@@ -764,8 +765,8 @@ async function updateProject(res, notion, projectsDbId, data) {
       if (updates.actions.adjustedTremoloTension) actionsList.push({ name: 'Adjusted Tremolo Tension' });
       if (updates.actions.adjustedNeckAngle) actionsList.push({ name: 'Adjusted Neck Angle' });
       
-      properties['Actions'] = { multi_select: actionsList };
-      console.log('Setting Actions:', actionsList.map(a => a.name));
+      properties['Standard Actions'] = { multi_select: actionsList };
+  console.log('Setting Standard Actions:', actionsList.map(a => a.name));
     }
 
     // Additional actions
