@@ -223,9 +223,11 @@ async function createProject(res, notion, projectsDbId, data) {
       };
     }
     if (instrumentType !== undefined) {
-      properties['Instrument Type'] = { 
-        rich_text: [{ text: { content: instrumentType || '' } }] 
-      };
+      if (instrumentType === null || instrumentType === '') {
+        properties['Instrument Type'] = { select: null };
+      } else {
+        properties['Instrument Type'] = { select: { name: instrumentType } };
+      }
     }
     if (stringBrand !== undefined) {
       properties['String Brand'] = { 
@@ -256,7 +258,7 @@ async function createProject(res, notion, projectsDbId, data) {
       };
     }
 
-    // Add actions as multi-select
+    // Add actions as multi-select (field name corrected to "Standard Actions")
     if (actions && typeof actions === 'object') {
       const actionsList = [];
       if (actions.adjustedHeightRadius) actionsList.push({ name: 'Adjusted Height and Radius' });
@@ -275,7 +277,7 @@ async function createProject(res, notion, projectsDbId, data) {
       if (actions.adjustedNeckAngle) actionsList.push({ name: 'Adjusted Neck Angle' });
       
       if (actionsList.length > 0) {
-        properties['Actions'] = { multi_select: actionsList };
+        properties['Standard Actions'] = { multi_select: actionsList };
       }
     }
 
@@ -1021,7 +1023,7 @@ function parseIntSafe(v) {
 function mapProject(page) {
   const props = page.properties;
 
-  // Helper function to extract actions from multi-select
+  // Helper function to extract actions from multi-select (field name corrected)
   const extractActions = (multiSelectProp) => {
     if (!multiSelectProp?.multi_select) return {};
     
@@ -1083,10 +1085,10 @@ function mapProject(page) {
     after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
     after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
 
-    // Instrument detail fields
+    // Instrument detail fields (Instrument Type now select field)
     instrumentFinish: props['Instrument Finish']?.rich_text?.[0]?.plain_text ?? '',
     serialNumber: props['Serial Number']?.rich_text?.[0]?.plain_text ?? '',
-    instrumentType: props['Instrument Type']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentType: props['Instrument Type']?.select?.name ?? '',
     stringBrand: props['String Brand']?.rich_text?.[0]?.plain_text ?? '',
     stringGauge: props['String Gauge']?.rich_text?.[0]?.plain_text ?? '',
     tuning: props['Tuning']?.rich_text?.[0]?.plain_text ?? '',
@@ -1094,8 +1096,8 @@ function mapProject(page) {
     fretboardRadius: props['Fretboard Radius']?.number ?? null,
     fretwire: props['Fretwire']?.rich_text?.[0]?.plain_text ?? '',
 
-    // Actions
-    actions: extractActions(props['Actions']),
+    // Actions (field name corrected to "Standard Actions")
+    actions: extractActions(props['Standard Actions']),
     additionalActions: props['Additional Actions']?.rich_text?.[0]?.plain_text ?? '',
 
     // Rollups/formulas (existing functionality)
@@ -1129,3 +1131,4 @@ function parseRatingValue(ratingStr) {
   const match = ratingStr.match(/^(\d+)-/);
   return match ? parseInt(match[1]) : 3;
 }
+    
