@@ -183,6 +183,7 @@
         complexity: 3,
         profitability: 3,
         dueDate: null,
+        intakeNotes: '',
         totalEstimatedHour: 0,
         totalMilestones: 0,
         completedMilestones: 0,
@@ -347,6 +348,10 @@
             <div class="form-group">
               <label>Due Date</label>
               <input type="date" id="dueDate" value="${currentProject.dueDate || ''}" onchange="markChanged()">
+            </div>
+            <div class="form-group full-width">
+              <label>Intake Notes</label>
+              <textarea id="intakeNotes" onchange="markChanged()" placeholder="Enter any initial notes, requirements, or special instructions for this project...">${escapeHtml(currentProject.intakeNotes || '')}</textarea>
             </div>
           </div>
         </div>
@@ -596,6 +601,7 @@
     function handleDragStart(e) {
       dragSrcIndex = parseInt(this.dataset.milestoneIndex, 10);
       this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', String(dragSrcIndex));
     }
 
@@ -771,6 +777,7 @@
           complexity: parseInt(document.getElementById('complexity').value),
           profitability: parseInt(document.getElementById('profitability').value),
           dueDate: document.getElementById('dueDate').value || null,
+          intakeNotes: document.getElementById('intakeNotes').value,
           // Measurement data
           neckReliefBefore: parseFloat(document.getElementById('neckReliefBefore').value) || null,
           before1stString1stFret: parseFloat(document.getElementById('before1stString1stFret').value) || null,
@@ -877,5 +884,4 @@
     }
   </script>
 </body>
-</html>effectAllowed = 'move';
-      e.dataTransfer.
+</html>
