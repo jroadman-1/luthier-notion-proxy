@@ -701,6 +701,16 @@
 
       const totalProjects = projectsData.length;
       
+      // Calculate current distribution for summary
+      let easyProfitCount = 0;
+      let complexUnprofitCount = 0;
+
+      projectsData.forEach(project => {
+        const category = categorizeProject(project.complexity, project.profitability);
+        if (category === 'easyProfit') easyProfitCount++;
+        else if (category === 'complexUnprofit') complexUnprofitCount++;
+      });
+      
       // Build current state grid
       const gridData = {};
       for (let c = 1; c <= 5; c++) {
