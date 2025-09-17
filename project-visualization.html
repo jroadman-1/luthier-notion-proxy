@@ -40,10 +40,39 @@
 
     .controls { 
       background: var(--card); 
-      padding: 20px; 
       border-radius: 8px; 
       box-shadow: 0 2px 4px var(--line); 
       margin-bottom: 20px; 
+    }
+
+    .controls-header {
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .controls-header:hover {
+      background: var(--gray-100);
+    }
+
+    .controls-content {
+      padding: 20px;
+      display: block;
+    }
+
+    .controls-content.collapsed {
+      display: none;
+    }
+
+    .collapse-icon {
+      transition: transform 0.3s ease;
+    }
+
+    .collapse-icon.collapsed {
+      transform: rotate(-90deg);
     }
 
     .grid-container { 
@@ -77,7 +106,7 @@
     }
 
     .grid-cell { 
-      background: var(--gray-100); 
+      background: var(--card); 
       border: 2px solid var(--line); 
       border-radius: 6px; 
       display: flex; 
@@ -88,9 +117,9 @@
       transition: all 0.3s ease; 
     }
 
-    .grid-cell.below-target { background: #d4edda; border-color: var(--green); }
-    .grid-cell.at-target { background: #fff3cd; border-color: var(--yellow); }
-    .grid-cell.over-target { background: #f8d7da; border-color: var(--red); }
+    .grid-cell.has-projects.below-target { background: #d4edda; border-color: var(--green); }
+    .grid-cell.has-projects.at-target { background: #fff3cd; border-color: var(--yellow); }
+    .grid-cell.has-projects.over-target { background: #f8d7da; border-color: var(--red); }
 
     .cell-count { 
       font-size: 24px; 
@@ -238,23 +267,28 @@
   </div>
 
   <div class="controls">
-    <h3>Target Distribution Settings</h3>
-    <div class="targets-config">
-      <div class="target-input">
-        <label>High Profit/Easy (C1-2, P4-5):</label>
-        <input type="number" id="easyProfitTarget" value="45" min="0" max="100">%
-      </div>
-      <div class="target-input">
-        <label>Medium Projects:</label>
-        <input type="number" id="mediumTarget" value="35" min="0" max="100">%
-      </div>
-      <div class="target-input">
-        <label>Complex/Low Profit (C4-5, P1-2):</label>
-        <input type="number" id="complexUnprofitTarget" value="10" min="0" max="100">%
-      </div>
+    <div class="controls-header" onclick="toggleControls()">
+      <h3>Target Distribution Settings</h3>
+      <span class="collapse-icon" id="collapseIcon">▼</span>
     </div>
-    <button class="btn" onclick="refreshData()">Refresh Data</button>
-    <button class="btn" onclick="updateTargets()">Update Targets</button>
+    <div class="controls-content" id="controlsContent">
+      <div class="targets-config">
+        <div class="target-input">
+          <label>High Profit/Easy (C1-2, P4-5):</label>
+          <input type="number" id="easyProfitTarget" value="45" min="0" max="100">%
+        </div>
+        <div class="target-input">
+          <label>Medium Projects:</label>
+          <input type="number" id="mediumTarget" value="35" min="0" max="100">%
+        </div>
+        <div class="target-input">
+          <label>Complex/Low Profit (C4-5, P1-2):</label>
+          <input type="number" id="complexUnprofitTarget" value="10" min="0" max="100">%
+        </div>
+      </div>
+      <button class="btn" onclick="refreshData()">Refresh Data</button>
+      <button class="btn" onclick="updateTargets()">Update Targets</button>
+    </div>
   </div>
 
   <div class="grid-container">
@@ -386,21 +420,26 @@
           let cellClass = 'grid-cell';
           let targetPercentage = 0;
           
-          if (category === 'easyProfit') {
-            targetPercentage = targets.easyProfit;
-          } else if (category === 'complexUnprofit') {
-            targetPercentage = targets.complexUnprofit;
-          } else {
-            targetPercentage = targets.medium;
-          }
+          // Only apply color coding if there are projects in this cell
+          if (count > 0) {
+            cellClass += ' has-projects';
+            
+            if (category === 'easyProfit') {
+              targetPercentage = targets.easyProfit;
+            } else if (category === 'complexUnprofit') {
+              targetPercentage = targets.complexUnprofit;
+            } else {
+              targetPercentage = targets.medium;
+            }
 
-          // Color based on target comparison
-          if (percentage < targetPercentage * 0.8) {
-            cellClass += ' below-target';
-          } else if (percentage <= targetPercentage * 1.2) {
-            cellClass += ' at-target';
-          } else {
-            cellClass += ' over-target';
+            // Color based on target comparison
+            if (percentage < targetPercentage * 0.8) {
+              cellClass += ' below-target';
+            } else if (percentage <= targetPercentage * 1.2) {
+              cellClass += ' at-target';
+            } else {
+              cellClass += ' over-target';
+            }
           }
 
           html += `
@@ -501,6 +540,21 @@
       if (success) {
         buildPortfolioGrid();
         buildStatistics();
+      }
+    }
+
+    // Toggle controls visibility
+    function toggleControls() {
+      const content = document.getElementById('controlsContent');
+      const icon = document.getElementById('collapseIcon');
+      
+      content.classList.toggle('collapsed');
+      icon.classList.toggle('collapsed');
+      
+      if (content.classList.contains('collapsed')) {
+        icon.textContent = '▶';
+      } else {
+        icon.textContent = '▼';
       }
     }
 
