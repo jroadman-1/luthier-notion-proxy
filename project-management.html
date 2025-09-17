@@ -434,16 +434,16 @@
             <div class="form-group">
               <label>Due Date</label>
               <input type="date" id="dueDate" value="${currentProject.dueDate || ''}" onchange="markChanged()">
-            </div>
             <div class="form-group">
-              <label>Store</label>
-              <select id="store" onchange="markChanged()">
-                <option value="">Select Store</option>
-                <option value="Store 1" ${currentProject.store === 'Store 1' ? 'selected' : ''}>Store 1</option>
-                <option value="Store 2" ${currentProject.store === 'Store 2' ? 'selected' : ''}>Store 2</option>
-                <option value="Store 3" ${currentProject.store === 'Store 3' ? 'selected' : ''}>Store 3</option>
-              </select>
-            </div>
+  <label>Store</label>
+  <select id="store" onchange="markChanged()">
+    <option value="">Select Store</option>
+    <option value="In Person"        ${currentProject.store === 'In Person' ? 'selected' : ''}>In Person</option>
+    <option value="Spacetone"        ${currentProject.store === 'Spacetone' ? 'selected' : ''}>Spacetone</option>
+    <option value="Lark Guitars"     ${currentProject.store === 'Lark Guitars' ? 'selected' : ''}>Lark Guitars</option>
+    <option value="Robot Monster"    ${currentProject.store === 'Robot Monster' ? 'selected' : ''}>Robot Monster</option>
+  </select>
+</div>
             <div class="form-group full-width">
               <label>Intake Notes</label>
               <textarea id="intakeNotes" onchange="markChanged()" placeholder="Enter any initial notes, requirements, or special instructions for this project...">${escapeHtml(currentProject.intakeNotes || '')}</textarea>
