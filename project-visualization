@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Portfolio Visualization</title>
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --ink: #2c3e50;
+      --muted: #666;
+      --line: rgba(0,0,0,0.08);
+      --green: #27ae60;
+      --yellow: #f39c12;
+      --red: #e74c3c;
+      --blue: #3498db;
+      --gray-100: #f8f9fa;
+      --gray-200: #ecf0f1;
+      --gray-300: #e9ecef;
+    }
+
+    body { 
+      font-family: Arial, sans-serif; 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      padding: 20px; 
+      background: var(--bg); 
+      color: var(--ink); 
+    }
+
+    .header { 
+      background: var(--ink); 
+      color: #fff; 
+      padding: 20px; 
+      border-radius: 8px; 
+      text-align: center; 
+      margin-bottom: 20px; 
+    }
+
+    .controls { 
+      background: var(--card); 
+      padding: 20px; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 4px var(--line); 
+      margin-bottom: 20px; 
+    }
+
+    .grid-container { 
+      background: var(--card); 
+      padding: 20px; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 4px var(--line); 
+      margin-bottom: 20px; 
+    }
+
+    .portfolio-grid { 
+      display: grid; 
+      grid-template-columns: 60px repeat(5, 1fr); 
+      grid-template-rows: repeat(6, 80px); 
+      gap: 2px; 
+      margin: 20px 0; 
+    }
+
+    .axis-label { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: bold; 
+      background: var(--gray-200); 
+      border-radius: 4px; 
+    }
+
+    .axis-label.vertical { 
+      writing-mode: vertical-rl; 
+      text-orientation: mixed; 
+    }
+
+    .grid-cell { 
+      background: var(--gray-100); 
+      border: 2px solid var(--line); 
+      border-radius: 6px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      position: relative; 
+      transition: all 0.3s ease; 
+    }
+
+    .grid-cell.below-target { background: #d4edda; border-color: var(--green); }
+    .grid-cell.at-target { background: #fff3cd; border-color: var(--yellow); }
+    .grid-cell.over-target { background: #f8d7da; border-color: var(--red); }
+
+    .cell-count { 
+      font-size: 24px; 
+      font-weight: bold; 
+      color: var(--ink); 
+    }
+
+    .cell-info { 
+      font-size: 10px; 
+      color: var(--muted); 
+      text-align: center; 
+      margin-top: 2px; 
+    }
+
+    .grid-labels { 
+      display: flex; 
+      justify-content: space-between; 
+      margin-top: 10px; 
+      font-size: 12px; 
+      color: var(--muted); 
+    }
+
+    .legend { 
+      background: var(--gray-100); 
+      padding: 15px; 
+      border-radius: 6px; 
+      margin-bottom: 20px; 
+    }
+
+    .legend-title { 
+      font-weight: bold; 
+      margin-bottom: 10px; 
+    }
+
+    .legend-items { 
+      display: flex; 
+      gap: 20px; 
+      flex-wrap: wrap; 
+    }
+
+    .legend-item { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+    }
+
+    .legend-color { 
+      width: 20px; 
+      height: 20px; 
+      border-radius: 4px; 
+      border: 2px solid var(--line); 
+    }
+
+    .stats-container { 
+      background: var(--card); 
+      padding: 20px; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 4px var(--line); 
+    }
+
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+      gap: 15px; 
+    }
+
+    .stat-card { 
+      background: var(--gray-100); 
+      padding: 15px; 
+      border-radius: 6px; 
+      text-align: center; 
+    }
+
+    .stat-value { 
+      font-size: 24px; 
+      font-weight: bold; 
+      color: var(--blue); 
+    }
+
+    .stat-label { 
+      font-size: 14px; 
+      color: var(--muted); 
+      margin-top: 5px; 
+    }
+
+    .btn { 
+      background: var(--blue); 
+      color: #fff; 
+      border: 0; 
+      padding: 10px 16px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-size: 14px; 
+      margin-right: 8px; 
+    }
+
+    .btn:hover { 
+      background: #2980b9; 
+    }
+
+    .loading { 
+      text-align: center; 
+      padding: 20px; 
+      color: var(--muted); 
+    }
+
+    .error { 
+      background: #f8d7da; 
+      color: #721c24; 
+      padding: 15px; 
+      border-radius: 6px; 
+      margin: 10px 0; 
+    }
+
+    .targets-config { 
+      background: var(--gray-100); 
+      padding: 15px; 
+      border-radius: 6px; 
+      margin-bottom: 20px; 
+    }
+
+    .target-input { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      margin-bottom: 10px; 
+    }
+
+    .target-input label { 
+      min-width: 150px; 
+    }
+
+    .target-input input { 
+      width: 60px; 
+      padding: 4px; 
+      border: 1px solid #ddd; 
+      border-radius: 4px; 
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Project Portfolio Visualization</h1>
+    <p>Complexity vs Profitability Distribution - "On The Bench" Projects</p>
+  </div>
+
+  <div class="controls">
+    <h3>Target Distribution Settings</h3>
+    <div class="targets-config">
+      <div class="target-input">
+        <label>High Profit/Easy (C1-2, P4-5):</label>
+        <input type="number" id="easyProfitTarget" value="45" min="0" max="100">%
+      </div>
+      <div class="target-input">
+        <label>Medium Projects:</label>
+        <input type="number" id="mediumTarget" value="35" min="0" max="100">%
+      </div>
+      <div class="target-input">
+        <label>Complex/Low Profit (C4-5, P1-2):</label>
+        <input type="number" id="complexUnprofitTarget" value="10" min="0" max="100">%
+      </div>
+    </div>
+    <button class="btn" onclick="refreshData()">Refresh Data</button>
+    <button class="btn" onclick="updateTargets()">Update Targets</button>
+  </div>
+
+  <div class="grid-container">
+    <h3>Portfolio Distribution Grid</h3>
+    
+    <div class="legend">
+      <div class="legend-title">Color Legend:</div>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-color below-target"></div>
+          <span>Below Target (Good)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color at-target"></div>
+          <span>At Target</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color over-target"></div>
+          <span>Over Target (Needs Attention)</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="portfolioGrid">
+      <div class="loading">Loading project data...</div>
+    </div>
+  </div>
+
+  <div class="stats-container">
+    <h3>Portfolio Summary</h3>
+    <div class="stats-grid" id="statsGrid">
+      <div class="loading">Loading statistics...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api/notion-proxy';
+
+    let projectsData = [];
+    let isDataLoaded = false;
+
+    // Target percentages (configurable)
+    let targets = {
+      easyProfit: 45,    // C1-2, P4-5
+      medium: 35,        // Everything else except complex/unprofitable
+      complexUnprofit: 10 // C4-5, P1-2
+    };
+
+    // Load data from API
+    async function loadDataFromAPI() {
+      try {
+        const res = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+        const data = await res.json();
+        if (!data.projects) throw new Error('Invalid data format received from API');
+
+        // Filter only active bench projects
+        projectsData = data.projects.filter(p => p.status === 'On The Bench');
+        isDataLoaded = true;
+        return true;
+      } catch (error) {
+        console.error('Failed to load data from API:', error);
+        document.getElementById('portfolioGrid').innerHTML = `
+          <div class="error">
+            Failed to load project data: ${error.message}<br>
+            Please check your API connection and try refreshing.
+          </div>`;
+        return false;
+      }
+    }
+
+    // Categorize project type
+    function categorizeProject(complexity, profitability) {
+      const c = Number(complexity) || 3;
+      const p = Number(profitability) || 3;
+      
+      if ((c <= 2) && (p >= 4)) return 'easyProfit';
+      if ((c >= 4) && (p <= 2)) return 'complexUnprofit';
+      return 'medium';
+    }
+
+    // Build the grid
+    function buildPortfolioGrid() {
+      if (!isDataLoaded) return;
+
+      const grid = document.getElementById('portfolioGrid');
+      const totalProjects = projectsData.length;
+      
+      // Initialize grid data
+      const gridData = {};
+      for (let c = 1; c <= 5; c++) {
+        for (let p = 1; p <= 5; p++) {
+          gridData[`${c}-${p}`] = [];
+        }
+      }
+
+      // Populate grid with projects
+      projectsData.forEach(project => {
+        const c = Number(project.complexity) || 3;
+        const p = Number(project.profitability) || 3;
+        const key = `${c}-${p}`;
+        if (gridData[key]) {
+          gridData[key].push(project);
+        }
+      });
+
+      // Build HTML
+      let html = `
+        <div class="portfolio-grid">
+          <div class="axis-label"></div>
+          <div class="axis-label">1</div>
+          <div class="axis-label">2</div>
+          <div class="axis-label">3</div>
+          <div class="axis-label">4</div>
+          <div class="axis-label">5</div>
+      `;
+
+      // Build grid cells (profitability 5 to 1, complexity 1 to 5)
+      for (let p = 5; p >= 1; p--) {
+        html += `<div class="axis-label vertical">P${p}</div>`;
+        for (let c = 1; c <= 5; c++) {
+          const key = `${c}-${p}`;
+          const projects = gridData[key] || [];
+          const count = projects.length;
+          const percentage = totalProjects > 0 ? (count / totalProjects) * 100 : 0;
+          
+          // Determine cell category and color
+          const category = categorizeProject(c, p);
+          let cellClass = 'grid-cell';
+          let targetPercentage = 0;
+          
+          if (category === 'easyProfit') {
+            targetPercentage = targets.easyProfit;
+          } else if (category === 'complexUnprofit') {
+            targetPercentage = targets.complexUnprofit;
+          } else {
+            targetPercentage = targets.medium;
+          }
+
+          // Color based on target comparison
+          if (percentage < targetPercentage * 0.8) {
+            cellClass += ' below-target';
+          } else if (percentage <= targetPercentage * 1.2) {
+            cellClass += ' at-target';
+          } else {
+            cellClass += ' over-target';
+          }
+
+          html += `
+            <div class="${cellClass}" title="Complexity ${c}, Profitability ${p}: ${count} projects (${percentage.toFixed(1)}%)">
+              <div class="cell-count">${count}</div>
+              <div class="cell-info">${percentage.toFixed(1)}%</div>
+            </div>
+          `;
+        }
+      }
+
+      html += `</div>`;
+      html += `
+        <div class="grid-labels">
+          <div>← Easy (C1)</div>
+          <div>Complexity</div>
+          <div>Complex (C5) →</div>
+        </div>
+      `;
+
+      grid.innerHTML = html;
+    }
+
+    // Build statistics
+    function buildStatistics() {
+      if (!isDataLoaded) return;
+
+      const totalProjects = projectsData.length;
+      let easyProfitCount = 0;
+      let mediumCount = 0;
+      let complexUnprofitCount = 0;
+
+      projectsData.forEach(project => {
+        const category = categorizeProject(project.complexity, project.profitability);
+        if (category === 'easyProfit') easyProfitCount++;
+        else if (category === 'complexUnprofit') complexUnprofitCount++;
+        else mediumCount++;
+      });
+
+      const easyProfitPct = totalProjects > 0 ? (easyProfitCount / totalProjects * 100) : 0;
+      const complexUnprofitPct = totalProjects > 0 ? (complexUnprofitCount / totalProjects * 100) : 0;
+      const mediumPct = totalProjects > 0 ? (mediumCount / totalProjects * 100) : 0;
+
+      // Calculate average complexity and profitability
+      const avgComplexity = totalProjects > 0 ? 
+        (projectsData.reduce((sum, p) => sum + (Number(p.complexity) || 3), 0) / totalProjects) : 0;
+      const avgProfitability = totalProjects > 0 ? 
+        (projectsData.reduce((sum, p) => sum + (Number(p.profitability) || 3), 0) / totalProjects) : 0;
+
+      const html = `
+        <div class="stat-card">
+          <div class="stat-value">${totalProjects}</div>
+          <div class="stat-label">Total Projects</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${easyProfitCount}</div>
+          <div class="stat-label">Easy & Profitable<br>(${easyProfitPct.toFixed(1)}% vs ${targets.easyProfit}% target)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${complexUnprofitCount}</div>
+          <div class="stat-label">Complex & Unprofitable<br>(${complexUnprofitPct.toFixed(1)}% vs ${targets.complexUnprofit}% target)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${avgComplexity.toFixed(1)}</div>
+          <div class="stat-label">Average Complexity</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${avgProfitability.toFixed(1)}</div>
+          <div class="stat-label">Average Profitability</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${mediumCount}</div>
+          <div class="stat-label">Medium Projects<br>(${mediumPct.toFixed(1)}% vs ${targets.medium}% target)</div>
+        </div>
+      `;
+
+      document.getElementById('statsGrid').innerHTML = html;
+    }
+
+    // Update targets from inputs
+    function updateTargets() {
+      targets.easyProfit = parseInt(document.getElementById('easyProfitTarget').value) || 45;
+      targets.medium = parseInt(document.getElementById('mediumTarget').value) || 35;
+      targets.complexUnprofit = parseInt(document.getElementById('complexUnprofitTarget').value) || 10;
+      
+      // Rebuild grid and stats with new targets
+      buildPortfolioGrid();
+      buildStatistics();
+    }
+
+    // Refresh data and rebuild
+    async function refreshData() {
+      isDataLoaded = false;
+      document.getElementById('portfolioGrid').innerHTML = '<div class="loading">Loading project data...</div>';
+      document.getElementById('statsGrid').innerHTML = '<div class="loading">Loading statistics...</div>';
+      
+      const success = await loadDataFromAPI();
+      if (success) {
+        buildPortfolioGrid();
+        buildStatistics();
+      }
+    }
+
+    // Initialize on page load
+    window.onload = async function() {
+      await refreshData();
+    };
+  </script>
+</body>
+</html>
