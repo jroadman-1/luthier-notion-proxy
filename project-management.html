@@ -567,7 +567,18 @@
               </div>
               <div class="form-group">
                 <label>Tuning</label>
-                <input type="text" id="tuning" value="${escapeHtml(currentProject.tuning || '')}" onchange="markChanged()">
+                <select id="tuning" onchange="markChanged()">
+                  <option value="">Select Tuning</option>
+                  <option value="Standard" ${currentProject.tuning === 'Standard' ? 'selected' : ''}>Standard</option>
+                  <option value="Drop D" ${currentProject.tuning === 'Drop D' ? 'selected' : ''}>Drop D</option>
+                  <option value="Drop C" ${currentProject.tuning === 'Drop C' ? 'selected' : ''}>Drop C</option>
+                  <option value="Half Step Down" ${currentProject.tuning === 'Half Step Down' ? 'selected' : ''}>Half Step Down</option>
+                  <option value="Whole Step Down" ${currentProject.tuning === 'Whole Step Down' ? 'selected' : ''}>Whole Step Down</option>
+                  <option value="Open G" ${currentProject.tuning === 'Open G' ? 'selected' : ''}>Open G</option>
+                  <option value="Open D" ${currentProject.tuning === 'Open D' ? 'selected' : ''}>Open D</option>
+                  <option value="DADGAD" ${currentProject.tuning === 'DADGAD' ? 'selected' : ''}>DADGAD</option>
+                  <option value="Custom" ${currentProject.tuning === 'Custom' ? 'selected' : ''}>Custom</option>
+                </select>
               </div>
               <div class="form-group">
                 <label>Tremolo</label>
