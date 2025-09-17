@@ -115,11 +115,31 @@
       justify-content: center; 
       position: relative; 
       transition: all 0.3s ease; 
+      font-weight: bold;
+      font-size: 16px;
     }
 
-    .grid-cell.has-projects.below-target { background: #d4edda; border-color: var(--green); }
-    .grid-cell.has-projects.at-target { background: #fff3cd; border-color: var(--yellow); }
-    .grid-cell.has-projects.over-target { background: #f8d7da; border-color: var(--red); }
+    .grid-cell.has-projects.below-target { 
+      background: #d4edda; 
+      border-color: var(--green); 
+    }
+    
+    .grid-cell.has-projects.at-target { 
+      background: #fff3cd; 
+      border-color: var(--yellow); 
+    }
+    
+    .grid-cell.has-projects.over-target { 
+      background: #f8d7da; 
+      border: 3px solid var(--red); 
+      animation: pulse 2s infinite; 
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+    }
 
     .cell-count { 
       font-size: 24px; 
@@ -132,6 +152,13 @@
       color: var(--muted); 
       text-align: center; 
       margin-top: 2px; 
+    }
+
+    .danger-icon::before {
+      content: "⚠";
+      color: var(--red);
+      font-size: 12px;
+      margin-right: 4px;
     }
 
     .grid-labels { 
@@ -173,36 +200,29 @@
       border: 2px solid var(--line); 
     }
 
-    .stats-container { 
-      background: var(--card); 
-      padding: 20px; 
-      border-radius: 8px; 
-      box-shadow: 0 2px 4px var(--line); 
-    }
-
-    .stats-grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-      gap: 15px; 
-    }
-
-    .stat-card { 
+    .targets-config { 
       background: var(--gray-100); 
       padding: 15px; 
       border-radius: 6px; 
-      text-align: center; 
+      margin-bottom: 20px; 
     }
 
-    .stat-value { 
-      font-size: 24px; 
-      font-weight: bold; 
-      color: var(--blue); 
+    .target-input { 
+      display: flex; 
+      align-items: center; 
+      gap: 10px; 
+      margin-bottom: 10px; 
     }
 
-    .stat-label { 
-      font-size: 14px; 
-      color: var(--muted); 
-      margin-top: 5px; 
+    .target-input label { 
+      min-width: 150px; 
+    }
+
+    .target-input input { 
+      width: 60px; 
+      padding: 4px; 
+      border: 1px solid #ddd; 
+      border-radius: 4px; 
     }
 
     .btn { 
@@ -234,29 +254,145 @@
       margin: 10px 0; 
     }
 
-    .targets-config { 
-      background: var(--gray-100); 
-      padding: 15px; 
-      border-radius: 6px; 
-      margin-bottom: 20px; 
+    /* Quadrant View Styles */
+    .quadrant-container { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      grid-template-rows: 1fr 1fr; 
+      gap: 15px; 
+      height: 400px; 
     }
 
-    .target-input { 
+    .quadrant { 
+      border-radius: 8px; 
+      padding: 20px; 
       display: flex; 
+      flex-direction: column; 
       align-items: center; 
-      gap: 10px; 
+      justify-content: center; 
+      text-align: center; 
+      border: 3px solid; 
+    }
+
+    .quadrant.sweet-spot { 
+      background: linear-gradient(135deg, #d4edda, #a3d9a3); 
+      border-color: var(--green); 
+    }
+
+    .quadrant.danger-zone { 
+      background: linear-gradient(135deg, #f8d7da, #f5b7b1); 
+      border-color: var(--red); 
+    }
+
+    .quadrant.medium-low { 
+      background: linear-gradient(135deg, #fff3cd, #fdeaa7); 
+      border-color: var(--yellow); 
+    }
+
+    .quadrant.medium-high { 
+      background: linear-gradient(135deg, #e1f5fe, #b3e5fc); 
+      border-color: var(--blue); 
+    }
+
+    .quadrant-title { 
+      font-size: 18px; 
+      font-weight: bold; 
       margin-bottom: 10px; 
     }
 
-    .target-input label { 
-      min-width: 150px; 
+    .quadrant-stats { 
+      font-size: 24px; 
+      font-weight: bold; 
+      margin: 10px 0; 
     }
 
-    .target-input input { 
-      width: 60px; 
-      padding: 4px; 
-      border: 1px solid #ddd; 
-      border-radius: 4px; 
+    .quadrant-target { 
+      font-size: 14px; 
+      color: #666; 
+    }
+
+    /* Two-Panel View Styles */
+    .two-panel { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 20px; 
+    }
+
+    .panel { 
+      background: var(--gray-100); 
+      padding: 15px; 
+      border-radius: 6px; 
+    }
+
+    .panel-title { 
+      font-weight: bold; 
+      margin-bottom: 15px; 
+      text-align: center; 
+    }
+
+    .panel-grid { 
+      display: grid; 
+      grid-template-columns: 40px repeat(5, 50px); 
+      grid-template-rows: repeat(6, 50px); 
+      gap: 2px; 
+    }
+
+    .panel-cell { 
+      border: 1px solid var(--line); 
+      border-radius: 3px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: bold; 
+      font-size: 12px; 
+    }
+
+    .panel-axis { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: bold; 
+      background: var(--gray-200); 
+      font-size: 10px; 
+    }
+
+    .summary-stats { 
+      margin-top: 15px; 
+      text-align: center; 
+      font-size: 14px; 
+    }
+
+    .stats-container { 
+      background: var(--card); 
+      padding: 20px; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 4px var(--line); 
+      margin-bottom: 20px;
+    }
+
+    .stats-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+      gap: 15px; 
+    }
+
+    .stat-card { 
+      background: var(--gray-100); 
+      padding: 15px; 
+      border-radius: 6px; 
+      text-align: center; 
+    }
+
+    .stat-value { 
+      font-size: 24px; 
+      font-weight: bold; 
+      color: var(--blue); 
+    }
+
+    .stat-label { 
+      font-size: 14px; 
+      color: var(--muted); 
+      margin-top: 5px; 
     }
   </style>
 </head>
@@ -266,6 +402,7 @@
     <p>Complexity vs Profitability Distribution - "On The Bench" Projects</p>
   </div>
 
+  <!-- Controls Section -->
   <div class="controls">
     <div class="controls-header" onclick="toggleControls()">
       <h3>Target Distribution Settings</h3>
@@ -291,23 +428,24 @@
     </div>
   </div>
 
+  <!-- Main Grid View (Option 3: Traffic Light with Animation) -->
   <div class="grid-container">
-    <h3>Portfolio Distribution Grid</h3>
+    <h3>Portfolio Distribution Grid - Traffic Light View</h3>
     
     <div class="legend">
       <div class="legend-title">Color Legend:</div>
       <div class="legend-items">
         <div class="legend-item">
-          <div class="legend-color below-target"></div>
-          <span>Below Target (Good)</span>
+          <div class="legend-color" style="background: #d4edda; border-color: #27ae60;"></div>
+          <span>Below Target (Good - can take more)</span>
         </div>
         <div class="legend-item">
-          <div class="legend-color at-target"></div>
-          <span>At Target</span>
+          <div class="legend-color" style="background: #fff3cd; border-color: #f39c12;"></div>
+          <span>At Target (Acceptable)</span>
         </div>
         <div class="legend-item">
-          <div class="legend-color over-target"></div>
-          <span>Over Target (Needs Attention)</span>
+          <div class="legend-color" style="background: #f8d7da; border: 3px solid #e74c3c;"></div>
+          <span>Over Target (PULSING - Stop intake!)</span>
         </div>
       </div>
     </div>
@@ -317,10 +455,37 @@
     </div>
   </div>
 
+  <!-- Statistics Summary -->
   <div class="stats-container">
     <h3>Portfolio Summary</h3>
     <div class="stats-grid" id="statsGrid">
       <div class="loading">Loading statistics...</div>
+    </div>
+  </div>
+
+  <!-- Quadrant View (Option 4) -->
+  <div class="controls">
+    <div class="controls-header" onclick="toggleQuadrant()">
+      <h3>Quadrant Business View</h3>
+      <span class="collapse-icon collapsed" id="quadrantIcon">▶</span>
+    </div>
+    <div class="controls-content collapsed" id="quadrantContent">
+      <div class="quadrant-container" id="quadrantGrid">
+        <div class="loading">Loading quadrant view...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison View (Option 5) -->
+  <div class="controls">
+    <div class="controls-header" onclick="toggleComparison()">
+      <h3>Current vs Target Comparison</h3>
+      <span class="collapse-icon collapsed" id="comparisonIcon">▶</span>
+    </div>
+    <div class="controls-content collapsed" id="comparisonContent">
+      <div class="two-panel" id="comparisonGrid">
+        <div class="loading">Loading comparison view...</div>
+      </div>
     </div>
   </div>
 
@@ -370,7 +535,7 @@
       return 'medium';
     }
 
-    // Build the grid
+    // Build the main traffic light grid
     function buildPortfolioGrid() {
       if (!isDataLoaded) return;
 
@@ -419,6 +584,7 @@
           const category = categorizeProject(c, p);
           let cellClass = 'grid-cell';
           let targetPercentage = 0;
+          let displayText = count.toString();
           
           // Only apply color coding if there are projects in this cell
           if (count > 0) {
@@ -439,12 +605,13 @@
               cellClass += ' at-target';
             } else {
               cellClass += ' over-target';
+              displayText = `⚠ ${count}`;
             }
           }
 
           html += `
             <div class="${cellClass}" title="Complexity ${c}, Profitability ${p}: ${count} projects (${percentage.toFixed(1)}%)">
-              <div class="cell-count">${count}</div>
+              <div class="cell-count">${displayText}</div>
               <div class="cell-info">${percentage.toFixed(1)}%</div>
             </div>
           `;
@@ -461,6 +628,195 @@
       `;
 
       grid.innerHTML = html;
+    }
+
+    // Build quadrant view
+    function buildQuadrantView() {
+      if (!isDataLoaded) return;
+
+      const totalProjects = projectsData.length;
+      let easyProfitCount = 0;
+      let mediumHighCount = 0;
+      let mediumLowCount = 0;
+      let complexUnprofitCount = 0;
+
+      projectsData.forEach(project => {
+        const c = Number(project.complexity) || 3;
+        const p = Number(project.profitability) || 3;
+        
+        if ((c <= 2) && (p >= 4)) {
+          easyProfitCount++;
+        } else if ((c >= 4) && (p <= 2)) {
+          complexUnprofitCount++;
+        } else if (p >= 4) {
+          mediumHighCount++;
+        } else {
+          mediumLowCount++;
+        }
+      });
+
+      const easyProfitPct = totalProjects > 0 ? (easyProfitCount / totalProjects * 100) : 0;
+      const complexUnprofitPct = totalProjects > 0 ? (complexUnprofitCount / totalProjects * 100) : 0;
+
+      const html = `
+        <div class="quadrant sweet-spot">
+          <div class="quadrant-title">SWEET SPOT</div>
+          <div style="font-size: 14px; margin-bottom: 10px;">Easy & Profitable<br>(C1-2, P4-5)</div>
+          <div class="quadrant-stats">${easyProfitCount} projects</div>
+          <div class="quadrant-stats" style="font-size: 18px; color: ${easyProfitPct < targets.easyProfit ? '#e74c3c' : '#27ae60'};">${easyProfitPct.toFixed(1)}% (Target: ${targets.easyProfit}%)</div>
+          <div class="quadrant-target">${easyProfitPct < targets.easyProfit ? '⬆ NEED MORE' : '✓ GOOD'}</div>
+        </div>
+
+        <div class="quadrant medium-high">
+          <div class="quadrant-title">MEDIUM-HIGH</div>
+          <div style="font-size: 14px; margin-bottom: 10px;">Moderate & Profitable<br>(C3, P4-5)</div>
+          <div class="quadrant-stats">${mediumHighCount} projects</div>
+          <div class="quadrant-stats" style="font-size: 18px;">${((mediumHighCount / totalProjects) * 100).toFixed(1)}%</div>
+          <div class="quadrant-target">✓ ACCEPTABLE</div>
+        </div>
+
+        <div class="quadrant medium-low">
+          <div class="quadrant-title">MEDIUM-LOW</div>
+          <div style="font-size: 14px; margin-bottom: 10px;">Easy & Moderate<br>(C1-2, P3)</div>
+          <div class="quadrant-stats">${mediumLowCount} projects</div>
+          <div class="quadrant-stats" style="font-size: 18px;">${((mediumLowCount / totalProjects) * 100).toFixed(1)}%</div>
+          <div class="quadrant-target">✓ ACCEPTABLE</div>
+        </div>
+
+        <div class="quadrant danger-zone">
+          <div class="quadrant-title">DANGER ZONE</div>
+          <div style="font-size: 14px; margin-bottom: 10px;">Complex & Unprofitable<br>(C4-5, P1-2)</div>
+          <div class="quadrant-stats">${complexUnprofitCount} projects</div>
+          <div class="quadrant-stats" style="font-size: 18px; color: ${complexUnprofitPct > targets.complexUnprofit ? '#e74c3c' : '#27ae60'};">${complexUnprofitPct.toFixed(1)}% (Target: ${targets.complexUnprofit}%)</div>
+          <div class="quadrant-target">${complexUnprofitPct > targets.complexUnprofit ? '⬇ REDUCE INTAKE' : '✓ GOOD'}</div>
+        </div>
+      `;
+
+      document.getElementById('quadrantGrid').innerHTML = html;
+    }
+
+    // Build comparison view
+    function buildComparisonView() {
+      if (!isDataLoaded) return;
+
+      const totalProjects = projectsData.length;
+      
+      // Build current state grid
+      const gridData = {};
+      for (let c = 1; c <= 5; c++) {
+        for (let p = 1; p <= 5; p++) {
+          gridData[`${c}-${p}`] = [];
+        }
+      }
+
+      projectsData.forEach(project => {
+        const c = Number(project.complexity) || 3;
+        const p = Number(project.profitability) || 3;
+        const key = `${c}-${p}`;
+        if (gridData[key]) {
+          gridData[key].push(project);
+        }
+      });
+
+      // Current state HTML
+      let currentHTML = `
+        <div class="panel-grid">
+          <div class="panel-axis"></div>
+          <div class="panel-axis">1</div>
+          <div class="panel-axis">2</div>
+          <div class="panel-axis">3</div>
+          <div class="panel-axis">4</div>
+          <div class="panel-axis">5</div>
+      `;
+
+      for (let p = 5; p >= 1; p--) {
+        currentHTML += `<div class="panel-axis">P${p}</div>`;
+        for (let c = 1; c <= 5; c++) {
+          const key = `${c}-${p}`;
+          const count = gridData[key] ? gridData[key].length : 0;
+          const category = categorizeProject(c, p);
+          let cellStyle = 'background: white;';
+          
+          if (count > 0) {
+            const percentage = (count / totalProjects) * 100;
+            let targetPct = 0;
+            
+            if (category === 'easyProfit') targetPct = targets.easyProfit;
+            else if (category === 'complexUnprofit') targetPct = targets.complexUnprofit;
+            else targetPct = targets.medium;
+            
+            if (percentage > targetPct * 1.2) {
+              cellStyle = 'background: #e74c3c; color: white;';
+            } else if (category === 'easyProfit' && percentage < targetPct * 0.8) {
+              cellStyle = 'background: #f39c12; color: white;';
+            } else {
+              cellStyle = 'background: #ecf0f1;';
+            }
+          }
+          
+          currentHTML += `<div class="panel-cell" style="${cellStyle}">${count}</div>`;
+        }
+      }
+      currentHTML += `</div>`;
+
+      // Target state HTML (simplified ideal)
+      let targetHTML = `
+        <div class="panel-grid">
+          <div class="panel-axis"></div>
+          <div class="panel-axis">1</div>
+          <div class="panel-axis">2</div>
+          <div class="panel-axis">3</div>
+          <div class="panel-axis">4</div>
+          <div class="panel-axis">5</div>
+      `;
+
+      // Calculate ideal distribution
+      const idealEasy = Math.round(totalProjects * targets.easyProfit / 100);
+      const idealComplex = Math.round(totalProjects * targets.complexUnprofit / 100);
+      
+      for (let p = 5; p >= 1; p--) {
+        targetHTML += `<div class="panel-axis">P${p}</div>`;
+        for (let c = 1; c <= 5; c++) {
+          const category = categorizeProject(c, p);
+          let targetCount = 0;
+          let cellStyle = 'background: white;';
+          
+          if (category === 'easyProfit') {
+            targetCount = Math.round(idealEasy / 4); // Spread across C1-2, P4-5 cells
+            cellStyle = 'background: #27ae60; color: white;';
+          } else if (category === 'complexUnprofit') {
+            targetCount = Math.round(idealComplex / 4); // Spread across C4-5, P1-2 cells
+            cellStyle = 'background: #f39c12; color: white;';
+          } else {
+            targetCount = Math.round((totalProjects - idealEasy - idealComplex) / 12); // Spread rest
+            cellStyle = 'background: #ecf0f1;';
+          }
+          
+          targetHTML += `<div class="panel-cell" style="${cellStyle}">${targetCount}</div>`;
+        }
+      }
+      targetHTML += `</div>`;
+
+      const html = `
+        <div class="panel">
+          <div class="panel-title">CURRENT STATE</div>
+          ${currentHTML}
+          <div class="summary-stats" style="color: #e74c3c; font-weight: bold;">
+            ${complexUnprofitCount} complex/unprofitable<br>
+            ${easyProfitCount} easy/profitable
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">TARGET STATE</div>
+          ${targetHTML}
+          <div class="summary-stats" style="color: #27ae60; font-weight: bold;">
+            Max ${idealComplex} complex/unprofitable<br>
+            Target ${idealEasy} easy/profitable
+          </div>
+        </div>
+      `;
+
+      document.getElementById('comparisonGrid').innerHTML = html;
     }
 
     // Build statistics
@@ -519,31 +875,7 @@
       document.getElementById('statsGrid').innerHTML = html;
     }
 
-    // Update targets from inputs
-    function updateTargets() {
-      targets.easyProfit = parseInt(document.getElementById('easyProfitTarget').value) || 45;
-      targets.medium = parseInt(document.getElementById('mediumTarget').value) || 35;
-      targets.complexUnprofit = parseInt(document.getElementById('complexUnprofitTarget').value) || 10;
-      
-      // Rebuild grid and stats with new targets
-      buildPortfolioGrid();
-      buildStatistics();
-    }
-
-    // Refresh data and rebuild
-    async function refreshData() {
-      isDataLoaded = false;
-      document.getElementById('portfolioGrid').innerHTML = '<div class="loading">Loading project data...</div>';
-      document.getElementById('statsGrid').innerHTML = '<div class="loading">Loading statistics...</div>';
-      
-      const success = await loadDataFromAPI();
-      if (success) {
-        buildPortfolioGrid();
-        buildStatistics();
-      }
-    }
-
-    // Toggle controls visibility
+    // Toggle functions for collapsible sections
     function toggleControls() {
       const content = document.getElementById('controlsContent');
       const icon = document.getElementById('collapseIcon');
@@ -555,6 +887,82 @@
         icon.textContent = '▶';
       } else {
         icon.textContent = '▼';
+      }
+    }
+
+    function toggleQuadrant() {
+      const content = document.getElementById('quadrantContent');
+      const icon = document.getElementById('quadrantIcon');
+      
+      content.classList.toggle('collapsed');
+      icon.classList.toggle('collapsed');
+      
+      if (content.classList.contains('collapsed')) {
+        icon.textContent = '▶';
+      } else {
+        icon.textContent = '▼';
+        buildQuadrantView(); // Build when opened
+      }
+    }
+
+    function toggleComparison() {
+      const content = document.getElementById('comparisonContent');
+      const icon = document.getElementById('comparisonIcon');
+      
+      content.classList.toggle('collapsed');
+      icon.classList.toggle('collapsed');
+      
+      if (content.classList.contains('collapsed')) {
+        icon.textContent = '▶';
+      } else {
+        icon.textContent = '▼';
+        buildComparisonView(); // Build when opened
+      }
+    }
+
+    // Update targets from inputs
+    function updateTargets() {
+      targets.easyProfit = parseInt(document.getElementById('easyProfitTarget').value) || 45;
+      targets.medium = parseInt(document.getElementById('mediumTarget').value) || 35;
+      targets.complexUnprofit = parseInt(document.getElementById('complexUnprofitTarget').value) || 10;
+      
+      // Rebuild all views with new targets
+      buildPortfolioGrid();
+      buildStatistics();
+      
+      // Rebuild expanded views if they're open
+      const quadrantContent = document.getElementById('quadrantContent');
+      const comparisonContent = document.getElementById('comparisonContent');
+      
+      if (!quadrantContent.classList.contains('collapsed')) {
+        buildQuadrantView();
+      }
+      if (!comparisonContent.classList.contains('collapsed')) {
+        buildComparisonView();
+      }
+    }
+
+    // Refresh data and rebuild all views
+    async function refreshData() {
+      isDataLoaded = false;
+      document.getElementById('portfolioGrid').innerHTML = '<div class="loading">Loading project data...</div>';
+      document.getElementById('statsGrid').innerHTML = '<div class="loading">Loading statistics...</div>';
+      
+      const success = await loadDataFromAPI();
+      if (success) {
+        buildPortfolioGrid();
+        buildStatistics();
+        
+        // Rebuild expanded views if they're open
+        const quadrantContent = document.getElementById('quadrantContent');
+        const comparisonContent = document.getElementById('comparisonContent');
+        
+        if (!quadrantContent.classList.contains('collapsed')) {
+          buildQuadrantView();
+        }
+        if (!comparisonContent.classList.contains('collapsed')) {
+          buildComparisonView();
+        }
       }
     }
 
