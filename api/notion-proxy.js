@@ -223,7 +223,8 @@ async function createProject(res, notion, projectsDbId, data) {
         rich_text: [{ text: { content: serialNumber || '' } }] 
       };
     }
-  
+    // Temporarily comment out all new fields in createProject as well
+    /*
     if (instrumentType !== undefined) {
       if (instrumentType === null || instrumentType === '') {
         properties['Instrument Type'] = { select: null };
@@ -231,7 +232,7 @@ async function createProject(res, notion, projectsDbId, data) {
         properties['Instrument Type'] = { select: { name: instrumentType } };
       }
     }
-  
+    */
     if (stringBrand !== undefined) {
       properties['String Brand'] = { 
         rich_text: [{ text: { content: stringBrand || '' } }] 
@@ -1141,3 +1142,4 @@ function parseRatingValue(ratingStr) {
   const match = ratingStr.match(/^(\d+)-/);
   return match ? parseInt(match[1]) : 3;
 }
+    
