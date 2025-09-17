@@ -1,4 +1,4 @@
-// /api/notion-proxy.js - Complete system API
+// /api/notion-proxy.js - Complete system API with new fields
 const { Client } = require('@notionhq/client');
 
 module.exports = async (req, res) => {
@@ -107,12 +107,21 @@ async function handleDelete(req, res, notion) {
 // Create new project
 async function createProject(res, notion, projectsDbId, data) {
   const { 
-    name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate, intakeNotes,
-    neckReliefBefore, before1stString1stFret, before1stString12thFret, before6thString1stFret, before6thString12thFret,
-    neckReliefAfter, after1stString1stFret, after1stString12thFret, after6thString1stFret, after6thString12thFret
+    name, projectId, status, instrumentMake, instrumentModel, complexity, profitability, 
+    dueDate, store, intakeNotes,
+    // Measurement fields
+    neckReliefBefore, before1stString1stFret, before1stString12thFret, 
+    before6thString1stFret, before6thString12thFret,
+    neckReliefAfter, after1stString1stFret, after1stString12thFret, 
+    after6thString1stFret, after6thString12thFret,
+    // Instrument details
+    instrumentFinish, serialNumber, instrumentType, stringBrand, stringGauge,
+    tuning, tremolo, fretboardRadius, fretwire,
+    // Actions
+    actions, additionalActions
   } = data;
   
-  console.log('Creating new project:', { name, status, instrumentMake, instrumentModel, complexity, profitability, dueDate, intakeNotes });
+  console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
   
   try {
     // Validate required fields
@@ -130,7 +139,14 @@ async function createProject(res, notion, projectsDbId, data) {
       }
     };
     
-    // Add optional fields if provided
+    // Add Project ID field
+    if (projectId !== undefined) {
+      properties['ID'] = { 
+        rich_text: [{ text: { content: projectId || '' } }] 
+      };
+    }
+    
+    // Add basic project fields
     if (instrumentMake !== undefined) {
       properties['Instrument Make'] = { 
         rich_text: [{ text: { content: instrumentMake || '' } }] 
@@ -151,14 +167,19 @@ async function createProject(res, notion, projectsDbId, data) {
       properties['Profitability'] = { number: profitability };
     }
 
-    // Add Intake Notes field
+    if (store !== undefined && store !== '') {
+      properties['Store'] = { 
+        select: { name: store }
+      };
+    }
+
     if (intakeNotes !== undefined) {
       properties['Intake Notes'] = { 
         rich_text: [{ text: { content: intakeNotes || '' } }] 
       };
     }
     
-    // Add measurement fields if provided
+    // Add measurement fields
     if (neckReliefBefore !== undefined && neckReliefBefore !== null) {
       properties['Neck Relief Before'] = { number: neckReliefBefore };
     }
@@ -189,13 +210,88 @@ async function createProject(res, notion, projectsDbId, data) {
     if (after6thString12thFret !== undefined && after6thString12thFret !== null) {
       properties['After 6th string at 12th fret'] = { number: after6thString12thFret };
     }
+
+    // Add instrument detail fields
+    if (instrumentFinish !== undefined) {
+      properties['Instrument Finish'] = { 
+        rich_text: [{ text: { content: instrumentFinish || '' } }] 
+      };
+    }
+    if (serialNumber !== undefined) {
+      properties['Serial Number'] = { 
+        rich_text: [{ text: { content: serialNumber || '' } }] 
+      };
+    }
+    if (instrumentType !== undefined) {
+      properties['Instrument Type'] = { 
+        rich_text: [{ text: { content: instrumentType || '' } }] 
+      };
+    }
+    if (stringBrand !== undefined) {
+      properties['String Brand'] = { 
+        rich_text: [{ text: { content: stringBrand || '' } }] 
+      };
+    }
+    if (stringGauge !== undefined) {
+      properties['String Gauge'] = { 
+        rich_text: [{ text: { content: stringGauge || '' } }] 
+      };
+    }
+    if (tuning !== undefined) {
+      properties['Tuning'] = { 
+        rich_text: [{ text: { content: tuning || '' } }] 
+      };
+    }
+    if (tremolo !== undefined) {
+      properties['Tremolo'] = { 
+        rich_text: [{ text: { content: tremolo || '' } }] 
+      };
+    }
+    if (fretboardRadius !== undefined && fretboardRadius !== null) {
+      properties['Fretboard Radius'] = { number: fretboardRadius };
+    }
+    if (fretwire !== undefined) {
+      properties['Fretwire'] = { 
+        rich_text: [{ text: { content: fretwire || '' } }] 
+      };
+    }
+
+    // Add actions as multi-select
+    if (actions && typeof actions === 'object') {
+      const actionsList = [];
+      if (actions.adjustedHeightRadius) actionsList.push({ name: 'Adjusted Height and Radius' });
+      if (actions.adjustedIntonation) actionsList.push({ name: 'Adjusted Intonation' });
+      if (actions.adjustedPickupHeight) actionsList.push({ name: 'Adjusted Pickup Height' });
+      if (actions.adjustedTrussRod) actionsList.push({ name: 'Adjusted Truss Rod' });
+      if (actions.adjustedStringSlots) actionsList.push({ name: 'Adjusted String Slots' });
+      if (actions.cleanedPolished) actionsList.push({ name: 'Cleaned and Polished' });
+      if (actions.installedStretchedStrings) actionsList.push({ name: 'Installed and Stretched Strings' });
+      if (actions.lubricatedStringSlots) actionsList.push({ name: 'Lubricated String Slots' });
+      if (actions.oiledFretboard) actionsList.push({ name: 'Oiled Fretboard' });
+      if (actions.polishedFrets) actionsList.push({ name: 'Polished Frets' });
+      if (actions.testedElectronics) actionsList.push({ name: 'Tested Electronics' });
+      if (actions.tightenedHardware) actionsList.push({ name: 'Tightened Hardware' });
+      if (actions.adjustedTremoloTension) actionsList.push({ name: 'Adjusted Tremolo Tension' });
+      if (actions.adjustedNeckAngle) actionsList.push({ name: 'Adjusted Neck Angle' });
+      
+      if (actionsList.length > 0) {
+        properties['Actions'] = { multi_select: actionsList };
+      }
+    }
+
+    // Add additional actions
+    if (additionalActions !== undefined) {
+      properties['Additional Actions'] = { 
+        rich_text: [{ text: { content: additionalActions || '' } }] 
+      };
+    }
     
     if (dueDate) {
       properties['Due Date'] = { date: { start: dueDate } };
     }
     
     // Set the current date for "Date Created" if the field exists
-    const nowISO = new Date().toISOString().split('T')[0]; // Just the date part
+    const nowISO = new Date().toISOString().split('T')[0];
     properties['Date Created'] = { date: { start: nowISO } };
     
     console.log('Creating project with properties:', JSON.stringify(properties, null, 2));
@@ -496,7 +592,7 @@ async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
   }
 }
 
-// Update project information - FIXED VERSION with better debugging
+// Update project information - ENHANCED VERSION with all new fields
 async function updateProject(res, notion, projectsDbId, data) {
   const { projectId, ...updates } = data;
   
@@ -505,9 +601,16 @@ async function updateProject(res, notion, projectsDbId, data) {
   try {
     const properties = {};
     
+    // Basic fields
     if (updates.name) {
       properties.Name = { title: [{ text: { content: updates.name } }] };
       console.log('Setting Name:', updates.name);
+    }
+    if (updates.projectId !== undefined) {
+      properties['ID'] = { 
+        rich_text: [{ text: { content: updates.projectId || '' } }] 
+      };
+      console.log('Setting Project ID:', updates.projectId);
     }
     if (updates.status) {
       properties.Status = { select: { name: updates.status } };
@@ -533,6 +636,15 @@ async function updateProject(res, notion, projectsDbId, data) {
       properties['Profitability'] = { number: updates.profitability };
       console.log('Setting Profitability:', updates.profitability);
     }
+    if (updates.store !== undefined) {
+      if (updates.store === null || updates.store === '') {
+        properties['Store'] = { select: null };
+        console.log('Clearing Store');
+      } else {
+        properties['Store'] = { select: { name: updates.store } };
+        console.log('Setting Store:', updates.store);
+      }
+    }
     if (updates.dueDate !== undefined) {
       if (updates.dueDate === null || updates.dueDate === '') {
         properties['Due Date'] = { date: null };
@@ -549,46 +661,106 @@ async function updateProject(res, notion, projectsDbId, data) {
       console.log('Setting Intake Notes:', updates.intakeNotes);
     }
 
-    // Add measurement fields
+    // Measurement fields
     if (updates.neckReliefBefore !== undefined) {
       properties['Neck Relief Before'] = updates.neckReliefBefore !== null ? { number: updates.neckReliefBefore } : { number: null };
-      console.log('Setting Neck Relief Before:', updates.neckReliefBefore);
     }
     if (updates.before1stString1stFret !== undefined) {
       properties['Before 1st string at 1st fret'] = updates.before1stString1stFret !== null ? { number: updates.before1stString1stFret } : { number: null };
-      console.log('Setting Before 1st string at 1st fret:', updates.before1stString1stFret);
     }
     if (updates.before1stString12thFret !== undefined) {
       properties['Before 1st string at 12th fret'] = updates.before1stString12thFret !== null ? { number: updates.before1stString12thFret } : { number: null };
-      console.log('Setting Before 1st string at 12th fret:', updates.before1stString12thFret);
     }
     if (updates.before6thString1stFret !== undefined) {
       properties['Before 6th string at 1st fret'] = updates.before6thString1stFret !== null ? { number: updates.before6thString1stFret } : { number: null };
-      console.log('Setting Before 6th string at 1st fret:', updates.before6thString1stFret);
     }
     if (updates.before6thString12thFret !== undefined) {
       properties['Before 6th string at 12th fret'] = updates.before6thString12thFret !== null ? { number: updates.before6thString12thFret } : { number: null };
-      console.log('Setting Before 6th string at 12th fret:', updates.before6thString12thFret);
     }
     if (updates.neckReliefAfter !== undefined) {
       properties['Neck Relief After'] = updates.neckReliefAfter !== null ? { number: updates.neckReliefAfter } : { number: null };
-      console.log('Setting Neck Relief After:', updates.neckReliefAfter);
     }
     if (updates.after1stString1stFret !== undefined) {
       properties['After 1st string at 1st fret'] = updates.after1stString1stFret !== null ? { number: updates.after1stString1stFret } : { number: null };
-      console.log('Setting After 1st string at 1st fret:', updates.after1stString1stFret);
     }
     if (updates.after1stString12thFret !== undefined) {
       properties['After 1st string at 12th fret'] = updates.after1stString12thFret !== null ? { number: updates.after1stString12thFret } : { number: null };
-      console.log('Setting After 1st string at 12th fret:', updates.after1stString12thFret);
     }
     if (updates.after6thString1stFret !== undefined) {
       properties['After 6th string at 1st fret'] = updates.after6thString1stFret !== null ? { number: updates.after6thString1stFret } : { number: null };
-      console.log('Setting After 6th string at 1st fret:', updates.after6thString1stFret);
     }
     if (updates.after6thString12thFret !== undefined) {
       properties['After 6th string at 12th fret'] = updates.after6thString12thFret !== null ? { number: updates.after6thString12thFret } : { number: null };
-      console.log('Setting After 6th string at 12th fret:', updates.after6thString12thFret);
+    }
+
+    // Instrument detail fields
+    if (updates.instrumentFinish !== undefined) {
+      properties['Instrument Finish'] = { 
+        rich_text: [{ text: { content: updates.instrumentFinish || '' } }] 
+      };
+    }
+    if (updates.serialNumber !== undefined) {
+      properties['Serial Number'] = { 
+        rich_text: [{ text: { content: updates.serialNumber || '' } }] 
+      };
+    }
+    if (updates.instrumentType !== undefined) {
+      properties['Instrument Type'] = { 
+        rich_text: [{ text: { content: updates.instrumentType || '' } }] 
+      };
+    }
+    if (updates.stringBrand !== undefined) {
+      properties['String Brand'] = { 
+        rich_text: [{ text: { content: updates.stringBrand || '' } }] 
+      };
+    }
+    if (updates.stringGauge !== undefined) {
+      properties['String Gauge'] = { 
+        rich_text: [{ text: { content: updates.stringGauge || '' } }] 
+      };
+    }
+    if (updates.tremolo !== undefined) {
+      properties['Tremolo'] = { 
+        rich_text: [{ text: { content: updates.tremolo || '' } }] 
+      };
+    }
+    if (updates.fretboardRadius !== undefined) {
+      properties['Fretboard Radius'] = updates.fretboardRadius !== null ? { number: updates.fretboardRadius } : { number: null };
+    }
+    if (updates.fretwire !== undefined) {
+      properties['Fretwire'] = { 
+        rich_text: [{ text: { content: updates.fretwire || '' } }] 
+      };
+    }
+
+    // Actions as multi-select
+    if (updates.actions && typeof updates.actions === 'object') {
+      const actionsList = [];
+      if (updates.actions.adjustedHeightRadius) actionsList.push({ name: 'Adjusted Height and Radius' });
+      if (updates.actions.adjustedIntonation) actionsList.push({ name: 'Adjusted Intonation' });
+      if (updates.actions.adjustedPickupHeight) actionsList.push({ name: 'Adjusted Pickup Height' });
+      if (updates.actions.adjustedTrussRod) actionsList.push({ name: 'Adjusted Truss Rod' });
+      if (updates.actions.adjustedStringSlots) actionsList.push({ name: 'Adjusted String Slots' });
+      if (updates.actions.cleanedPolished) actionsList.push({ name: 'Cleaned and Polished' });
+      if (updates.actions.installedStretchedStrings) actionsList.push({ name: 'Installed and Stretched Strings' });
+      if (updates.actions.lubricatedStringSlots) actionsList.push({ name: 'Lubricated String Slots' });
+      if (updates.actions.oiledFretboard) actionsList.push({ name: 'Oiled Fretboard' });
+      if (updates.actions.polishedFrets) actionsList.push({ name: 'Polished Frets' });
+      if (updates.actions.testedElectronics) actionsList.push({ name: 'Tested Electronics' });
+      if (updates.actions.tightenedHardware) actionsList.push({ name: 'Tightened Hardware' });
+      if (updates.actions.adjustedTremoloTension) actionsList.push({ name: 'Adjusted Tremolo Tension' });
+      if (updates.actions.adjustedNeckAngle) actionsList.push({ name: 'Adjusted Neck Angle' });
+      
+      properties['Actions'] = { multi_select: actionsList };
+      console.log('Setting Actions:', actionsList.map(a => a.name));
+    }
+
+    // Additional actions
+    if (updates.additionalActions !== undefined) {
+      properties['Additional Actions'] = { 
+        rich_text: [{ text: { content: updates.additionalActions || '' } }] 
+      };
+      console.log('Setting Additional Actions:', updates.additionalActions);
     }
 
     console.log('Final properties to update:', JSON.stringify(properties, null, 2));
@@ -609,7 +781,6 @@ async function updateProject(res, notion, projectsDbId, data) {
       body: error.body
     });
     
-    // Return the detailed error to help debug
     return res.status(500).json({ 
       error: 'Project update failed', 
       detail: error.message,
@@ -740,7 +911,6 @@ async function createWorkflow(res, notion, workflowsDbId, data) {
   }
   
   try {
-    // Validate the workflow data is valid JSON
     try {
       JSON.parse(workflowData || '[]');
     } catch (e) {
@@ -788,7 +958,6 @@ async function updateWorkflow(res, notion, workflowsDbId, data) {
   }
   
   try {
-    // Validate the workflow data is valid JSON
     try {
       JSON.parse(workflowData || '[]');
     } catch (e) {
@@ -848,30 +1017,61 @@ function parseIntSafe(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-// Mapping functions
+// Enhanced mapping functions with all new fields
 function mapProject(page) {
   const props = page.properties;
+
+  // Helper function to extract actions from multi-select
+  const extractActions = (multiSelectProp) => {
+    if (!multiSelectProp?.multi_select) return {};
+    
+    const actions = {};
+    const actionMap = {
+      'Adjusted Height and Radius': 'adjustedHeightRadius',
+      'Adjusted Intonation': 'adjustedIntonation',
+      'Adjusted Pickup Height': 'adjustedPickupHeight',
+      'Adjusted Truss Rod': 'adjustedTrussRod',
+      'Adjusted String Slots': 'adjustedStringSlots',
+      'Cleaned and Polished': 'cleanedPolished',
+      'Installed and Stretched Strings': 'installedStretchedStrings',
+      'Lubricated String Slots': 'lubricatedStringSlots',
+      'Oiled Fretboard': 'oiledFretboard',
+      'Polished Frets': 'polishedFrets',
+      'Tested Electronics': 'testedElectronics',
+      'Tightened Hardware': 'tightenedHardware',
+      'Adjusted Tremolo Tension': 'adjustedTremoloTension',
+      'Adjusted Neck Angle': 'adjustedNeckAngle'
+    };
+
+    multiSelectProp.multi_select.forEach(item => {
+      const key = actionMap[item.name];
+      if (key) actions[key] = true;
+    });
+
+    return actions;
+  };
 
   return {
     id: page.id,
     name: props['Name']?.title?.[0]?.plain_text ?? 'Untitled',
+    projectId: props['ID']?.rich_text?.[0]?.plain_text ?? '',
     instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
     instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
     status: props['Status']?.select?.name ?? 'Unknown',
     dueDate: props['Due Date']?.date?.start ?? null,
+    store: props['Store']?.select?.name ?? '',
     intakeNotes: props['Intake Notes']?.rich_text?.[0]?.plain_text ?? '',
 
-    // numeric fields (now just simple number properties)
+    // Numeric fields
     complexity: props['Complexity']?.number ?? 3,
     profitability: props['Profitability']?.number ?? 3,
 
-    // dates for "days since worked"
+    // Dates for "days since worked"
     lastWorked: props['Last Worked']?.date?.start ?? null,
-   
-    dateCreated: props['Date Created']?.date?.start ?? null,   // your custom date
-    createdTime: page.created_time,                            // Notion system created timestamp
+    dateCreated: props['Date Created']?.date?.start ?? null,
+    createdTime: page.created_time,
 
-    // measurement fields
+    // Measurement fields
     neckReliefBefore: props['Neck Relief Before']?.number ?? null,
     before1stString1stFret: props['Before 1st string at 1st fret']?.number ?? null,
     before1stString12thFret: props['Before 1st string at 12th fret']?.number ?? null,
@@ -883,7 +1083,22 @@ function mapProject(page) {
     after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
     after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
 
-    // rollups / formulas you already use
+    // Instrument detail fields
+    instrumentFinish: props['Instrument Finish']?.rich_text?.[0]?.plain_text ?? '',
+    serialNumber: props['Serial Number']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentType: props['Instrument Type']?.rich_text?.[0]?.plain_text ?? '',
+    stringBrand: props['String Brand']?.rich_text?.[0]?.plain_text ?? '',
+    stringGauge: props['String Gauge']?.rich_text?.[0]?.plain_text ?? '',
+    tuning: props['Tuning']?.rich_text?.[0]?.plain_text ?? '',
+    tremolo: props['Tremolo']?.rich_text?.[0]?.plain_text ?? '',
+    fretboardRadius: props['Fretboard Radius']?.number ?? null,
+    fretwire: props['Fretwire']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Actions
+    actions: extractActions(props['Actions']),
+    additionalActions: props['Additional Actions']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Rollups/formulas (existing functionality)
     totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
     totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
     completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
