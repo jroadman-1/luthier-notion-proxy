@@ -139,11 +139,12 @@ async function createProject(res, notion, projectsDbId, data) {
       }
     };
     
-    // Add Project ID field
-    if (projectId !== undefined) {
-      properties['ID'] = { 
-        rich_text: [{ text: { content: projectId || '' } }] 
-      };
+    // Add Project ID field (corrected to number type)
+    if (projectId !== undefined && projectId !== '') {
+      const idNumber = parseInt(projectId, 10);
+      if (!isNaN(idNumber)) {
+        properties['ID'] = { number: idNumber };
+      }
     }
     
     // Add basic project fields
@@ -240,9 +241,11 @@ async function createProject(res, notion, projectsDbId, data) {
       };
     }
     if (tuning !== undefined) {
-      properties['Tuning'] = { 
-        rich_text: [{ text: { content: tuning || '' } }] 
-      };
+      if (tuning === null || tuning === '') {
+        properties['Tuning'] = { select: null };
+      } else {
+        properties['Tuning'] = { select: { name: tuning } };
+      }
     }
     if (tremolo !== undefined) {
       properties['Tremolo'] = { 
@@ -609,9 +612,14 @@ async function updateProject(res, notion, projectsDbId, data) {
       console.log('Setting Name:', updates.name);
     }
     if (updates.projectId !== undefined) {
-      properties['ID'] = { 
-        rich_text: [{ text: { content: updates.projectId || '' } }] 
-      };
+      if (updates.projectId === null || updates.projectId === '') {
+        properties['ID'] = { number: null };
+      } else {
+        const idNumber = parseInt(updates.projectId, 10);
+        if (!isNaN(idNumber)) {
+          properties['ID'] = { number: idNumber };
+        }
+      }
       console.log('Setting Project ID:', updates.projectId);
     }
     if (updates.status) {
@@ -1056,7 +1064,7 @@ function mapProject(page) {
   return {
     id: page.id,
     name: props['Name']?.title?.[0]?.plain_text ?? 'Untitled',
-    projectId: props['ID']?.rich_text?.[0]?.plain_text ?? '',
+    projectId: props['ID']?.number ? String(props['ID'].number) : '',
     instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
     instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
     status: props['Status']?.select?.name ?? 'Unknown',
@@ -1085,13 +1093,13 @@ function mapProject(page) {
     after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
     after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
 
-    // Instrument detail fields (Instrument Type now select field)
+    // Instrument detail fields (updated field types)
     instrumentFinish: props['Instrument Finish']?.rich_text?.[0]?.plain_text ?? '',
     serialNumber: props['Serial Number']?.rich_text?.[0]?.plain_text ?? '',
     instrumentType: props['Instrument Type']?.select?.name ?? '',
     stringBrand: props['String Brand']?.rich_text?.[0]?.plain_text ?? '',
     stringGauge: props['String Gauge']?.rich_text?.[0]?.plain_text ?? '',
-    tuning: props['Tuning']?.rich_text?.[0]?.plain_text ?? '',
+    tuning: props['Tuning']?.select?.name ?? '',
     tremolo: props['Tremolo']?.rich_text?.[0]?.plain_text ?? '',
     fretboardRadius: props['Fretboard Radius']?.number ?? null,
     fretwire: props['Fretwire']?.rich_text?.[0]?.plain_text ?? '',
