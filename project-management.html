@@ -501,36 +501,7 @@
           </div>
         </div>
 
-        <div class="form-section collapsible-section">
-          <h3 onclick="toggleCollapsible('billing')">
-            <span id="billingToggle" class="collapsible-toggle">▶</span>
-            Billing
-          </h3>
-          <div id="billingContent" class="collapsible-content" style="display: none;">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Total Amount ($)</label>
-                <input type="number" step="0.01" min="0" id="total" 
-                       value="${currentProject.total || ''}" 
-                       onchange="markChanged(); updateBillingCalculation()" 
-                       placeholder="0.00">
-              </div>
-              <div class="form-group">
-                <label>Commission ($)</label>
-                <input type="number" step="0.01" min="0" id="commission" 
-                       value="${currentProject.commission || ''}" 
-                       onchange="markChanged(); updateBillingCalculation()" 
-                       placeholder="0.00">
-              </div>
-              <div class="form-group full-width">
-                <label>Minus Commission (Calculated)</label>
-                <div class="readonly-display" id="minusCommissionDisplay">
-                  ${((currentProject.total || 0) - (currentProject.commission || 0)).toFixed(2)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        
 
         <div class="form-section collapsible-section">
           <h3 onclick="toggleCollapsible('measurements')">
@@ -745,6 +716,37 @@
             <div class="form-group" style="margin-top:15px;">
               <label>Additional Actions</label>
               <textarea id="additionalActions" onchange="markChanged()" placeholder="Enter any additional actions performed...">${escapeHtml(currentProject.additionalActions || '')}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('billing')">
+            <span id="billingToggle" class="collapsible-toggle">▶</span>
+            Billing
+          </h3>
+          <div id="billingContent" class="collapsible-content" style="display: none;">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Total Amount ($)</label>
+                <input type="number" step="0.01" min="0" id="total" 
+                       value="${currentProject.total || ''}" 
+                       onchange="markChanged(); updateBillingCalculation()" 
+                       placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Commission ($)</label>
+                <input type="number" step="0.01" min="0" id="commission" 
+                       value="${currentProject.commission || ''}" 
+                       onchange="markChanged(); updateBillingCalculation()" 
+                       placeholder="0.00">
+              </div>
+              <div class="form-group full-width">
+                <label>Minus Commission (Calculated)</label>
+                <div class="readonly-display" id="minusCommissionDisplay">
+                  ${((currentProject.total || 0) - (currentProject.commission || 0)).toFixed(2)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
