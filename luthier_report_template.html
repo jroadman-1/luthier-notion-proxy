@@ -9,20 +9,20 @@
     * { box-sizing: border-box; }
     body {
       font-family: 'Times New Roman', serif;
-      margin: 0; padding: 0; color: #333; line-height: 1.4; font-size: 12px; background: #fff;
+      margin: 0; padding: 0; color: #333; line-height: 1.4; font-size: 12px;
     }
-    .report-container { max-width: 8.5in; margin: 0 auto; background: white; min-height: 11in; padding: 0.1in 0.15in; }
+    .report-container { max-width: 8.5in; margin: 0 auto; background: white; min-height: 11in; }
 
-    /* Letterhead */
+    /* Letterhead Section */
     .letterhead {
       border-bottom: 3px solid #2c3e50; margin-bottom: 20px; padding-bottom: 15px;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      display: flex; align-items: center; justify-content: space-between;
     }
     .logo-section {
       flex: 0 0 120px; height: 80px; background: #f8f9fa; border: 2px dashed #ccc;
       display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; text-align: center;
     }
-    .company-info { flex: 1; text-align: center; margin: 0 10px; }
+    .company-info { flex: 1; text-align: center; margin: 0 20px; }
     .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
     .company-tagline { font-size: 14px; color: #666; font-style: italic; margin-bottom: 8px; }
     .contact-info { font-size: 11px; color: #555; }
@@ -30,51 +30,51 @@
 
     /* Project Header */
     .project-header { background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; border-radius: 4px; margin-bottom: 20px; }
-    .project-title { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-align: center; letter-spacing: 0.5px; }
-    .project-basic-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 12px; }
+    .project-title { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-align: center; }
+    .project-basic-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 15px; }
     .info-item { display: flex; flex-direction: column; }
     .info-label { font-weight: bold; font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 3px; }
     .info-value { font-size: 13px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 2px; min-height: 16px; }
 
-    /* Layout */
+    /* Two Column Layout */
     .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 20px; }
     .left-column, .right-column { min-height: 400px; }
 
-    /* Sections */
+    /* Section Styling */
     .section { margin-bottom: 25px; break-inside: avoid; }
     .section-title { font-size: 14px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 3px; margin-bottom: 12px; }
 
-    /* Measurements */
+    /* Measurements Table */
     .measurements-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px; }
-    .measurements-table th { background: #f0f3f6; padding: 6px 4px; text-align: left; border: 1px solid #dee2e6; font-weight: bold; font-size: 9px; }
+    .measurements-table th { background: #f8f9fa; padding: 6px 4px; text-align: left; border: 1px solid #dee2e6; font-weight: bold; font-size: 9px; }
     .measurements-table td { padding: 6px 4px; border: 1px solid #dee2e6; text-align: center; }
     .measurements-table .measurement-name { text-align: left; font-weight: 500; }
 
-    /* Actions */
+    /* Actions Checklist */
     .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; }
     .action-item { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
     .checkbox { width: 12px; height: 12px; border: 1px solid #666; display: inline-block; position: relative; }
     .checkbox.checked::after { content: '✓'; position: absolute; left: 1px; top: -2px; font-size: 10px; font-weight: bold; }
 
-    /* Notes */
+    /* Notes Section */
     .notes-box { border: 1px solid #dee2e6; min-height: 80px; padding: 10px; background: #fafafa; font-size: 11px; line-height: 1.5; white-space: pre-wrap; }
 
-    /* Summary */
-    .summary-section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin-bottom: 20px; }
-    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .summary-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccc; }
-    .summary-item:last-child { border-bottom: none; font-weight: bold; font-size: 13px; }
-
-    /* Signatures */
+    /* Signature Section */
     .signature-section { margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
     .signature-box { text-align: center; }
     .signature-line { border-bottom: 1px solid #333; width: 220px; margin: 0 auto 5px; height: 42px; }
     .signature-label { font-size: 11px; color: #666; }
 
+    /* Time and Billing Summary */
+    .summary-section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin-bottom: 20px; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .summary-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccc; }
+    .summary-item:last-child { border-bottom: none; font-weight: bold; font-size: 13px; }
+
     /* Print Button */
     .print-button { position: fixed; top: 10px; right: 10px; background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; }
     .print-button:hover { background: #0056b3; }
-    @media print { .print-button { display: none !important; } .section { break-inside: avoid; } }
+    @media print { .print-button { display: none; } .section { break-inside: avoid; } }
   </style>
 </head>
 <body>
@@ -226,7 +226,7 @@
 
         <!-- Time & Billing Summary (optional) -->
         <div class="section summary-section" id="summarySection" style="display:none;">
-          <div class="section-title" style="border: none; padding: 0; margin: 0 0 8px 0;">TIME & BILLING SUMMARY</div>
+          <div class="section-title" style="border:none;margin:0 0 8px 0;padding:0;">TIME & BILLING SUMMARY</div>
           <div class="summary-grid">
             <div>
               <div class="summary-item"><span>Estimated Hours</span><span id="summary_est_hours"></span></div>
@@ -256,8 +256,8 @@
   </div>
 
   <script>
-  (function() {
-    // Read payload from localStorage
+  (function(){
+    // Pull payload saved by the management page
     const raw = localStorage.getItem('luthierReportData');
     const data = raw ? JSON.parse(raw) : {};
     const p = (data && data.project) ? data.project : {};
@@ -266,7 +266,7 @@
     // Helpers
     const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = (v ?? ''); };
     const setCheck = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('checked', !!on); };
-    const numInch = x => (x === '' || x == null || isNaN(parseFloat(x))) ? '' : (parseFloat(x).toFixed(3) + '\"');
+    const inch = (x) => (x === '' || x == null || isNaN(parseFloat(x))) ? '' : (parseFloat(x).toFixed(3) + '\"');
 
     // Letterhead
     const svcDate = (new Date()).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -283,16 +283,16 @@
     setText('finishText', p.instrumentFinish || '');
 
     // Measurements
-    setText('m_relief_before', numInch(p.neckReliefBefore));
-    setText('m_relief_after', numInch(p.neckReliefAfter));
-    setText('m_1s_1f_before', numInch(p.before1stString1stFret));
-    setText('m_1s_1f_after', numInch(p.after1stString1stFret));
-    setText('m_1s_12f_before', numInch(p.before1stString12thFret));
-    setText('m_1s_12f_after', numInch(p.after1stString12thFret));
-    setText('m_6s_1f_before', numInch(p.before6thString1stFret));
-    setText('m_6s_1f_after', numInch(p.after6thString1stFret));
-    setText('m_6s_12f_before', numInch(p.before6thString12thFret));
-    setText('m_6s_12f_after', numInch(p.after6thString12thFret));
+    setText('m_relief_before', inch(p.neckReliefBefore));
+    setText('m_relief_after', inch(p.neckReliefAfter));
+    setText('m_1s_1f_before', inch(p.before1stString1stFret));
+    setText('m_1s_1f_after', inch(p.after1stString1stFret));
+    setText('m_1s_12f_before', inch(p.before1stString12thFret));
+    setText('m_1s_12f_after', inch(p.after1stString12thFret));
+    setText('m_6s_1f_before', inch(p.before6thString1stFret));
+    setText('m_6s_1f_after', inch(p.after6thString1stFret));
+    setText('m_6s_12f_before', inch(p.before6thString12thFret));
+    setText('m_6s_12f_after', inch(p.after6thString12thFret));
 
     // Specs
     setText('spec_type', p.instrumentType || '');
@@ -340,7 +340,8 @@
     const hasTime = (est > 0) || (act > 0);
 
     if (hasBilling || hasTime) {
-      document.getElementById('summarySection').style.display = 'block';
+      const section = document.getElementById('summarySection');
+      if (section) section.style.display = 'block';
       if (hasTime) {
         setText('summary_est_hours', est ? est.toFixed(1) + 'h' : '');
         setText('summary_actual_hours', act ? act.toFixed(1) + 'h' : '');
