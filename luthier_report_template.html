@@ -273,7 +273,7 @@
 
     // Header info
     const instrumentName = [p.instrumentMake, p.instrumentModel].filter(Boolean).join(' ');
-    setText('customerName', p.customerName || '');
+    setText('customerName', p.name || '');
     setText('instrumentName', instrumentName || p.instrumentType || '');
     setText('statusText', p.status || '');
     setText('storeName', p.store || '');
