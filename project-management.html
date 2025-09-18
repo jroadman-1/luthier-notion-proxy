@@ -1465,6 +1465,26 @@
     })();
     currentProject.fretwire = val('fretwire');
 
+    // Actions (add this to syncEditorIntoCurrentProject function)
+if (!currentProject.actions) currentProject.actions = {};
+
+currentProject.actions.adjustedHeightRadius = document.getElementById('adjustedHeightRadius')?.checked || false;
+currentProject.actions.adjustedIntonation = document.getElementById('adjustedIntonation')?.checked || false;
+currentProject.actions.adjustedPickupHeight = document.getElementById('adjustedPickupHeight')?.checked || false;
+currentProject.actions.adjustedTrussRod = document.getElementById('adjustedTrussRod')?.checked || false;
+currentProject.actions.adjustedStringSlots = document.getElementById('adjustedStringSlots')?.checked || false;
+currentProject.actions.cleanedPolished = document.getElementById('cleanedPolished')?.checked || false;
+currentProject.actions.installedStretchedStrings = document.getElementById('installedStretchedStrings')?.checked || false;
+currentProject.actions.lubricatedStringSlots = document.getElementById('lubricatedStringSlots')?.checked || false;
+currentProject.actions.oiledFretboard = document.getElementById('oiledFretboard')?.checked || false;
+currentProject.actions.polishedFrets = document.getElementById('polishedFrets')?.checked || false;
+currentProject.actions.testedElectronics = document.getElementById('testedElectronics')?.checked || false;
+currentProject.actions.tightenedHardware = document.getElementById('tightenedHardware')?.checked || false;
+currentProject.actions.adjustedTremoloTension = document.getElementById('adjustedTremoloTension')?.checked || false;
+currentProject.actions.adjustedNeckAngle = document.getElementById('adjustedNeckAngle')?.checked || false;
+
+currentProject.additionalActions = document.getElementById('additionalActions')?.value || '';
+
     // Actions (“Standard Actions”) are already mapped in your API to currentProject.actions
     // If you later add action checkboxes in the editor UI, read them here and update currentProject.actions accordingly.
   }
