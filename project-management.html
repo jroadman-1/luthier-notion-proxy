@@ -124,9 +124,10 @@
           <input type="text" id="projectIdInput" class="project-id-input" placeholder="Project ID" style="display:none;" onchange="markChanged()">
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
-          <button class="btn success" onclick="saveProject()" id="saveBtn" disabled>Save Changes</button>
-          <button class="btn secondary" onclick="cancelChanges()">Cancel</button>
-        </div>
+  <button class="btn success" onclick="saveProject()" id="saveBtn" disabled>Save Changes</button>
+  <button class="btn" onclick="openReportForCurrent()">Open Report</button>
+  <button class="btn secondary" onclick="cancelChanges()">Cancel</button>
+</div>
       </div>
 
       <div class="editor-content" id="editorContent">
@@ -1409,6 +1410,84 @@
       hasUnsavedChanges = false;
       updateSaveButton();
     }
+
+    
+  function syncEditorIntoCurrentProject() {
+    if (!currentProject) return;
+    // Core fields visible in the “Project Details” section
+    const val = id => document.getElementById(id)?.value ?? '';
+
+    currentProject.name = val('projectName');
+    currentProject.status = val('projectStatus');
+    currentProject.instrumentMake = val('instrumentMake');
+    currentProject.instrumentModel = val('instrumentModel');
+    currentProject.complexity = parseInt(val('complexity') || currentProject.complexity || 3, 10);
+    currentProject.profitability = parseInt(val('profitability') || currentProject.profitability || 3, 10);
+    currentProject.dueDate = val('dueDate') || null;
+    currentProject.store = val('store') || '';
+    currentProject.intakeNotes = val('intakeNotes') || '';
+
+    // Billing (if shown)
+    const totalEl = document.getElementById('total');
+    const commissionEl = document.getElementById('commission');
+    if (totalEl) currentProject.total = totalEl.value ? parseFloat(totalEl.value) : null;
+    if (commissionEl) currentProject.commission = commissionEl.value ? parseFloat(commissionEl.value) : null;
+
+    // Measurements (only if section expanded—safe to read anyway)
+    const num = id => {
+      const v = document.getElementById(id)?.value;
+      return (v === '' || v == null) ? null : parseFloat(v);
+    };
+
+    currentProject.neckReliefBefore = num('neckReliefBefore');
+    currentProject.before1stString1stFret = num('before1stString1stFret');
+    currentProject.before1stString12thFret = num('before1stString12thFret');
+    currentProject.before6thString1stFret = num('before6thString1stFret');
+    currentProject.before6thString12thFret = num('before6thString12thFret');
+
+    currentProject.neckReliefAfter = num('neckReliefAfter');
+    currentProject.after1stString1stFret = num('after1stString1stFret');
+    currentProject.after1stString12thFret = num('after1stString12thFret');
+    currentProject.after6thString1stFret = num('after6thString1stFret');
+    currentProject.after6thString12thFret = num('after6thString12thFret');
+
+    // Instrument details
+    currentProject.instrumentFinish = val('instrumentFinish');
+    currentProject.serialNumber = val('serialNumber');
+    currentProject.instrumentType = val('instrumentType');
+    currentProject.stringBrand = val('stringBrand');
+    currentProject.stringGauge = val('stringGauge');
+    currentProject.tuning = val('tuning');
+    currentProject.tremolo = val('tremolo');
+    currentProject.fretboardRadius = (() => {
+      const r = val('fretboardRadius');
+      return r ? parseFloat(r) : null;
+    })();
+    currentProject.fretwire = val('fretwire');
+
+    // Actions (“Standard Actions”) are already mapped in your API to currentProject.actions
+    // If you later add action checkboxes in the editor UI, read them here and update currentProject.actions accordingly.
+  }
+
+  function openReportForCurrent() {
+    if (!currentProject) {
+      showMessage('Select a project first', 'error');
+      return;
+    }
+    // Pull any on-screen edits into the object:
+    syncEditorIntoCurrentProject();
+
+    // Attach milestones currently loaded for this project:
+    const payload = {
+      project: currentProject,
+      milestones: currentMilestones || []
+    };
+
+    // Save to localStorage and pop new window with the printable report:
+    localStorage.setItem('luthierReportData', JSON.stringify(payload));
+    window.open('luthier_report_template.html', '_blank', 'noopener');
+  }
+
   </script>
 </body>
 </html>
