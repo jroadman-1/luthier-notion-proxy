@@ -89,6 +89,10 @@
     .checkbox-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:15px}
     .checkbox-item{display:flex;align-items:center;gap:6px;font-size:14px}
     .checkbox-item input[type="checkbox"]{margin:0}
+    .billing-summary{background:#e8f2ff;padding:15px;border-radius:6px;margin-bottom:20px;border-left:4px solid #2196f3}
+    .billing-summary h4{margin:0 0 10px;color:#1976d2}
+    .billing-stat .label{font-size:12px;color:#666;margin-top:2px}
+    .readonly-display{background:#f8f9fa;color:#666;font-weight:bold;text-align:center;padding:8px 12px;border:1px solid #e9ecef;border-radius:4px;margin-top:5px}
   </style>
 </head>
 <body>
@@ -210,6 +214,10 @@
         totalMilestones: 0,
         completedMilestones: 0,
         progress: 0,
+        // Initialize billing fields
+        total: null,
+        commission: null,
+        minusCommission: null,
         // Initialize measurement fields
         neckReliefBefore: null,
         before1stString1stFret: null,
@@ -339,6 +347,20 @@
       return currentMilestones.reduce((total, m) => total + (m.estimatedHours || 0), 0);
     }
 
+    function calculateMinusCommission() {
+      const total = parseFloat(document.getElementById('total')?.value) || 0;
+      const commission = parseFloat(document.getElementById('commission')?.value) || 0;
+      return total - commission;
+    }
+
+    function updateBillingCalculation() {
+      const minusCommissionDisplay = document.getElementById('minusCommissionDisplay');
+      if (minusCommissionDisplay) {
+        const result = calculateMinusCommission();
+        minusCommissionDisplay.textContent = `${result.toFixed(2)}`;
+      }
+    }
+
     function displayProjectEditor() {
       if (!currentProject) return;
 
@@ -395,6 +417,33 @@
         `;
       }
 
+      // Billing summary for existing projects with billing data
+      if (!isNewProject && (currentProject.total || currentProject.commission)) {
+        const total = currentProject.total || 0;
+        const commission = currentProject.commission || 0;
+        const minusCommission = currentProject.minusCommission || (total - commission);
+        
+        content += `
+          <div class="billing-summary">
+            <h4>Project Billing Summary</h4>
+            <div class="billing-stats">
+              <div class="billing-stat">
+                <div class="value">${total.toFixed(2)}</div>
+                <div class="label">Total Amount</div>
+              </div>
+              <div class="billing-stat">
+                <div class="value">${commission.toFixed(2)}</div>
+                <div class="label">Commission</div>
+              </div>
+              <div class="billing-stat">
+                <div class="value">${minusCommission.toFixed(2)}</div>
+                <div class="label">Minus Commission</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       content += `
         <div class="form-section">
           <h3>Project Details</h3>
@@ -440,14 +489,45 @@
               <select id="store" onchange="markChanged()">
                 <option value="">Select Store</option>
                 <option value="In Person"        ${currentProject.store === 'In Person' ? 'selected' : ''}>In Person</option>
-    <option value="Spacetone"        ${currentProject.store === 'Spacetone' ? 'selected' : ''}>Spacetone</option>
-    <option value="Lark Guitars"     ${currentProject.store === 'Lark Guitars' ? 'selected' : ''}>Lark Guitars</option>
-    <option value="Robot Monster"    ${currentProject.store === 'Robot Monster' ? 'selected' : ''}>Robot Monster</option>
+                <option value="Spacetone"        ${currentProject.store === 'Spacetone' ? 'selected' : ''}>Spacetone</option>
+                <option value="Lark Guitars"     ${currentProject.store === 'Lark Guitars' ? 'selected' : ''}>Lark Guitars</option>
+                <option value="Robot Monster"    ${currentProject.store === 'Robot Monster' ? 'selected' : ''}>Robot Monster</option>
               </select>
             </div>
             <div class="form-group full-width">
               <label>Intake Notes</label>
               <textarea id="intakeNotes" onchange="markChanged()" placeholder="Enter any initial notes, requirements, or special instructions for this project...">${escapeHtml(currentProject.intakeNotes || '')}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('billing')">
+            <span id="billingToggle" class="collapsible-toggle">▶</span>
+            Billing
+          </h3>
+          <div id="billingContent" class="collapsible-content" style="display: none;">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Total Amount ($)</label>
+                <input type="number" step="0.01" min="0" id="total" 
+                       value="${currentProject.total || ''}" 
+                       onchange="markChanged(); updateBillingCalculation()" 
+                       placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Commission ($)</label>
+                <input type="number" step="0.01" min="0" id="commission" 
+                       value="${currentProject.commission || ''}" 
+                       onchange="markChanged(); updateBillingCalculation()" 
+                       placeholder="0.00">
+              </div>
+              <div class="form-group full-width">
+                <label>Minus Commission (Calculated)</label>
+                <div class="readonly-display" id="minusCommissionDisplay">
+                  ${((currentProject.total || 0) - (currentProject.commission || 0)).toFixed(2)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -728,6 +808,9 @@
 
       // Initialize auto-split preview
       previewAutoSplit();
+      
+      // Initialize billing calculation
+      updateBillingCalculation();
     }
 
     function toggleCollapsible(section) {
@@ -1185,6 +1268,10 @@
           store: document.getElementById('store').value,
           intakeNotes: document.getElementById('intakeNotes').value,
           
+          // Billing data
+          total: parseFloat(document.getElementById('total').value) || null,
+          commission: parseFloat(document.getElementById('commission').value) || null,
+          
           // Measurement data
           neckReliefBefore: parseFloat(document.getElementById('neckReliefBefore').value) || null,
           before1stString1stFret: parseFloat(document.getElementById('before1stString1stFret').value) || null,
@@ -1322,4 +1409,7 @@
     }
   </script>
 </body>
-</html>
+</html>s{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+    .billing-stat{text-align:center;padding:8px;background:rgba(255,255,255,0.7);border-radius:4px}
+    .billing-stat .value{font-size:18px;font-weight:bold;color:#1976d2}
+    .billing-stat
