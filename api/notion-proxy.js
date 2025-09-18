@@ -1,4 +1,4 @@
-// /api/notion-proxy.js - Complete system API with new fields
+// /api/notion-proxy.js - Complete system API with billing fields
 const { Client } = require('@notionhq/client');
 
 module.exports = async (req, res) => {
@@ -118,7 +118,9 @@ async function createProject(res, notion, projectsDbId, data) {
     instrumentFinish, serialNumber, instrumentType, stringBrand, stringGauge,
     tuning, tremolo, fretboardRadius, fretwire,
     // Actions
-    actions, additionalActions
+    actions, additionalActions,
+    // Billing fields
+    total, commission
   } = data;
   
   console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
@@ -178,6 +180,15 @@ async function createProject(res, notion, projectsDbId, data) {
       properties['Intake Notes'] = { 
         rich_text: [{ text: { content: intakeNotes || '' } }] 
       };
+    }
+
+    // Add billing fields
+    if (total !== undefined && total !== null && total !== '') {
+      properties['Total'] = { number: parseFloat(total) };
+    }
+    
+    if (commission !== undefined && commission !== null && commission !== '') {
+      properties['Commission'] = { number: parseFloat(commission) };
     }
     
     // Add measurement fields
@@ -335,6 +346,326 @@ async function createProject(res, notion, projectsDbId, data) {
       notionError: error.body 
     });
   }
+}
+
+// Update project information - ENHANCED VERSION with billing fields
+async function updateProject(res, notion, projectsDbId, data) {
+  const { projectId, ...updates } = data;
+  
+  console.log('updateProject called with:', { projectId, updates });
+  
+  try {
+    const properties = {};
+    
+    // Basic fields
+    if (updates.name) {
+      properties.Name = { title: [{ text: { content: updates.name } }] };
+      console.log('Setting Name:', updates.name);
+    }
+    if (updates.projectId !== undefined) {
+      if (updates.projectId === null || updates.projectId === '') {
+        properties['ID'] = { number: null };
+      } else {
+        const idNumber = parseInt(updates.projectId, 10);
+        if (!isNaN(idNumber)) {
+          properties['ID'] = { number: idNumber };
+        }
+      }
+      console.log('Setting Project ID:', updates.projectId);
+    }
+    if (updates.status) {
+      properties.Status = { select: { name: updates.status } };
+      console.log('Setting Status:', updates.status);
+    }
+    if (updates.instrumentMake !== undefined) {
+      properties['Instrument Make'] = { 
+        rich_text: [{ text: { content: updates.instrumentMake || '' } }] 
+      };
+      console.log('Setting Instrument Make:', updates.instrumentMake);
+    }
+    if (updates.instrumentModel !== undefined) {
+      properties['Instrument Model'] = { 
+        rich_text: [{ text: { content: updates.instrumentModel || '' } }] 
+      };
+      console.log('Setting Instrument Model:', updates.instrumentModel);
+    }
+    if (updates.complexity !== undefined) {
+      properties['Complexity'] = { number: updates.complexity };
+      console.log('Setting Complexity:', updates.complexity);
+    }
+    if (updates.profitability !== undefined) {
+      properties['Profitability'] = { number: updates.profitability };
+      console.log('Setting Profitability:', updates.profitability);
+    }
+    if (updates.store !== undefined) {
+      if (updates.store === null || updates.store === '') {
+        properties['Store'] = { select: null };
+        console.log('Clearing Store');
+      } else {
+        properties['Store'] = { select: { name: updates.store } };
+        console.log('Setting Store:', updates.store);
+      }
+    }
+    if (updates.dueDate !== undefined) {
+      if (updates.dueDate === null || updates.dueDate === '') {
+        properties['Due Date'] = { date: null };
+        console.log('Clearing Due Date');
+      } else {
+        properties['Due Date'] = { date: { start: updates.dueDate } };
+        console.log('Setting Due Date:', updates.dueDate);
+      }
+    }
+    if (updates.intakeNotes !== undefined) {
+      properties['Intake Notes'] = { 
+        rich_text: [{ text: { content: updates.intakeNotes || '' } }] 
+      };
+      console.log('Setting Intake Notes:', updates.intakeNotes);
+    }
+
+    // Billing fields
+    if (updates.total !== undefined) {
+      if (updates.total === null || updates.total === '') {
+        properties['Total'] = { number: null };
+        console.log('Clearing Total');
+      } else {
+        properties['Total'] = { number: parseFloat(updates.total) };
+        console.log('Setting Total:', updates.total);
+      }
+    }
+    
+    if (updates.commission !== undefined) {
+      if (updates.commission === null || updates.commission === '') {
+        properties['Commission'] = { number: null };
+        console.log('Clearing Commission');
+      } else {
+        properties['Commission'] = { number: parseFloat(updates.commission) };
+        console.log('Setting Commission:', updates.commission);
+      }
+    }
+
+    // Measurement fields
+    if (updates.neckReliefBefore !== undefined) {
+      properties['Neck Relief Before'] = updates.neckReliefBefore !== null ? { number: updates.neckReliefBefore } : { number: null };
+    }
+    if (updates.before1stString1stFret !== undefined) {
+      properties['Before 1st string at 1st fret'] = updates.before1stString1stFret !== null ? { number: updates.before1stString1stFret } : { number: null };
+    }
+    if (updates.before1stString12thFret !== undefined) {
+      properties['Before 1st string at 12th fret'] = updates.before1stString12thFret !== null ? { number: updates.before1stString12thFret } : { number: null };
+    }
+    if (updates.before6thString1stFret !== undefined) {
+      properties['Before 6th string at 1st fret'] = updates.before6thString1stFret !== null ? { number: updates.before6thString1stFret } : { number: null };
+    }
+    if (updates.before6thString12thFret !== undefined) {
+      properties['Before 6th string at 12th fret'] = updates.before6thString12thFret !== null ? { number: updates.before6thString12thFret } : { number: null };
+    }
+    if (updates.neckReliefAfter !== undefined) {
+      properties['Neck Relief After'] = updates.neckReliefAfter !== null ? { number: updates.neckReliefAfter } : { number: null };
+    }
+    if (updates.after1stString1stFret !== undefined) {
+      properties['After 1st string at 1st fret'] = updates.after1stString1stFret !== null ? { number: updates.after1stString1stFret } : { number: null };
+    }
+    if (updates.after1stString12thFret !== undefined) {
+      properties['After 1st string at 12th fret'] = updates.after1stString12thFret !== null ? { number: updates.after1stString12thFret } : { number: null };
+    }
+    if (updates.after6thString1stFret !== undefined) {
+      properties['After 6th string at 1st fret'] = updates.after6thString1stFret !== null ? { number: updates.after6thString1stFret } : { number: null };
+    }
+    if (updates.after6thString12thFret !== undefined) {
+      properties['After 6th string at 12th fret'] = updates.after6thString12thFret !== null ? { number: updates.after6thString12thFret } : { number: null };
+    }
+
+    // Instrument detail fields
+    if (updates.instrumentFinish !== undefined) {
+      properties['Instrument Finish'] = { 
+        rich_text: [{ text: { content: updates.instrumentFinish || '' } }] 
+      };
+    }
+    if (updates.serialNumber !== undefined) {
+      properties['Serial Number'] = { 
+        rich_text: [{ text: { content: updates.serialNumber || '' } }] 
+      };
+    }
+    if (updates.instrumentType !== undefined) {
+  if (updates.instrumentType === null || updates.instrumentType === '') {
+    properties['Instrument Type'] = { select: null };
+  } else {
+    properties['Instrument Type'] = { select: { name: updates.instrumentType } };
+  }
+}
+    if (updates.stringBrand !== undefined) {
+      properties['String Brand'] = { 
+        rich_text: [{ text: { content: updates.stringBrand || '' } }] 
+      };
+    }
+    if (updates.stringGauge !== undefined) {
+      properties['String Gauge'] = { 
+        rich_text: [{ text: { content: updates.stringGauge || '' } }] 
+      };
+    }
+    if (updates.tremolo !== undefined) {
+      properties['Tremolo'] = { 
+        rich_text: [{ text: { content: updates.tremolo || '' } }] 
+      };
+    }
+    if (updates.fretboardRadius !== undefined) {
+      properties['Fretboard Radius'] = updates.fretboardRadius !== null ? { number: updates.fretboardRadius } : { number: null };
+    }
+    if (updates.fretwire !== undefined) {
+      properties['Fretwire'] = { 
+        rich_text: [{ text: { content: updates.fretwire || '' } }] 
+      };
+    }
+
+    // Actions as multi-select
+    if (updates.actions && typeof updates.actions === 'object') {
+      const actionsList = [];
+      if (updates.actions.adjustedHeightRadius) actionsList.push({ name: 'Adjusted Height and Radius' });
+      if (updates.actions.adjustedIntonation) actionsList.push({ name: 'Adjusted Intonation' });
+      if (updates.actions.adjustedPickupHeight) actionsList.push({ name: 'Adjusted Pickup Height' });
+      if (updates.actions.adjustedTrussRod) actionsList.push({ name: 'Adjusted Truss Rod' });
+      if (updates.actions.adjustedStringSlots) actionsList.push({ name: 'Adjusted String Slots' });
+      if (updates.actions.cleanedPolished) actionsList.push({ name: 'Cleaned and Polished' });
+      if (updates.actions.installedStretchedStrings) actionsList.push({ name: 'Installed and Stretched Strings' });
+      if (updates.actions.lubricatedStringSlots) actionsList.push({ name: 'Lubricated String Slots' });
+      if (updates.actions.oiledFretboard) actionsList.push({ name: 'Oiled Fretboard' });
+      if (updates.actions.polishedFrets) actionsList.push({ name: 'Polished Frets' });
+      if (updates.actions.testedElectronics) actionsList.push({ name: 'Tested Electronics' });
+      if (updates.actions.tightenedHardware) actionsList.push({ name: 'Tightened Hardware' });
+      if (updates.actions.adjustedTremoloTension) actionsList.push({ name: 'Adjusted Tremolo Tension' });
+      if (updates.actions.adjustedNeckAngle) actionsList.push({ name: 'Adjusted Neck Angle' });
+      
+      properties['Standard Actions'] = { multi_select: actionsList };
+  console.log('Setting Standard Actions:', actionsList.map(a => a.name));
+    }
+
+    // Additional actions
+    if (updates.additionalActions !== undefined) {
+      properties['Additional Actions'] = { 
+        rich_text: [{ text: { content: updates.additionalActions || '' } }] 
+      };
+      console.log('Setting Additional Actions:', updates.additionalActions);
+    }
+
+    console.log('Final properties to update:', JSON.stringify(properties, null, 2));
+
+    const updateResult = await notion.pages.update({
+      page_id: projectId,
+      properties
+    });
+
+    console.log('Project update successful, updated page:', updateResult.id);
+    return res.json({ success: true, message: 'Project updated successfully' });
+    
+  } catch (error) {
+    console.error('Project update error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      body: error.body
+    });
+    
+    return res.status(500).json({ 
+      error: 'Project update failed', 
+      detail: error.message,
+      code: error.code,
+      notionError: error.body 
+    });
+  }
+}
+
+// Enhanced mapping functions with billing fields
+function mapProject(page) {
+  const props = page.properties;
+
+  // Helper function to extract actions from multi-select (field name corrected)
+  const extractActions = (multiSelectProp) => {
+    if (!multiSelectProp?.multi_select) return {};
+    
+    const actions = {};
+    const actionMap = {
+      'Adjusted Height and Radius': 'adjustedHeightRadius',
+      'Adjusted Intonation': 'adjustedIntonation',
+      'Adjusted Pickup Height': 'adjustedPickupHeight',
+      'Adjusted Truss Rod': 'adjustedTrussRod',
+      'Adjusted String Slots': 'adjustedStringSlots',
+      'Cleaned and Polished': 'cleanedPolished',
+      'Installed and Stretched Strings': 'installedStretchedStrings',
+      'Lubricated String Slots': 'lubricatedStringSlots',
+      'Oiled Fretboard': 'oiledFretboard',
+      'Polished Frets': 'polishedFrets',
+      'Tested Electronics': 'testedElectronics',
+      'Tightened Hardware': 'tightenedHardware',
+      'Adjusted Tremolo Tension': 'adjustedTremoloTension',
+      'Adjusted Neck Angle': 'adjustedNeckAngle'
+    };
+
+    multiSelectProp.multi_select.forEach(item => {
+      const key = actionMap[item.name];
+      if (key) actions[key] = true;
+    });
+
+    return actions;
+  };
+
+  return {
+    id: page.id,
+    name: props['Name']?.title?.[0]?.plain_text ?? 'Untitled',
+    projectId: props['ID']?.number ? String(props['ID'].number) : '',
+    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
+    status: props['Status']?.select?.name ?? 'Unknown',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    store: props['Store']?.select?.name ?? '',
+    intakeNotes: props['Intake Notes']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Numeric fields
+    complexity: props['Complexity']?.number ?? 3,
+    profitability: props['Profitability']?.number ?? 3,
+
+    // Billing fields
+    total: props['Total']?.number ?? null,
+    commission: props['Commission']?.number ?? null,
+    minusCommission: props['Minus Commission']?.formula?.number ?? null,
+
+    // Dates for "days since worked"
+    lastWorked: props['Last Worked']?.date?.start ?? null,
+    dateCreated: props['Date Created']?.date?.start ?? null,
+    createdTime: page.created_time,
+
+    // Measurement fields
+    neckReliefBefore: props['Neck Relief Before']?.number ?? null,
+    before1stString1stFret: props['Before 1st string at 1st fret']?.number ?? null,
+    before1stString12thFret: props['Before 1st string at 12th fret']?.number ?? null,
+    before6thString1stFret: props['Before 6th string at 1st fret']?.number ?? null,
+    before6thString12thFret: props['Before 6th string at 12th fret']?.number ?? null,
+    neckReliefAfter: props['Neck Relief After']?.number ?? null,
+    after1stString1stFret: props['After 1st string at 1st fret']?.number ?? null,
+    after1stString12thFret: props['After 1st string at 12th fret']?.number ?? null,
+    after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
+    after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
+
+    // Instrument detail fields (updated field types)
+    instrumentFinish: props['Instrument Finish']?.rich_text?.[0]?.plain_text ?? '',
+    serialNumber: props['Serial Number']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentType: props['Instrument Type']?.select?.name ?? '',
+    stringBrand: props['String Brand']?.rich_text?.[0]?.plain_text ?? '',
+    stringGauge: props['String Gauge']?.rich_text?.[0]?.plain_text ?? '',
+    tuning: props['Tuning']?.select?.name ?? '',
+    tremolo: props['Tremolo']?.rich_text?.[0]?.plain_text ?? '',
+    fretboardRadius: props['Fretboard Radius']?.number ?? null,
+    fretwire: props['Fretwire']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Actions (field name corrected to "Standard Actions")
+    actions: extractActions(props['Standard Actions']),
+    additionalActions: props['Additional Actions']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Rollups/formulas (existing functionality)
+    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
+    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
+    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
+    progress: props['Progress %']?.formula?.number ?? 0
+  };
 }
 
 // Get all projects and milestones for scheduling
@@ -599,211 +930,6 @@ async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
   }
 }
 
-// Update project information - ENHANCED VERSION with all new fields
-async function updateProject(res, notion, projectsDbId, data) {
-  const { projectId, ...updates } = data;
-  
-  console.log('updateProject called with:', { projectId, updates });
-  
-  try {
-    const properties = {};
-    
-    // Basic fields
-    if (updates.name) {
-      properties.Name = { title: [{ text: { content: updates.name } }] };
-      console.log('Setting Name:', updates.name);
-    }
-    if (updates.projectId !== undefined) {
-      if (updates.projectId === null || updates.projectId === '') {
-        properties['ID'] = { number: null };
-      } else {
-        const idNumber = parseInt(updates.projectId, 10);
-        if (!isNaN(idNumber)) {
-          properties['ID'] = { number: idNumber };
-        }
-      }
-      console.log('Setting Project ID:', updates.projectId);
-    }
-    if (updates.status) {
-      properties.Status = { select: { name: updates.status } };
-      console.log('Setting Status:', updates.status);
-    }
-    if (updates.instrumentMake !== undefined) {
-      properties['Instrument Make'] = { 
-        rich_text: [{ text: { content: updates.instrumentMake || '' } }] 
-      };
-      console.log('Setting Instrument Make:', updates.instrumentMake);
-    }
-    if (updates.instrumentModel !== undefined) {
-      properties['Instrument Model'] = { 
-        rich_text: [{ text: { content: updates.instrumentModel || '' } }] 
-      };
-      console.log('Setting Instrument Model:', updates.instrumentModel);
-    }
-    if (updates.complexity !== undefined) {
-      properties['Complexity'] = { number: updates.complexity };
-      console.log('Setting Complexity:', updates.complexity);
-    }
-    if (updates.profitability !== undefined) {
-      properties['Profitability'] = { number: updates.profitability };
-      console.log('Setting Profitability:', updates.profitability);
-    }
-    if (updates.store !== undefined) {
-      if (updates.store === null || updates.store === '') {
-        properties['Store'] = { select: null };
-        console.log('Clearing Store');
-      } else {
-        properties['Store'] = { select: { name: updates.store } };
-        console.log('Setting Store:', updates.store);
-      }
-    }
-    if (updates.dueDate !== undefined) {
-      if (updates.dueDate === null || updates.dueDate === '') {
-        properties['Due Date'] = { date: null };
-        console.log('Clearing Due Date');
-      } else {
-        properties['Due Date'] = { date: { start: updates.dueDate } };
-        console.log('Setting Due Date:', updates.dueDate);
-      }
-    }
-    if (updates.intakeNotes !== undefined) {
-      properties['Intake Notes'] = { 
-        rich_text: [{ text: { content: updates.intakeNotes || '' } }] 
-      };
-      console.log('Setting Intake Notes:', updates.intakeNotes);
-    }
-
-    // Measurement fields
-    if (updates.neckReliefBefore !== undefined) {
-      properties['Neck Relief Before'] = updates.neckReliefBefore !== null ? { number: updates.neckReliefBefore } : { number: null };
-    }
-    if (updates.before1stString1stFret !== undefined) {
-      properties['Before 1st string at 1st fret'] = updates.before1stString1stFret !== null ? { number: updates.before1stString1stFret } : { number: null };
-    }
-    if (updates.before1stString12thFret !== undefined) {
-      properties['Before 1st string at 12th fret'] = updates.before1stString12thFret !== null ? { number: updates.before1stString12thFret } : { number: null };
-    }
-    if (updates.before6thString1stFret !== undefined) {
-      properties['Before 6th string at 1st fret'] = updates.before6thString1stFret !== null ? { number: updates.before6thString1stFret } : { number: null };
-    }
-    if (updates.before6thString12thFret !== undefined) {
-      properties['Before 6th string at 12th fret'] = updates.before6thString12thFret !== null ? { number: updates.before6thString12thFret } : { number: null };
-    }
-    if (updates.neckReliefAfter !== undefined) {
-      properties['Neck Relief After'] = updates.neckReliefAfter !== null ? { number: updates.neckReliefAfter } : { number: null };
-    }
-    if (updates.after1stString1stFret !== undefined) {
-      properties['After 1st string at 1st fret'] = updates.after1stString1stFret !== null ? { number: updates.after1stString1stFret } : { number: null };
-    }
-    if (updates.after1stString12thFret !== undefined) {
-      properties['After 1st string at 12th fret'] = updates.after1stString12thFret !== null ? { number: updates.after1stString12thFret } : { number: null };
-    }
-    if (updates.after6thString1stFret !== undefined) {
-      properties['After 6th string at 1st fret'] = updates.after6thString1stFret !== null ? { number: updates.after6thString1stFret } : { number: null };
-    }
-    if (updates.after6thString12thFret !== undefined) {
-      properties['After 6th string at 12th fret'] = updates.after6thString12thFret !== null ? { number: updates.after6thString12thFret } : { number: null };
-    }
-
-    // Instrument detail fields
-    if (updates.instrumentFinish !== undefined) {
-      properties['Instrument Finish'] = { 
-        rich_text: [{ text: { content: updates.instrumentFinish || '' } }] 
-      };
-    }
-    if (updates.serialNumber !== undefined) {
-      properties['Serial Number'] = { 
-        rich_text: [{ text: { content: updates.serialNumber || '' } }] 
-      };
-    }
-    if (updates.instrumentType !== undefined) {
-  if (updates.instrumentType === null || updates.instrumentType === '') {
-    properties['Instrument Type'] = { select: null };
-  } else {
-    properties['Instrument Type'] = { select: { name: updates.instrumentType } };
-  }
-}
-    if (updates.stringBrand !== undefined) {
-      properties['String Brand'] = { 
-        rich_text: [{ text: { content: updates.stringBrand || '' } }] 
-      };
-    }
-    if (updates.stringGauge !== undefined) {
-      properties['String Gauge'] = { 
-        rich_text: [{ text: { content: updates.stringGauge || '' } }] 
-      };
-    }
-    if (updates.tremolo !== undefined) {
-      properties['Tremolo'] = { 
-        rich_text: [{ text: { content: updates.tremolo || '' } }] 
-      };
-    }
-    if (updates.fretboardRadius !== undefined) {
-      properties['Fretboard Radius'] = updates.fretboardRadius !== null ? { number: updates.fretboardRadius } : { number: null };
-    }
-    if (updates.fretwire !== undefined) {
-      properties['Fretwire'] = { 
-        rich_text: [{ text: { content: updates.fretwire || '' } }] 
-      };
-    }
-
-    // Actions as multi-select
-    if (updates.actions && typeof updates.actions === 'object') {
-      const actionsList = [];
-      if (updates.actions.adjustedHeightRadius) actionsList.push({ name: 'Adjusted Height and Radius' });
-      if (updates.actions.adjustedIntonation) actionsList.push({ name: 'Adjusted Intonation' });
-      if (updates.actions.adjustedPickupHeight) actionsList.push({ name: 'Adjusted Pickup Height' });
-      if (updates.actions.adjustedTrussRod) actionsList.push({ name: 'Adjusted Truss Rod' });
-      if (updates.actions.adjustedStringSlots) actionsList.push({ name: 'Adjusted String Slots' });
-      if (updates.actions.cleanedPolished) actionsList.push({ name: 'Cleaned and Polished' });
-      if (updates.actions.installedStretchedStrings) actionsList.push({ name: 'Installed and Stretched Strings' });
-      if (updates.actions.lubricatedStringSlots) actionsList.push({ name: 'Lubricated String Slots' });
-      if (updates.actions.oiledFretboard) actionsList.push({ name: 'Oiled Fretboard' });
-      if (updates.actions.polishedFrets) actionsList.push({ name: 'Polished Frets' });
-      if (updates.actions.testedElectronics) actionsList.push({ name: 'Tested Electronics' });
-      if (updates.actions.tightenedHardware) actionsList.push({ name: 'Tightened Hardware' });
-      if (updates.actions.adjustedTremoloTension) actionsList.push({ name: 'Adjusted Tremolo Tension' });
-      if (updates.actions.adjustedNeckAngle) actionsList.push({ name: 'Adjusted Neck Angle' });
-      
-      properties['Standard Actions'] = { multi_select: actionsList };
-  console.log('Setting Standard Actions:', actionsList.map(a => a.name));
-    }
-
-    // Additional actions
-    if (updates.additionalActions !== undefined) {
-      properties['Additional Actions'] = { 
-        rich_text: [{ text: { content: updates.additionalActions || '' } }] 
-      };
-      console.log('Setting Additional Actions:', updates.additionalActions);
-    }
-
-    console.log('Final properties to update:', JSON.stringify(properties, null, 2));
-
-    const updateResult = await notion.pages.update({
-      page_id: projectId,
-      properties
-    });
-
-    console.log('Project update successful, updated page:', updateResult.id);
-    return res.json({ success: true, message: 'Project updated successfully' });
-    
-  } catch (error) {
-    console.error('Project update error details:', {
-      message: error.message,
-      code: error.code,
-      status: error.status,
-      body: error.body
-    });
-    
-    return res.status(500).json({ 
-      error: 'Project update failed', 
-      detail: error.message,
-      code: error.code,
-      notionError: error.body 
-    });
-  }
-}
-
 // Update single milestone
 async function updateMilestone(res, notion, milestonesDbId, data) {
   const { milestoneId, ...updates } = data;
@@ -1031,95 +1157,6 @@ function parseIntSafe(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-// Enhanced mapping functions with all new fields
-function mapProject(page) {
-  const props = page.properties;
-
-  // Helper function to extract actions from multi-select (field name corrected)
-  const extractActions = (multiSelectProp) => {
-    if (!multiSelectProp?.multi_select) return {};
-    
-    const actions = {};
-    const actionMap = {
-      'Adjusted Height and Radius': 'adjustedHeightRadius',
-      'Adjusted Intonation': 'adjustedIntonation',
-      'Adjusted Pickup Height': 'adjustedPickupHeight',
-      'Adjusted Truss Rod': 'adjustedTrussRod',
-      'Adjusted String Slots': 'adjustedStringSlots',
-      'Cleaned and Polished': 'cleanedPolished',
-      'Installed and Stretched Strings': 'installedStretchedStrings',
-      'Lubricated String Slots': 'lubricatedStringSlots',
-      'Oiled Fretboard': 'oiledFretboard',
-      'Polished Frets': 'polishedFrets',
-      'Tested Electronics': 'testedElectronics',
-      'Tightened Hardware': 'tightenedHardware',
-      'Adjusted Tremolo Tension': 'adjustedTremoloTension',
-      'Adjusted Neck Angle': 'adjustedNeckAngle'
-    };
-
-    multiSelectProp.multi_select.forEach(item => {
-      const key = actionMap[item.name];
-      if (key) actions[key] = true;
-    });
-
-    return actions;
-  };
-
-  return {
-    id: page.id,
-    name: props['Name']?.title?.[0]?.plain_text ?? 'Untitled',
-    projectId: props['ID']?.number ? String(props['ID'].number) : '',
-    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
-    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
-    status: props['Status']?.select?.name ?? 'Unknown',
-    dueDate: props['Due Date']?.date?.start ?? null,
-    store: props['Store']?.select?.name ?? '',
-    intakeNotes: props['Intake Notes']?.rich_text?.[0]?.plain_text ?? '',
-
-    // Numeric fields
-    complexity: props['Complexity']?.number ?? 3,
-    profitability: props['Profitability']?.number ?? 3,
-
-    // Dates for "days since worked"
-    lastWorked: props['Last Worked']?.date?.start ?? null,
-    dateCreated: props['Date Created']?.date?.start ?? null,
-    createdTime: page.created_time,
-
-    // Measurement fields
-    neckReliefBefore: props['Neck Relief Before']?.number ?? null,
-    before1stString1stFret: props['Before 1st string at 1st fret']?.number ?? null,
-    before1stString12thFret: props['Before 1st string at 12th fret']?.number ?? null,
-    before6thString1stFret: props['Before 6th string at 1st fret']?.number ?? null,
-    before6thString12thFret: props['Before 6th string at 12th fret']?.number ?? null,
-    neckReliefAfter: props['Neck Relief After']?.number ?? null,
-    after1stString1stFret: props['After 1st string at 1st fret']?.number ?? null,
-    after1stString12thFret: props['After 1st string at 12th fret']?.number ?? null,
-    after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
-    after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
-
-    // Instrument detail fields (updated field types)
-    instrumentFinish: props['Instrument Finish']?.rich_text?.[0]?.plain_text ?? '',
-    serialNumber: props['Serial Number']?.rich_text?.[0]?.plain_text ?? '',
-    instrumentType: props['Instrument Type']?.select?.name ?? '',
-    stringBrand: props['String Brand']?.rich_text?.[0]?.plain_text ?? '',
-    stringGauge: props['String Gauge']?.rich_text?.[0]?.plain_text ?? '',
-    tuning: props['Tuning']?.select?.name ?? '',
-    tremolo: props['Tremolo']?.rich_text?.[0]?.plain_text ?? '',
-    fretboardRadius: props['Fretboard Radius']?.number ?? null,
-    fretwire: props['Fretwire']?.rich_text?.[0]?.plain_text ?? '',
-
-    // Actions (field name corrected to "Standard Actions")
-    actions: extractActions(props['Standard Actions']),
-    additionalActions: props['Additional Actions']?.rich_text?.[0]?.plain_text ?? '',
-
-    // Rollups/formulas (existing functionality)
-    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
-    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
-    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
-    progress: props['Progress %']?.formula?.number ?? 0
-  };
-}
-
 function mapMilestone(page) {
   const props = page.properties;
   
@@ -1143,4 +1180,3 @@ function parseRatingValue(ratingStr) {
   const match = ratingStr.match(/^(\d+)-/);
   return match ? parseInt(match[1]) : 3;
 }
-    
