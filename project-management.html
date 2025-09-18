@@ -91,9 +91,6 @@
     .checkbox-item input[type="checkbox"]{margin:0}
     .billing-summary{background:#e8f2ff;padding:15px;border-radius:6px;margin-bottom:20px;border-left:4px solid #2196f3}
     .billing-summary h4{margin:0 0 10px;color:#1976d2}
-    .billing-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
-    .billing-stat{text-align:center;padding:8px;background:rgba(255,255,255,0.7);border-radius:4px}
-    .billing-stat .value{font-size:18px;font-weight:bold;color:#1976d2}
     .billing-stat .label{font-size:12px;color:#666;margin-top:2px}
     .readonly-display{background:#f8f9fa;color:#666;font-weight:bold;text-align:center;padding:8px 12px;border:1px solid #e9ecef;border-radius:4px;margin-top:5px}
   </style>
@@ -360,7 +357,7 @@
       const minusCommissionDisplay = document.getElementById('minusCommissionDisplay');
       if (minusCommissionDisplay) {
         const result = calculateMinusCommission();
-        minusCommissionDisplay.textContent = `$${result.toFixed(2)}`;
+        minusCommissionDisplay.textContent = `${result.toFixed(2)}`;
       }
     }
 
@@ -414,6 +411,33 @@
               <div class="time-stat">
                 <div class="value">${totalCount > 0 ? Math.round((completedCount/totalCount)*100) : 0}%</div>
                 <div class="label">Progress</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Billing summary for existing projects with billing data
+      if (!isNewProject && (currentProject.total || currentProject.commission)) {
+        const total = currentProject.total || 0;
+        const commission = currentProject.commission || 0;
+        const minusCommission = currentProject.minusCommission || (total - commission);
+        
+        content += `
+          <div class="billing-summary">
+            <h4>Project Billing Summary</h4>
+            <div class="billing-stats">
+              <div class="billing-stat">
+                <div class="value">${total.toFixed(2)}</div>
+                <div class="label">Total Amount</div>
+              </div>
+              <div class="billing-stat">
+                <div class="value">${commission.toFixed(2)}</div>
+                <div class="label">Commission</div>
+              </div>
+              <div class="billing-stat">
+                <div class="value">${minusCommission.toFixed(2)}</div>
+                <div class="label">Minus Commission</div>
               </div>
             </div>
           </div>
@@ -477,36 +501,7 @@
           </div>
         </div>
 
-        <div class="form-section collapsible-section">
-          <h3 onclick="toggleCollapsible('billing')">
-            <span id="billingToggle" class="collapsible-toggle">▶</span>
-            Billing
-          </h3>
-          <div id="billingContent" class="collapsible-content" style="display: none;">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Total Amount ($)</label>
-                <input type="number" step="0.01" min="0" id="total" 
-                       value="${currentProject.total || ''}" 
-                       onchange="markChanged(); updateBillingCalculation()" 
-                       placeholder="0.00">
-              </div>
-              <div class="form-group">
-                <label>Commission ($)</label>
-                <input type="number" step="0.01" min="0" id="commission" 
-                       value="${currentProject.commission || ''}" 
-                       onchange="markChanged(); updateBillingCalculation()" 
-                       placeholder="0.00">
-              </div>
-              <div class="form-group full-width">
-                <label>Minus Commission (Calculated)</label>
-                <div class="readonly-display" id="minusCommissionDisplay">
-                  $${((currentProject.total || 0) - (currentProject.commission || 0)).toFixed(2)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        
 
         <div class="form-section collapsible-section">
           <h3 onclick="toggleCollapsible('measurements')">
@@ -522,6 +517,40 @@
                 <label>Neck Relief Before</label>
                 <input type="number" step="0.001" id="neckReliefBefore" 
                        value="${currentProject.neckReliefBefore || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 1st Fret</label>
+                <input type="number" step="0.001" id="before1stString1stFret" 
+                       value="${currentProject.before1stString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 12th Fret</label>
+                <input type="number" step="0.001" id="before1stString12thFret" 
+                       value="${currentProject.before1stString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 1st Fret</label>
+                <input type="number" step="0.001" id="before6thString1stFret" 
+                       value="${currentProject.before6thString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 12th Fret</label>
+                <input type="number" step="0.001" id="before6thString12thFret" 
+                       value="${currentProject.before6thString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              
+              <div class="form-group full-width">
+                <h4 style="margin: 20px 0 15px 0; color: #666; font-size: 14px;">After Measurements</h4>
+              </div>
+              <div class="form-group full-width">
+                <label>Neck Relief After</label>
+                <input type="number" step="0.001" id="neckReliefAfter" 
+                       value="${currentProject.neckReliefAfter || ''}" 
                        onchange="markChanged()" placeholder="0.000">
               </div>
               <div class="form-group">
@@ -689,36 +718,39 @@
               <textarea id="additionalActions" onchange="markChanged()" placeholder="Enter any additional actions performed...">${escapeHtml(currentProject.additionalActions || '')}</textarea>
             </div>
           </div>
-        </div>`;
+        </div>
 
-      // Billing summary for existing projects with billing data - MOVED AFTER ACTIONS
-      if (!isNewProject && (currentProject.total || currentProject.commission)) {
-        const total = currentProject.total || 0;
-        const commission = currentProject.commission || 0;
-        const minusCommission = currentProject.minusCommission || (total - commission);
-        
-        content += `
-          <div class="billing-summary">
-            <h4>Project Billing Summary</h4>
-            <div class="billing-stats">
-              <div class="billing-stat">
-                <div class="value">${total.toFixed(2)}</div>
-                <div class="label">Total Amount</div>
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('billing')">
+            <span id="billingToggle" class="collapsible-toggle">▶</span>
+            Billing
+          </h3>
+          <div id="billingContent" class="collapsible-content" style="display: none;">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Total Amount ($)</label>
+                <input type="number" step="0.01" min="0" id="total" 
+                       value="${currentProject.total || ''}" 
+                       onchange="markChanged(); updateBillingCalculation()" 
+                       placeholder="0.00">
               </div>
-              <div class="billing-stat">
-                <div class="value">${commission.toFixed(2)}</div>
-                <div class="label">Commission</div>
+              <div class="form-group">
+                <label>Commission ($)</label>
+                <input type="number" step="0.01" min="0" id="commission" 
+                       value="${currentProject.commission || ''}" 
+                       onchange="markChanged(); updateBillingCalculation()" 
+                       placeholder="0.00">
               </div>
-              <div class="billing-stat">
-                <div class="value">${minusCommission.toFixed(2)}</div>
-                <div class="label">Minus Commission</div>
+              <div class="form-group full-width">
+                <label>Minus Commission (Calculated)</label>
+                <div class="readonly-display" id="minusCommissionDisplay">
+                  ${((currentProject.total || 0) - (currentProject.commission || 0)).toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
-        `;
-      }
+        </div>
 
-      content += `
         <div class="form-section">
           <h3>Milestones</h3>
           <div class="tabs">
@@ -1379,38 +1411,7 @@
     }
   </script>
 </body>
-</html> 1st Fret</label>
-                <input type="number" step="0.001" id="before1stString1stFret" 
-                       value="${currentProject.before1stString1stFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>1st String at 12th Fret</label>
-                <input type="number" step="0.001" id="before1stString12thFret" 
-                       value="${currentProject.before1stString12thFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>6th String at 1st Fret</label>
-                <input type="number" step="0.001" id="before6thString1stFret" 
-                       value="${currentProject.before6thString1stFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>6th String at 12th Fret</label>
-                <input type="number" step="0.001" id="before6thString12thFret" 
-                       value="${currentProject.before6thString12thFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              
-              <div class="form-group full-width">
-                <h4 style="margin: 20px 0 15px 0; color: #666; font-size: 14px;">After Measurements</h4>
-              </div>
-              <div class="form-group full-width">
-                <label>Neck Relief After</label>
-                <input type="number" step="0.001" id="neckReliefAfter" 
-                       value="${currentProject.neckReliefAfter || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>1st String at
+</html>s{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+    .billing-stat{text-align:center;padding:8px;background:rgba(255,255,255,0.7);border-radius:4px}
+    .billing-stat .value{font-size:18px;font-weight:bold;color:#1976d2}
+    .billing-stat
