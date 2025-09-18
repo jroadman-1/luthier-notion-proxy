@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Work Order - Luthier Services</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Times New Roman', serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      line-height: 1.4;
+      font-size: 12px;
+    }
+
+    .report-container {
+      max-width: 8.5in;
+      margin: 0 auto;
+      background: white;
+      min-height: 11in;
+    }
+
+    /* Letterhead Section */
+    .letterhead {
+      border-bottom: 3px solid #2c3e50;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-section {
+      flex: 0 0 120px;
+      height: 80px;
+      background: #f8f9fa;
+      border: 2px dashed #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #666;
+      text-align: center;
+    }
+
+    .company-info {
+      flex: 1;
+      text-align: center;
+      margin: 0 20px;
+    }
+
+    .company-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .company-tagline {
+      font-size: 14px;
+      color: #666;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    .contact-info {
+      font-size: 11px;
+      color: #555;
+    }
+
+    .report-date {
+      flex: 0 0 120px;
+      text-align: right;
+      font-size: 11px;
+      color: #666;
+    }
+
+    /* Project Header */
+    .project-header {
+      background: #f8f9fa;
+      padding: 15px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .project-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .project-basic-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 15px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info-label {
+      font-weight: bold;
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .info-value {
+      font-size: 13px;
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 2px;
+    }
+
+    /* Two Column Layout */
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 20px;
+    }
+
+    .left-column, .right-column {
+      min-height: 400px;
+    }
+
+    /* Section Styling */
+    .section {
+      margin-bottom: 25px;
+      break-inside: avoid;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #2c3e50;
+      border-bottom: 2px solid #2c3e50;
+      padding-bottom: 3px;
+      margin-bottom: 12px;
+    }
+
+    /* Measurements Table */
+    .measurements-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      margin-bottom: 10px;
+    }
+
+    .measurements-table th {
+      background: #f8f9fa;
+      padding: 6px 4px;
+      text-align: left;
+      border: 1px solid #dee2e6;
+      font-weight: bold;
+      font-size: 9px;
+    }
+
+    .measurements-table td {
+      padding: 6px 4px;
+      border: 1px solid #dee2e6;
+      text-align: center;
+    }
+
+    .measurements-table .measurement-name {
+      text-align: left;
+      font-weight: 500;
+    }
+
+    /* Actions Checklist */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      font-size: 10px;
+    }
+
+    .action-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 0;
+    }
+
+    .checkbox {
+      width: 12px;
+      height: 12px;
+      border: 1px solid #666;
+      display: inline-block;
+      position: relative;
+    }
+
+    .checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      left: 1px;
+      top: -2px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    /* Notes Section */
+    .notes-box {
+      border: 1px solid #dee2e6;
+      min-height: 80px;
+      padding: 10px;
+      background: #fafafa;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    /* Signature Section */
+    .signature-section {
+      margin-top: 30px;
+      border-top: 1px solid #dee2e6;
+      padding-top: 15px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .signature-box {
+      text-align: center;
+    }
+
+    .signature-line {
+      border-bottom: 1px solid #333;
+      width: 200px;
+      margin: 0 auto 5px;
+      height: 40px;
+    }
+
+    .signature-label {
+      font-size: 11px;
+      color: #666;
+    }
+
+    /* Time and Billing Summary */
+    .summary-section {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px dotted #ccc;
+    }
+
+    .summary-item:last-child {
+      border-bottom: none;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    /* Print Specific Styles */
+    @media print {
+      .report-container {
+        margin: 0;
+        box-shadow: none;
+      }
+      
+      .no-print {
+        display: none !important;
+      }
+      
+      .section {
+        break-inside: avoid;
+      }
+    }
+
+    /* Print Button for Testing */
+    .print-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .print-button:hover {
+      background: #0056b3;
+    }
+
+    @media print {
+      .print-button {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="print-button no-print" onclick="window.print()">🖨️ Print Report</button>
+
+  <div class="report-container">
+    <!-- Letterhead -->
+    <header class="letterhead">
+      <div class="logo-section">
+        YOUR LOGO HERE
+      </div>
+      <div class="company-info">
+        <div class="company-name">Roadman Guitars</div>
+        <div class="company-tagline">Professional Guitar Setup & Repair</div>
+        <div class="contact-info">
+          San Antonio, Texas<br>
+          Phone: (210) 764-3738 | Email: roadmanguitars@gmail.com
+        </div>
+      </div>
+      <div class="report-date">
+        <strong>Service Date:</strong><br>
+        September 18, 2025<br><br>
+        <strong>Project ID:</strong><br>
+        #2025-089
+      </div>
+    </header>
+
+    <!-- Project Header -->
+    <div class="project-header">
+      <div class="project-title">WORK ORDER COMPLETION REPORT</div>
+      <div class="project-basic-info">
+        <div class="info-item">
+          <div class="info-label">Customer</div>
+          <div class="info-value">John Musician</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Instrument</div>
+          <div class="info-value">Gibson SG Junior</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Status</div>
+          <div class="info-value">Completed</div>
+        </div>
+      </div>
+      <div class="project-basic-info">
+        <div class="info-item">
+          <div class="info-label">Store</div>
+          <div class="info-value">Spacetone Music</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Serial Number</div>
+          <div class="info-value">123456789</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Finish</div>
+          <div class="info-value">Cherry Red</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="main-content">
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Measurements -->
+        <div class="section">
+          <div class="section-title">SETUP MEASUREMENTS</div>
+          <table class="measurements-table">
+            <thead>
+              <tr>
+                <th>Measurement</th>
+                <th>Before</th>
+                <th>After</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="measurement-name">Neck Relief</td>
+                <td>0.015"</td>
+                <td>0.010"</td>
+              </tr>
+              <tr>
+                <td class="measurement-name">1st String @ 1st Fret</td>
+                <td>0.020"</td>
+                <td>0.018"</td>
+              </tr>
+              <tr>
+                <td class="measurement-name">1st String @ 12th Fret</td>
+                <td>0.080"</td>
+                <td>0.065"</td>
+              </tr>
+              <tr>
+                <td class="measurement-name">6th String @ 1st Fret</td>
+                <td>0.025"</td>
+                <td>0.022"</td>
+              </tr>
+              <tr>
+                <td class="measurement-name">6th String @ 12th Fret</td>
+                <td>0.110"</td>
+                <td>0.095"</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Instrument Details -->
+        <div class="section">
+          <div class="section-title">INSTRUMENT SPECIFICATIONS</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px;">
+            <div>
+              <strong>Type:</strong> Electric Guitar<br>
+              <strong>Strings:</strong> D'Addario 10-46<br>
+              <strong>Tuning:</strong> Standard<br>
+              <strong>Fretboard Radius:</strong> 12"
+            </div>
+            <div>
+              <strong>Fretwire:</strong> Medium Jumbo<br>
+              <strong>Tremolo:</strong> N/A<br>
+              <strong>Complexity:</strong> 4/5<br>
+              <strong>Due Date:</strong> Sept 20, 2025
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Notes -->
+        <div class="section">
+          <div class="section-title">CUSTOMER REQUEST</div>
+          <div class="notes-box">
+            "Guitar has been buzzing on the lower frets and the action feels too high. Please set up for medium playing style with standard tuning. Customer prefers slightly lower action if possible without buzzing."
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-column">
+        <!-- Services Performed -->
+        <div class="section">
+          <div class="section-title">SERVICES PERFORMED</div>
+          <div class="actions-grid">
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Adjusted Height and Radius</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Adjusted Intonation</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox"></span>
+              <span>Adjusted Pickup Height</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Adjusted Truss Rod</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Adjusted String Slots</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Cleaned and Polished</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Installed New Strings</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Lubricated String Slots</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Oiled Fretboard</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Polished Frets</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Tested Electronics</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox checked"></span>
+              <span>Tightened Hardware</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox"></span>
+              <span>Adjusted Tremolo Tension</span>
+            </div>
+            <div class="action-item">
+              <span class="checkbox"></span>
+              <span>Adjusted Neck Angle</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Work -->
+        <div class="section">
+          <div class="section-title">ADDITIONAL WORK PERFORMED</div>
+          <div class="notes-box">
+            Replaced worn nut - customer approved additional charge. Old nut had deep grooves causing string binding. New bone nut properly cut and lubricated. Bridge posts were loose and retightened. Minor fret polish on 1st-5th frets where there was light oxidation.
+          </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="section">
+          <div class="section-title">RECOMMENDATIONS</div>
+          <div class="notes-box">
+            Instrument is now properly set up and should play well. Recommend changing strings every 3-4 months depending on playing frequency. The frets are in good condition. Next setup recommended in 6-12 months or with seasonal humidity changes.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Billing Summary (moved to bottom) -->
+    <div class="summary-section">
+      <div class="section-title">BILLING</div>
+      <div class="summary-grid">
+        <div></div>
+        <div>
+          <div class="summary-item">
+            <span>Total Amount:</span>
+            <span>$125.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Add to report.html
+window.onload = function() {
+  const reportData = JSON.parse(localStorage.getItem('reportData') || '{}');
+  if (reportData.project) {
+    populateReportWithData(reportData);
+  }
+};
+  </script>
+</body>
+</html>
