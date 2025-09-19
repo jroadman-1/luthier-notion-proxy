@@ -43,6 +43,31 @@
     /* Section Styling */
     .section { margin-bottom: 25px; break-inside: avoid; }
     .section-title { font-size: 14px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 3px; margin-bottom: 12px; }
+    
+    /* Align sections across columns by matching specific content heights */
+    .left-column .section:nth-child(2) { /* Instrument Specifications */
+      margin-bottom: 25px;
+    }
+    .right-column .section:nth-child(1) { /* Services Performed */
+      margin-bottom: 25px;
+    }
+    .left-column .section:nth-child(3) { /* Customer Request */
+      margin-bottom: 25px;
+    }
+    .right-column .section:nth-child(2) { /* Additional Work */
+      margin-bottom: 25px;
+    }
+    .right-column .section:nth-child(3) { /* Technician Notes */
+      margin-bottom: 25px;
+    }
+    
+    /* Fine-tune alignment by adjusting the instrument specs content */
+    .left-column .section:nth-child(2) .section-title { 
+      margin-bottom: 12px; 
+    }
+    .right-column .section:nth-child(1) .section-title { 
+      margin-bottom: 12px; 
+    }
 
     /* Measurements Table */
     .measurements-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px; }
@@ -65,11 +90,31 @@
     .signature-line { border-bottom: 1px solid #333; width: 220px; margin: 0 auto 5px; height: 42px; }
     .signature-label { font-size: 11px; color: #666; }
 
-    /* Time and Billing Summary */
-    .summary-section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin-bottom: 20px; }
-    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .summary-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccc; }
-    .summary-item:last-child { border-bottom: none; font-weight: bold; font-size: 13px; }
+    /* Billing Section - Bottom of page */
+    .billing-section { 
+      background: #f8f9fa; 
+      border: 2px solid #2c3e50; 
+      border-radius: 4px; 
+      padding: 20px; 
+      margin-top: 30px;
+      text-align: center;
+    }
+    .billing-title { 
+      font-size: 16px; 
+      font-weight: bold; 
+      color: #2c3e50; 
+      margin-bottom: 15px; 
+      text-transform: uppercase; 
+    }
+    .billing-amount { 
+      font-size: 24px; 
+      font-weight: bold; 
+      color: #2c3e50; 
+      border: 2px solid #2c3e50;
+      padding: 10px;
+      display: inline-block;
+      min-width: 120px;
+    }
 
     /* Print Button */
     .print-button { position: fixed; top: 10px; right: 10px; background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; }
@@ -178,26 +223,22 @@
         <!-- Instrument Details -->
         <div class="section">
           <div class="section-title">INSTRUMENT SPECIFICATIONS</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px;">
-            <div>
-              <strong>Type:</strong> <span id="spec_type"></span><br>
-              <strong>Strings:</strong> <span id="spec_strings"></span><br>
-              <strong>Tuning:</strong> <span id="spec_tuning"></span><br>
-              <strong>Fretboard Radius:</strong> <span id="spec_radius"></span>
-            </div>
-            <div>
-              <strong>Fretwire:</strong> <span id="spec_fretwire"></span><br>
-              <strong>Tremolo:</strong> <span id="spec_tremolo"></span><br>
-              <!-- <strong>Complexity:</strong> <span id="spec_complexity"></span><br>-->
-              <strong>Due Date:</strong> <span id="spec_due"></span>
-            </div>
+          <div style="display: grid; grid-template-columns: 120px 1fr 120px 1fr; gap: 10px; font-size: 11px; align-items: baseline;">
+            <strong>Type:</strong> <span id="spec_type"></span>
+            <strong>Fretwire:</strong> <span id="spec_fretwire"></span>
+            <strong>Strings:</strong> <span id="spec_strings"></span>
+            <strong>Tremolo:</strong> <span id="spec_tremolo"></span>
+            <strong>Tuning:</strong> <span id="spec_tuning"></span>
+            <strong>Due Date:</strong> <span id="spec_due"></span>
+            <strong>Fretboard Radius:</strong> <span id="spec_radius"></span>
+            <span></span><span></span>
           </div>
         </div>
 
         <!-- Customer Notes -->
         <div class="section">
           <div class="section-title">CUSTOMER REQUEST</div>
-          <div class="notes-box" id="notesBox"></div>
+          <div class="notes-box" id="customerNotesBox"></div>
         </div>
       </div>
 
@@ -227,29 +268,21 @@
         <!-- Additional Work -->
         <div class="section">
           <div class="section-title">ADDITIONAL WORK PERFORMED</div>
-          <div class="notes-box">
-            Replaced worn nut - customer approved additional charge. Old nut had deep grooves causing string binding. New bone nut properly cut and lubricated. Bridge posts were loose and retightened. Minor fret polish on 1st-5th frets where there was light oxidation.
-          </div>
+          <div class="notes-box" id="additionalWorkBox"></div>
         </div>
 
-        <!-- Time & Billing Summary (optional) -->
-        <div class="section summary-section" id="summarySection" style="display:none;">
-          <div class="section-title" style="border:none;margin:0 0 8px 0;padding:0;">TIME & BILLING SUMMARY</div>
-          <div class="summary-grid">
-            <div>
-              <div class="summary-item"><span>Estimated Hours</span><span id="summary_est_hours"></span></div>
-              <div class="summary-item"><span>Actual Hours</span><span id="summary_actual_hours"></span></div>
-            </div>
-            <div>
-              <div class="summary-item"><span>Total</span><span id="summary_total"></span></div>
-              <div class="summary-item"><span>Commission</span><span id="summary_commission"></span></div>
-              <div class="summary-item"><span>Minus Commission</span><span id="summary_minus_commission"></span></div>
-            </div>
-          </div>
+        <!-- Notes Section -->
+        <div class="section">
+          <div class="section-title">TECHNICIAN NOTES</div>
+          <div class="notes-box" id="techNotesBox"></div>
         </div>
-
-        
       </div>
+    </div>
+
+    <!-- Billing Section at Bottom -->
+    <div class="billing-section" id="billingSection" style="display:none;">
+      <div class="billing-title">Total Amount</div>
+      <div class="billing-amount" id="billingTotal">$0.00</div>
     </div>
   </div>
 
@@ -264,7 +297,7 @@
     // Helpers
     const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = (v ?? ''); };
     const setCheck = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('checked', !!on); };
-    const inch = (x) => (x === '' || x == null || isNaN(parseFloat(x))) ? '' : (parseFloat(x).toFixed(3) + '\"');
+    const inch = (x) => (x === '' || x == null || isNaN(parseFloat(x))) ? '' : (parseFloat(x).toFixed(3) + '"');
 
     // Letterhead
     const svcDate = (new Date()).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -296,10 +329,9 @@
     setText('spec_type', p.instrumentType || '');
     setText('spec_strings', [p.stringBrand, p.stringGauge].filter(Boolean).join(' ') || '');
     setText('spec_tuning', p.tuning || '');
-    setText('spec_radius', (p.fretboardRadius != null && p.fretboardRadius !== '') ? (p.fretboardRadius + '\"') : '');
+    setText('spec_radius', (p.fretboardRadius != null && p.fretboardRadius !== '') ? (p.fretboardRadius + '"') : '');
     setText('spec_fretwire', p.fretwire || '');
     setText('spec_tremolo', p.tremolo || 'N/A');
-    setText('spec_complexity', p.complexity ? (p.complexity + '/5') : '');
     if (p.dueDate) {
       const d = new Date(p.dueDate);
       setText('spec_due', isNaN(d) ? p.dueDate : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }));
@@ -307,8 +339,14 @@
       setText('spec_due', '');
     }
 
-    // Notes
-    setText('notesBox', p.intakeNotes || '');
+    // Notes - Customer Request (intake notes)
+    setText('customerNotesBox', p.intakeNotes || '');
+
+    // Additional Work - Connected to additionalActions field
+    setText('additionalWorkBox', p.additionalActions || '');
+
+    // Technician Notes - Future connection to new notes field
+    setText('techNotesBox', p.technicianNotes || '');
 
     // Actions (Standard Actions)
     const a = p.actions || {};
@@ -327,27 +365,13 @@
     setCheck('act_tremoloTension', !!a.adjustedTremoloTension);
     setCheck('act_neckAngle', !!a.adjustedNeckAngle);
 
-    // Optional time/billing summary (auto-show if there is data)
-    const est = ms.reduce((t, m) => t + (parseFloat(m.estimatedHours) || 0), 0);
-    const act = ms.filter(m => m.status === 'Completed').reduce((t, m) => t + (parseFloat(m.actualHours) || 0), 0);
+    // Billing - Show only if there's a total amount
     const total = (p.total != null) ? parseFloat(p.total) : null;
-    const commission = (p.commission != null) ? parseFloat(p.commission) : null;
-    const minusCommission = (total != null && commission != null) ? (total - commission) : null;
-
-    const hasBilling = (total != null) || (commission != null) || (minusCommission != null);
-    const hasTime = (est > 0) || (act > 0);
-
-    if (hasBilling || hasTime) {
-      const section = document.getElementById('summarySection');
-      if (section) section.style.display = 'block';
-      if (hasTime) {
-        setText('summary_est_hours', est ? est.toFixed(1) + 'h' : '');
-        setText('summary_actual_hours', act ? act.toFixed(1) + 'h' : '');
-      }
-      if (hasBilling) {
-        setText('summary_total', (total != null && !isNaN(total)) ? ('$' + total.toFixed(2)) : '');
-        setText('summary_commission', (commission != null && !isNaN(commission)) ? ('$' + commission.toFixed(2)) : '');
-        setText('summary_minus_commission', (minusCommission != null && !isNaN(minusCommission)) ? ('$' + minusCommission.toFixed(2)) : '');
+    if (total != null && !isNaN(total) && total > 0) {
+      const billingSection = document.getElementById('billingSection');
+      if (billingSection) {
+        billingSection.style.display = 'block';
+        setText('billingTotal', '$' + total.toFixed(2));
       }
     }
   })();
