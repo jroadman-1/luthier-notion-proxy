@@ -75,7 +75,6 @@
       border-radius: 4px; 
       padding: 15px; 
       margin-top: 15px;
-      position: relative;
     }
     .billing-title { 
       font-size: 14px; 
@@ -87,16 +86,16 @@
       padding-bottom: 3px; 
       margin-bottom: 10px;
     }
+    .billing-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .billing-amount { 
       font-size: 16px; 
       font-weight: bold; 
       color: #2c3e50; 
       margin: 0;
-      text-align: right;
-      position: absolute;
-      right: 15px;
-      top: 50%;
-      transform: translateY(-50%);
     }
 
     /* Print Button */
