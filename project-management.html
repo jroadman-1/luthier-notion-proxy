@@ -243,6 +243,7 @@
         // Initialize actions
         actions: {},
         additionalActions: ''
+        notes: ''
       };
 
       currentMilestones = [];
@@ -720,6 +721,13 @@
             </div>
           </div>
         </div>
+
+        <div class="form-group" style="margin-top:15px;">
+  <label>Notes</label>
+  <textarea id="notes" onchange="markChanged()" placeholder="General project notes, updates, or reminders...">
+    ${escapeHtml(currentProject.notes || '')}
+  </textarea>
+</div>
 
         <div class="form-section collapsible-section">
           <h3 onclick="toggleCollapsible('billing')">
@@ -1270,6 +1278,7 @@
           dueDate: document.getElementById('dueDate').value || null,
           store: document.getElementById('store').value,
           intakeNotes: document.getElementById('intakeNotes').value,
+          notes: document.getElementById('notes').value,
           
           // Billing data
           total: parseFloat(document.getElementById('total').value) || null,
