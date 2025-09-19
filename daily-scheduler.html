@@ -152,7 +152,7 @@
     <!-- NEW: Controls header with dropdown toggle -->
     <div class="controls-header">
       <h3>⚙️ Scheduling Controls</h3>
-      <button class="dropdown-toggle" id="adjustments-toggle">
+      <button class="dropdown-toggle" onclick="toggleAdjustments()" id="adjustments-toggle">
         <span>Show Adjustments</span>
         <span class="dropdown-arrow" id="dropdown-arrow">▼</span>
       </button>
@@ -222,9 +222,9 @@
     </div>
     <!-- END: Dropdown wrapper -->
 
-    <button class="btn" id="generateBtn">Generate Schedule</button>
-    <button class="btn secondary" id="resetBtn">Reset to Defaults</button>
-    <button class="btn success" id="refreshBtn">Refresh Data</button>
+    <button class="btn" onclick="generateSchedule()">Generate Schedule</button>
+    <button class="btn secondary" onclick="resetWeights()">Reset to Defaults</button>
+    <button class="btn success" onclick="refreshData()">Refresh Data</button>
   </div>
 
   <div class="schedule-container">
