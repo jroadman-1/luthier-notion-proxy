@@ -44,23 +44,11 @@
     .section { margin-bottom: 25px; break-inside: avoid; }
     .section-title { font-size: 14px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 3px; margin-bottom: 12px; }
     
-    /* Precise alignment using fixed heights for matching sections */
-    .left-column .section:nth-child(2) { /* Instrument Specifications */
-      height: 105px; /* Fixed height to match services performed */
-      margin-bottom: 25px;
-    }
-    .right-column .section:nth-child(1) { /* Services Performed */  
-      height: 105px;
-      margin-bottom: 25px;
-    }
-    .left-column .section:nth-child(3) { /* Customer Request */
-      height: 120px; /* Fixed height to match additional work */
-      margin-bottom: 25px;
-    }
-    .right-column .section:nth-child(2) { /* Additional Work */
-      height: 120px;
-      margin-bottom: 25px;
-    }
+    /* Remove fixed heights and let content flow naturally */
+    .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 20px; align-items: start; }
+    
+    /* Ensure consistent spacing between sections */
+    .section { margin-bottom: 25px; }
 
     /* Measurements Table */
     .measurements-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px; }
@@ -83,33 +71,29 @@
     .signature-line { border-bottom: 1px solid #333; width: 220px; margin: 0 auto 5px; height: 42px; }
     .signature-label { font-size: 11px; color: #666; }
 
-    /* Billing Section - Bottom of page */
+    /* Billing Section - Simple horizontal layout */
     .billing-section { 
       background: #f8f9fa; 
-      border: 1px solid #2c3e50; 
+      border: 1px solid #dee2e6; 
       border-radius: 4px; 
       padding: 15px; 
       margin-top: 20px;
-      text-align: center;
-      max-width: 300px;
-      margin-left: auto;
-      margin-right: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .billing-title { 
       font-size: 14px; 
       font-weight: bold; 
       color: #2c3e50; 
-      margin-bottom: 10px; 
-      text-transform: uppercase; 
+      text-transform: uppercase;
+      margin: 0;
     }
     .billing-amount { 
-      font-size: 18px; 
+      font-size: 16px; 
       font-weight: bold; 
       color: #2c3e50; 
-      border: 1px solid #2c3e50;
-      padding: 8px 15px;
-      display: inline-block;
-      min-width: 100px;
+      margin: 0;
     }
 
     /* Print Button */
