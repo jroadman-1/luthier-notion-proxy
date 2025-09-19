@@ -120,7 +120,8 @@ async function createProject(res, notion, projectsDbId, data) {
     // Actions
     actions, additionalActions,
     // Billing fields
-    total, commission
+    total, commission,
+    notes
   } = data;
   
   console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
@@ -303,6 +304,12 @@ async function createProject(res, notion, projectsDbId, data) {
         rich_text: [{ text: { content: additionalActions || '' } }] 
       };
     }
+
+    if (notes !== undefined) {
+  properties['Notes'] = {
+    rich_text: [{ text: { content: notes || '' } }]
+  };
+}
     
     if (dueDate) {
       properties['Due Date'] = { date: { start: dueDate } };
@@ -421,6 +428,13 @@ async function updateProject(res, notion, projectsDbId, data) {
       };
       console.log('Setting Intake Notes:', updates.intakeNotes);
     }
+
+    if (updates.notes !== undefined) {
+  properties['Notes'] = {
+    rich_text: [{ text: { content: updates.notes || '' } }]
+  };
+  console.log('Setting Notes:', updates.notes);
+}
 
     // Billing fields
     if (updates.total !== undefined) {
@@ -659,6 +673,7 @@ function mapProject(page) {
     // Actions (field name corrected to "Standard Actions")
     actions: extractActions(props['Standard Actions']),
     additionalActions: props['Additional Actions']?.rich_text?.[0]?.plain_text ?? '',
+    notes: props['Notes']?.rich_text?.[0]?.plain_text ?? '',
 
     // Rollups/formulas (existing functionality)
     totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
