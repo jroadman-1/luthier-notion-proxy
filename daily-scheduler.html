@@ -22,33 +22,12 @@
       --gray-200: #ecf0f1;
       --gray-300: #e9ecef;
     }
-    body { 
-      font-family: Arial, sans-serif; 
-      max-width: 1000px; 
-      margin: 0 auto; 
-      padding: 20px; 
-      background: var(--bg); 
-      color: var(--ink); 
-    }
-    .header { 
-      background: var(--ink); 
-      color: #fff; 
-      padding: 20px; 
-      border-radius: 8px; 
-      text-align: center; 
-      margin-bottom: 20px; 
-    }
-    .controls, .schedule-container { 
-      background: var(--card); 
-      padding: 20px; 
-      border-radius: 8px; 
-      box-shadow: 0 2px 4px var(--line); 
-    }
-    .controls { 
-      margin-bottom: 20px; 
-    }
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; background: var(--bg); color: var(--ink); }
+    .header { background: var(--ink); color: #fff; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+    .controls, .schedule-container { background: var(--card); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px var(--line); }
+    .controls { margin-bottom: 20px; }
     
-    /* Dropdown styles */
+    /* NEW: Dropdown styles */
     .controls-header {
       display: flex;
       align-items: center;
@@ -91,104 +70,76 @@
     }
     
     .adjustments-dropdown.expanded {
-      max-height: 500px;
+      max-height: 800px;
       opacity: 1;
       margin-bottom: 20px;
     }
+    /* END: New dropdown styles */
     
-    .input-group { 
-      margin-bottom: 12px; 
-      display: flex; 
-      align-items: center; 
-      gap: 12px; 
-    }
-    .input-group label { 
-      width: 230px; 
-      font-weight: bold; 
-    }
-    .input-group input[type="number"] { 
-      padding: 8px; 
-      border: 1px solid #ddd; 
-      border-radius: 6px; 
-      width: 120px; 
-    }
-    .priority-weights { 
-      background: var(--gray-100); 
-      padding: 15px; 
-      border-radius: 6px; 
-      margin: 15px 0; 
-    }
-    .slider-group { 
-      margin-bottom: 12px; 
-    }
-    .slider-group label { 
-      display: flex; 
-      justify-content: space-between; 
-      margin-bottom: 6px; 
-      font-size: 14px; 
-    }
-    .slider-group input[type="range"] { 
-      width: 100%; 
-    }
-    .weight-total { 
-      font-weight: bold; 
-      text-align: center; 
-      margin-top: 10px; 
-      padding: 8px; 
-      background: var(--gray-300); 
-      border-radius: 4px; 
-    }
-    .btn { 
-      background: var(--blue); 
-      color: #fff; 
-      border: 0; 
-      padding: 10px 16px; 
-      border-radius: 6px; 
-      cursor: pointer; 
-      font-size: 14px; 
-      margin-right: 8px; 
-    }
-    .btn:hover { 
-      background: var(--blue-700); 
-    }
-    .btn.secondary { 
-      background: #95a5a6; 
-    }
-    .btn.success { 
-      background: var(--green); 
-    }
-    .btn.success:hover { 
-      background: var(--green-700); 
-    }
+    .input-group { margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+    .input-group label { width: 230px; font-weight: bold; }
+    .input-group input[type="number"] { padding: 8px; border: 1px solid #ddd; border-radius: 6px; width: 120px; }
+    .priority-weights { background: var(--gray-100); padding: 15px; border-radius: 6px; margin: 15px 0; }
+    .slider-group { margin-bottom: 12px; }
+    .slider-group label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+    .slider-group input[type="range"] { width: 100%; }
+    .weight-total { font-weight: bold; text-align: center; margin-top: 10px; padding: 8px; background: var(--gray-300); border-radius: 4px; }
+    .btn { background: var(--blue); color: #fff; border: 0; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 8px; }
+    .btn:hover { background: var(--blue-700); }
+    .btn.secondary { background: #95a5a6; }
+    .btn.success { background: var(--green); }
+    .btn.success:hover { background: var(--green-700); }
 
-    .milestone-item { 
-      background: var(--gray-100); 
-      border-left: 4px solid var(--blue); 
-      padding: 14px; 
-      margin-bottom: 10px; 
-      border-radius: 6px; 
+    .milestone-item { background: var(--gray-100); border-left: 4px solid var(--blue); padding: 14px; margin-bottom: 10px; border-radius: 6px; }
+    .milestone-item.complex { border-left-color: var(--red); background: #fdf2f2; }
+    .milestone-item.completed { opacity: 0.6; background: #d4edda; border-left-color: #28a745; }
+    .milestone-row { display: flex; align-items: flex-start; gap: 12px; }
+    .milestone-checkbox { transform: scale(1.4); margin-top: 4px; cursor: pointer; }
+    .milestone-content { flex: 1; }
+    .milestone-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .milestone-title { font-weight: bold; color: var(--ink); }
+    .milestone-time { background: var(--blue); color: #fff; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+    .milestone-time.complex { background: var(--red); }
+    .milestone-details { color: var(--muted); font-size: 13px; margin-bottom: 6px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: bold; }
+    .complexity-1 { background: #27ae60; }
+    .complexity-2 { background: #f39c12; }
+    .complexity-3 { background: #e67e22; }
+    .complexity-4 { background: #e74c3c; }
+    .complexity-5 { background: #8e44ad; }
+    .badge.quick { background: #34495e; }
+
+    .summary { background: var(--gray-200); padding: 14px; border-radius: 6px; margin-top: 18px; text-align: center; }
+    .loading { text-align: center; padding: 20px; color: var(--muted); }
+    .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin: 10px 0; }
+
+    .time-input-group { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+    .time-input-group input[type="number"] { width: 100px; padding: 6px; border: 1px solid #ddd; border-radius: 6px; }
+    .save-progress-btn, .update-all-btn { background: var(--green); color: #fff; border: 0; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+
+    /* New styles for editable milestone names */
+    .milestone-name { margin-top: 8px; font-size: 14px; color: var(--ink); }
+    .milestone-name-display { font-style: italic; cursor: pointer; padding: 4px; border-radius: 4px; }
+    .milestone-name-display:hover { background: rgba(52, 152, 219, 0.1); }
+    .milestone-name-input { 
+      width: 100%; 
+      padding: 6px; 
+      border: 2px solid var(--blue); 
+      border-radius: 4px; 
+      font-size: 14px;
+      background: #fff;
     }
-    .milestone-item.complex { 
-      border-left-color: var(--red); 
-      background: #fdf2f2; 
+    .milestone-name-input:focus { outline: none; border-color: var(--blue-700); }
+    .edit-controls { display: flex; gap: 6px; margin-top: 4px; }
+    .edit-controls button { 
+      padding: 4px 8px; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 12px;
     }
-    .milestone-item.completed { 
-      opacity: 0.6; 
-      background: #d4edda; 
-      border-left-color: #28a745; 
-    }
-    .loading { 
-      text-align: center; 
-      padding: 20px; 
-      color: var(--muted); 
-    }
-    .error { 
-      background: #f8d7da; 
-      color: #721c24; 
-      padding: 15px; 
-      border-radius: 6px; 
-      margin: 10px 0; 
-    }
+    .save-name-btn { background: var(--green); color: white; }
+    .cancel-name-btn { background: #95a5a6; color: white; }
   </style>
 </head>
 <body>
@@ -198,9 +149,10 @@
   </div>
 
   <div class="controls">
+    <!-- NEW: Controls header with dropdown toggle -->
     <div class="controls-header">
       <h3>⚙️ Scheduling Controls</h3>
-      <button class="dropdown-toggle" id="adjustments-toggle">
+      <button class="dropdown-toggle" onclick="toggleAdjustments()" id="adjustments-toggle">
         <span>Show Adjustments</span>
         <span class="dropdown-arrow" id="dropdown-arrow">▼</span>
       </button>
@@ -211,6 +163,7 @@
       <input type="number" id="availableHours" value="8" min="1" max="16" step="0.5">
     </div>
 
+    <!-- NEW: Wrapping adjustments in dropdown -->
     <div class="adjustments-dropdown" id="adjustments-dropdown">
       <div class="priority-weights">
         <h4>Priority Weight Adjustments</h4>
@@ -220,7 +173,7 @@
             <span>Due Date Urgency</span>
             <span><span id="dueDateWeight">40</span>%</span>
           </label>
-          <input type="range" id="dueDateSlider" min="0" max="80" value="40">
+          <input type="range" id="dueDateSlider" min="0" max="80" value="40" oninput="updateWeights()">
         </div>
 
         <div class="slider-group">
@@ -228,7 +181,7 @@
             <span>Complexity Priority</span>
             <span><span id="complexityWeight">30</span>%</span>
           </label>
-          <input type="range" id="complexitySlider" min="0" max="80" value="30">
+          <input type="range" id="complexitySlider" min="0" max="80" value="30" oninput="updateWeights()">
         </div>
 
         <div class="slider-group">
@@ -236,7 +189,7 @@
             <span>Days Since Worked</span>
             <span><span id="daysWorkedWeight">10</span>%</span>
           </label>
-          <input type="range" id="daysWorkedSlider" min="0" max="50" value="10">
+          <input type="range" id="daysWorkedSlider" min="0" max="50" value="10" oninput="updateWeights()">
         </div>
 
         <div class="slider-group">
@@ -244,7 +197,7 @@
             <span>Quick Wins Boost</span>
             <span><span id="quickWeight">20</span>%</span>
           </label>
-          <input type="range" id="quickSlider" min="0" max="50" value="20">
+          <input type="range" id="quickSlider" min="0" max="50" value="20" oninput="updateWeights()">
         </div>
 
         <div class="weight-total">
@@ -267,57 +220,28 @@
         <input type="number" id="dueBuffer" value="2" min="0" max="7" step="1">
       </div>
     </div>
+    <!-- END: Dropdown wrapper -->
 
-    <button class="btn" id="generateBtn">Generate Schedule</button>
-    <button class="btn secondary" id="resetBtn">Reset to Defaults</button>
-    <button class="btn success" id="refreshBtn">Refresh Data</button>
+    <button class="btn" onclick="generateSchedule()">Generate Schedule</button>
+    <button class="btn secondary" onclick="resetWeights()">Reset to Defaults</button>
+    <button class="btn success" onclick="refreshData()">Refresh Data</button>
   </div>
 
   <div class="schedule-container">
     <h3>📅 Today's Recommended Schedule</h3>
     <div id="scheduleOutput">
-      <div class="loading">Click 'Generate Schedule' to begin or 'Refresh Data' to load from API...</div>
+      <div class="loading">Loading project data...</div>
     </div>
   </div>
 
   <script>
-    // Global variables
     const API_URL = '/api/notion-proxy';
+
     let projectsData = [];
     let milestonesData = [];
     let isDataLoaded = false;
 
-    // Sample data fallback for testing
-    const sampleData = {
-      projects: [
-        {
-          id: '1',
-          name: 'Acoustic Guitar Setup',
-          status: 'On The Bench',
-          complexity: 2,
-          dueDate: '2024-01-15',
-          instrumentMake: 'Taylor',
-          instrumentModel: '814ce'
-        },
-        {
-          id: '2', 
-          name: 'Electric Guitar Rewire',
-          status: 'On The Bench',
-          complexity: 4,
-          dueDate: '2024-01-20',
-          instrumentMake: 'Fender',
-          instrumentModel: 'Stratocaster'
-        }
-      ],
-      milestones: [
-        { id: 'm1', projectId: '1', name: 'Initial inspection', status: 'Ready', estimatedHours: 0.5, order: 1 },
-        { id: 'm2', projectId: '1', name: 'String replacement', status: 'Not Started', estimatedHours: 1.0, order: 2 },
-        { id: 'm3', projectId: '2', name: 'Disassemble electronics', status: 'Ready', estimatedHours: 2.0, order: 1 },
-        { id: 'm4', projectId: '2', name: 'Install new wiring', status: 'Not Started', estimatedHours: 3.0, order: 2 }
-      ]
-    };
-
-    // Dropdown toggle function
+    // NEW: Dropdown toggle function
     function toggleAdjustments() {
       const dropdown = document.getElementById('adjustments-dropdown');
       const arrow = document.getElementById('dropdown-arrow');
@@ -334,193 +258,410 @@
       }
     }
 
-    // Load data function
+    // ---------------------------
+    // Data Loading
+    // ---------------------------
     async function loadDataFromAPI() {
       try {
-        console.log('Attempting to load data from API...');
-        const response = await fetch(API_URL, { 
-          headers: { 'Accept': 'application/json' } 
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.projects || !data.milestones) {
-          throw new Error('Invalid data format received from API');
-        }
+        const res = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+        const data = await res.json();
+        if (!data.projects || !data.milestones) throw new Error('Invalid data format received from API');
 
+        // Filter only active bench projects
         projectsData = data.projects.filter(p => p.status === 'On The Bench');
         milestonesData = data.milestones;
         isDataLoaded = true;
-        console.log('Data loaded successfully from API');
         return true;
-        
       } catch (error) {
-        console.error('API failed, using sample data:', error);
-        projectsData = sampleData.projects;
-        milestonesData = sampleData.milestones;
-        isDataLoaded = true;
-        
+        console.error('Failed to load data from API:', error);
         document.getElementById('scheduleOutput').innerHTML = `
           <div class="error">
-            Unable to connect to API: ${error.message}<br>
-            Using sample data for demonstration. Click 'Generate Schedule' to continue.
+            Failed to load project data: ${error.message}<br>
+            Please check your API connection and try refreshing.
           </div>`;
-        return true;
+        return false;
       }
     }
 
-    // Generate schedule function
-    async function generateSchedule() {
-      console.log('Generate schedule called');
-      
-      if (!isDataLoaded) {
-        document.getElementById('scheduleOutput').innerHTML = '<div class="loading">Loading data...</div>';
-        await loadDataFromAPI();
-      }
-
-      if (projectsData.length === 0) {
-        document.getElementById('scheduleOutput').innerHTML = `
-          <div class="milestone-item">
-            <div style="font-weight: bold; margin-bottom: 8px;">🎯 No active projects found</div>
-            <div style="color: var(--muted);">No projects with status "On The Bench" available for scheduling.</div>
-          </div>`;
-        return;
-      }
-
-      // Simple scheduling logic for demonstration
-      const availableHours = parseFloat(document.getElementById('availableHours').value) || 8;
-      const ready = getReadyMilestones();
-      
-      if (ready.length === 0) {
-        document.getElementById('scheduleOutput').innerHTML = `
-          <div class="milestone-item">
-            <div style="font-weight: bold; margin-bottom: 8px;">🎉 No ready milestones found</div>
-            <div style="color: var(--muted);">All current milestones are either completed or waiting for dependencies.</div>
-          </div>`;
-        return;
-      }
-
-      let html = '';
-      let totalHours = 0;
-      
-      ready.forEach((item, index) => {
-        if (totalHours >= availableHours) return;
-        
-        const hours = Math.min(item.milestone.estimatedHours || 1, availableHours - totalHours);
-        totalHours += hours;
-        
-        html += `
-          <div class="milestone-item">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <div style="font-weight: bold;">${item.project.name} - ${item.project.instrumentMake || ''} ${item.project.instrumentModel || ''}</div>
-              <div style="background: var(--blue); color: white; padding: 4px 10px; border-radius: 999px; font-size: 12px;">
-                ${hours.toFixed(1)}h
-              </div>
-            </div>
-            <div style="color: var(--muted); font-size: 13px; margin-bottom: 8px;">
-              Complexity: ${item.project.complexity || 3} • Status: ${item.milestone.status}
-            </div>
-            <div style="font-style: italic;">Milestone: ${item.milestone.name}</div>
-          </div>`;
-      });
-
-      html += `
-        <div style="background: var(--gray-200); padding: 14px; border-radius: 6px; margin-top: 18px; text-align: center;">
-          <strong>Schedule Summary:</strong> ${totalHours.toFixed(1)}h scheduled of ${availableHours.toFixed(1)}h available<br>
-          <strong>Projects scheduled:</strong> ${ready.length} milestones from ${projectsData.length} active projects
-        </div>`;
-
-      document.getElementById('scheduleOutput').innerHTML = html;
-    }
-
-    // Get ready milestones
+    // ---------------------------
+    // Task Selection (original behavior)
+    // ---------------------------
     function getReadyMilestones() {
+      if (!isDataLoaded || projectsData.length === 0) return [];
       const ready = [];
       projectsData.forEach(project => {
         const projectMilestones = milestonesData
           .filter(m => m.projectId === project.id)
-          .sort((a, b) => (a.order || 0) - (b.order || 0));
-          
+          .sort((a, b) => a.order - b.order);
         for (let i = 0; i < projectMilestones.length; i++) {
           const milestone = projectMilestones[i];
           if (milestone.status === 'Completed') continue;
-          
           const previous = projectMilestones[i - 1];
           const canStart = !previous || previous.status === 'Completed';
-          
           if (canStart && (milestone.status === 'Ready' || milestone.status === 'Not Started')) {
             ready.push({ milestone, project });
-            break;
+            break; // only first ready milestone per project
           }
         }
       });
       return ready;
     }
 
-    // Update weights
-    function updateWeights() {
-      const due = parseInt(document.getElementById('dueDateSlider').value) || 0;
-      const complex = parseInt(document.getElementById('complexitySlider').value) || 0;
-      const age = parseInt(document.getElementById('daysWorkedSlider').value) || 0;
-      const quick = parseInt(document.getElementById('quickSlider').value) || 0;
-      
-      document.getElementById('dueDateWeight').textContent = due;
-      document.getElementById('complexityWeight').textContent = complex;
-      document.getElementById('daysWorkedWeight').textContent = age;
-      document.getElementById('quickWeight').textContent = quick;
-      document.getElementById('totalWeight').textContent = (due + complex + age + quick);
+    function nextMilestoneInProject(milestone) {
+      const list = milestonesData
+        .filter(m => m.projectId === milestone.projectId)
+        .sort((a, b) => a.order - b.order);
+      const idx = list.findIndex(m => m.id === milestone.id);
+      return idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
     }
 
-    // Reset weights
-    function resetWeights() {
-      document.getElementById('dueDateSlider').value = 40;
-      document.getElementById('complexitySlider').value = 30;
-      document.getElementById('daysWorkedSlider').value = 10;
-      document.getElementById('quickSlider').value = 20;
-      document.getElementById('complexPercentage').value = 30;
-      document.getElementById('reservePercentage').value = 15;
-      document.getElementById('dueBuffer').value = 2;
-      updateWeights();
+    // ---------------------------
+    // Helpers for scoring / dates
+    // ---------------------------
+    function clamp(x, min, max) { return Math.max(min, Math.min(max, x)); }
+
+    function totalProjectHours(projectId) {
+      const list = milestonesData.filter(m => m.projectId === projectId && m.status !== 'Completed');
+      return list.reduce((acc, m) => acc + (m.estimatedHours || 0), 0);
     }
 
-    // Refresh data
-    async function refreshData() {
-      isDataLoaded = false;
-      document.getElementById('scheduleOutput').innerHTML = '<div class="loading">Refreshing data...</div>';
-      await loadDataFromAPI();
-      await generateSchedule();
+    function isQuickWin(task) {
+      const c = Number(task.project.complexity) || 3;   // numeric 1–5
+      if (c >= 4) return false;                         // only C1–C3 qualify
+      const totalHrs = totalProjectHours(task.project.id);
+      return totalHrs <= 2;                             // ≤ 2h project total
     }
 
-    // Event listeners
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM loaded, setting up event listeners');
-      
-      // Dropdown toggle
-      document.getElementById('adjustments-toggle').addEventListener('click', toggleAdjustments);
-      
-      // Main buttons
-      document.getElementById('generateBtn').addEventListener('click', generateSchedule);
-      document.getElementById('resetBtn').addEventListener('click', resetWeights);
-      document.getElementById('refreshBtn').addEventListener('click', refreshData);
-      
-      // Slider updates
-      const sliders = ['dueDateSlider', 'complexitySlider', 'daysWorkedSlider', 'quickSlider'];
-      sliders.forEach(sliderId => {
-        const slider = document.getElementById(sliderId);
-        if (slider) {
-          slider.addEventListener('input', updateWeights);
-        }
+    function remainingComplexMilestones(projectId) {
+      const project = projectsData.find(p => p.id === projectId);
+      const isComplexProject = (project?.complexity || 3) >= 4;
+      if (!isComplexProject) return 0;
+      return milestonesData.filter(m => m.projectId === projectId && m.status !== 'Completed').length;
+    }
+
+    // Calendar-day difference ignoring time-of-day
+    function daysUntilDueCalendar(dueStr) {
+      if (!dueStr) return 9999; // no due date = far away
+      const t = new Date();
+      const today0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+      const d = new Date(dueStr);
+      const due0 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return Math.round((due0 - today0) / (1000 * 60 * 60 * 24)); // negative if overdue
+    }
+
+    function getDaysSinceWorked(project, today) {
+      const parse = s => (s ? new Date(s) : null);
+      const ref = parse(project.lastWorked)
+               || parse(project.intakeDate)
+               || parse(project.dateCreated)
+               || parse(project.createdTime);
+      if (!ref) return null;  // unknown baseline
+      return Math.max(0, Math.floor((today - ref) / (1000 * 60 * 60 * 24)));
+    }
+
+    // ---------------------------
+    // Scoring with Sliders (existing math preserved)
+    // ---------------------------
+    function calculatePriorities(readyTasks) {
+      const today = new Date();
+      const dueBufferDays = parseInt(document.getElementById('dueBuffer').value) || 2;
+
+      const w_due = parseInt(document.getElementById('dueDateSlider').value) || 0;
+      const w_complex = parseInt(document.getElementById('complexitySlider').value) || 0;
+      const w_age = parseInt(document.getElementById('daysWorkedSlider').value) || 0;
+      const w_quick = parseInt(document.getElementById('quickSlider').value) || 0;
+      const w_sum = Math.max(1, w_due + w_complex + w_age + w_quick);
+      const W = { due: w_due / w_sum, complex: w_complex / w_sum, age: w_age / w_sum, quick: w_quick / w_sum };
+
+      const scored = readyTasks.map(task => {
+        const daysUntilDue = daysUntilDueCalendar(task.project.dueDate);
+        const rawDSW = getDaysSinceWorked(task.project, today);
+        const daysSinceWorked = rawDSW ?? 0;
+
+        const overdue = daysUntilDue < 0;
+        const dueUrgencyBuffered = overdue ? 1 : clamp((dueBufferDays - daysUntilDue) / dueBufferDays, 0, 1);
+        const complexityScore = ((task.project.complexity || 3) / 5);
+        const neglectBoost = clamp(daysSinceWorked / 14, 0, 1);
+        const quickWinBoost = isQuickWin(task) ? 1 : 0;
+
+        const complexLeft = remainingComplexMilestones(task.project.id);
+        const workDaysRemaining = Math.max(1, (overdue ? 0 : daysUntilDue) - dueBufferDays);
+        const distributionFactor = (task.project.complexity || 3) >= 4
+          ? clamp(complexLeft / workDaysRemaining, 0, 1)
+          : 0;
+
+        let score =
+          W.due * dueUrgencyBuffered +
+          W.complex * complexityScore +
+          W.age * neglectBoost +
+          W.quick * quickWinBoost;
+
+        // small nudge to spread complex work earlier
+        score += 0.15 * distributionFactor;
+        if (overdue) score += 2.0; // strong jump for overdue
+
+        return {
+          ...task,
+          score,
+          daysUntilDue,
+          daysSinceWorked,
+          overdue,
+          isComplex: (task.project.complexity || 3) >= 4,
+          isQuick: quickWinBoost === 1
+        };
       });
+
+      return scored.sort((a, b) => b.score - a.score);
+    }
+
+    // ---------------------------
+    // Packing (existing behavior)
+    // ---------------------------
+    function balanceComplexity(prioritizedTasks, availableHoursInput) {
+      const reservePct = parseInt(document.getElementById('reservePercentage').value) || 15;
+      const complexTargetPct = (parseInt(document.getElementById('complexPercentage').value) || 30) / 100;
+
+      const availableHours = Math.max(0, availableHoursInput * (1 - reservePct / 100));
+
+      const schedule = [];
+      let totalHours = 0;
+      let complexHours = 0;
+
+      const usedMilestones = new Set();
+      const complexProjectsScheduled = new Set();
+
+      function tryAdd(task) {
+        if (usedMilestones.has(task.milestone.id)) return false;
+        const h = task.milestone.estimatedHours || 0;
+        if (h <= 0) return false;
+        if (totalHours + h > availableHours + 1e-6) return false;
+
+        if (task.isComplex && complexProjectsScheduled.has(task.project.id) && !task.overdue) {
+          const needMoreComplex = complexHours < (availableHours * complexTargetPct) - 1e-6;
+          if (!needMoreComplex) return false;
+        }
+
+        schedule.push({ ...task, scheduledHours: h });
+        totalHours += h;
+        if (task.isComplex) {
+          complexHours += h;
+          complexProjectsScheduled.add(task.project.id);
+        }
+        usedMilestones.add(task.milestone.id);
+        return true;
+      }
+
+      const overdue = prioritizedTasks.filter(t => t.overdue);
+      const quickWins = prioritizedTasks.filter(t => t.isQuick);
+      const complex = prioritizedTasks.filter(t => t.isComplex);
+      const simple = prioritizedTasks.filter(t => !t.isComplex);
+
+      // Step 0: Overdue first
+      for (const t of overdue) {
+        if (totalHours >= availableHours) break;
+        tryAdd(t);
+      }
+
+      // Step 1: Guarantee at least one quick win if available
+      if (totalHours < availableHours && quickWins.length) {
+        for (const t of quickWins) { if (tryAdd(t)) break; }
+      }
+
+      // Step 2: Fill while targeting complex %
+      let guard = 0;
+      while (totalHours < availableHours && guard++ < 500) {
+        const needComplex = complexHours < (availableHours * complexTargetPct) - 1e-6;
+        let picked = false;
+        if (needComplex) {
+          for (const t of complex) { if (tryAdd(t)) { picked = true; break; } }
+          if (!picked) { for (const t of simple) { if (tryAdd(t)) { picked = true; break; } } }
+        } else {
+          for (const t of simple) { if (tryAdd(t)) { picked = true; break; } }
+          if (!picked) { for (const t of complex) { if (tryAdd(t)) { picked = true; break; } } }
+        }
+        if (!picked) break;
+      }
+
+      return { schedule, totalHours, complexHours, availableHours };
+    }
+
+    // ---------------------------
+    // NEW: Overdue expansion (minimal patch)
+    // ---------------------------
+    function isProjectOverdue(project) {
+      const days = daysUntilDueCalendar(project?.dueDate);
+      return typeof days === 'number' && days < 0 && project?.status !== 'Done';
+    }
+
+    function getOverdueRemainingMilestones() {
+      if (!isDataLoaded || projectsData.length === 0) return [];
+      const tasks = [];
+      const overdueProjects = projectsData.filter(isProjectOverdue);
+
+      overdueProjects.forEach(project => {
+        const remaining = milestonesData
+          .filter(m => m.projectId === project.id && m.status !== 'Completed')
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
+        remaining.forEach(m => tasks.push({ milestone: m, project }));
+      });
+
+      return tasks;
+    }
+
+    function dedupeByMilestone(arr) {
+      const seen = new Set();
+      const out = [];
+      for (const x of arr) {
+        if (!seen.has(x.milestone.id)) { seen.add(x.milestone.id); out.push(x); }
+      }
+      return out;
+    }
+
+    // ---------------------------
+    // NEW: Milestone Name Editing Functions
+    // ---------------------------
+    function startEditingMilestoneName(milestoneId) {
+      const displayEl = document.getElementById(`name-display-${milestoneId}`);
+      const inputEl = document.getElementById(`name-input-${milestoneId}`);
+      const controlsEl = document.getElementById(`name-controls-${milestoneId}`);
       
-      // Initialize weights
-      updateWeights();
+      if (displayEl && inputEl && controlsEl) {
+        displayEl.style.display = 'none';
+        inputEl.style.display = 'block';
+        controlsEl.style.display = 'flex';
+        inputEl.focus();
+        inputEl.select();
+      }
+    }
+
+    function cancelEditingMilestoneName(milestoneId) {
+      const displayEl = document.getElementById(`name-display-${milestoneId}`);
+      const inputEl = document.getElementById(`name-input-${milestoneId}`);
+      const controlsEl = document.getElementById(`name-controls-${milestoneId}`);
       
-      console.log('Event listeners set up successfully');
-    });
-  </script>
-</body>
-</html>
+      if (displayEl && inputEl && controlsEl) {
+        displayEl.style.display = 'block';
+        inputEl.style.display = 'none';
+        controlsEl.style.display = 'none';
+        
+        // Reset input to original value
+        const milestone = milestonesData.find(m => m.id === milestoneId);
+        if (milestone) {
+          inputEl.value = milestone.name;
+        }
+      }
+    }
+
+    async function saveMilestoneName(milestoneId) {
+      const inputEl = document.getElementById(`name-input-${milestoneId}`);
+      const displayEl = document.getElementById(`name-display-${milestoneId}`);
+      const controlsEl = document.getElementById(`name-controls-${milestoneId}`);
+      
+      if (!inputEl || !displayEl || !controlsEl) return;
+      
+      const newName = inputEl.value.trim();
+      if (!newName) {
+        alert('Milestone name cannot be empty');
+        inputEl.focus();
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}?action=update-milestone`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            milestoneId: milestoneId, 
+            name: newName 
+          })
+        });
+
+        if (!response.ok) throw new Error(`Failed to update milestone name: ${response.statusText}`);
+        
+        // Update local data
+        const milestone = milestonesData.find(m => m.id === milestoneId);
+        if (milestone) {
+          milestone.name = newName;
+        }
+        
+        // Update UI
+        displayEl.textContent = newName;
+        displayEl.style.display = 'block';
+        inputEl.style.display = 'none';
+        controlsEl.style.display = 'none';
+        
+        console.log('Milestone name updated successfully');
+      } catch (error) {
+        alert('Failed to update milestone name: ' + error.message);
+        console.error('Error updating milestone name:', error);
+      }
+    }
+
+    // ---------------------------
+    // UI Rendering (Enhanced with editable names)
+    // ---------------------------
+    function displaySchedule(result, effectiveHours) {
+      const { schedule, totalHours, complexHours } = result;
+      let html = '';
+
+      if (schedule.length === 0) {
+        html = `
+          <div class="milestone-item">
+            <div class="milestone-title">🎉 No milestones ready for scheduling!</div>
+            <div class="milestone-details">All current milestones are either completed or waiting for previous tasks to finish.</div>
+          </div>`;
+      } else {
+        schedule.forEach((item, index) => {
+          const dueText = item.daysUntilDue < 0 ? '⚠️ OVERDUE!' :
+            item.daysUntilDue <= 3 ? '🔥 Due soon' :
+            item.daysUntilDue <= 7 ? '📅 Due this week' : '✅ On track';
+
+          const dsw = (typeof item.daysSinceWorked === 'number') ? item.daysSinceWorked : null;
+          const workedText =
+            dsw === null ? '' :
+            dsw === 0    ? '🟢 touched today' :
+            dsw === 1    ? '⏰ 1 day since worked' :
+                           `⏰ ${dsw} days since worked`;
+
+          const complexClass = item.isComplex ? 'complex' : '';
+          const timeClass = item.isComplex ? 'complex' : '';
+          const completedClass = item.milestone.status === 'Completed' ? 'completed' : '';
+
+          html += `
+            <div class="milestone-item ${complexClass} ${completedClass}" id="milestone-${item.milestone.id}">
+              <div class="milestone-row">
+                <input type="checkbox" class="milestone-checkbox" ${item.milestone.status === 'Completed' ? 'checked disabled' : ''}
+                  onchange="toggleMilestoneCompletion('${item.milestone.id}', ${index})" id="checkbox-${item.milestone.id}">
+                <div class="milestone-content">
+                  <div class="milestone-header">
+                    <div class="milestone-title">${item.project.name} - ${item.project.instrumentMake || ''} ${item.project.instrumentModel || ''}</div>
+                    <div class="milestone-time ${timeClass}">${(item.scheduledHours || 0).toFixed(1)}h</div>
+                  </div>
+                  <div class="milestone-details">
+                    <span class="badge complexity-${item.project.complexity || 3}">C${item.project.complexity || 3}</span>
+                    ${item.isQuick ? '<span class="badge quick">Quick</span>' : ''}
+                    <span>${dueText}</span>
+                    <span>• Priority: ${item.score.toFixed(2)}</span>
+                    ${workedText ? `<span>• ${workedText}</span>` : ''}
+                  </div>
+                  <div class="milestone-name">
+                    <span>Milestone: </span>
+                    <span class="milestone-name-display" id="name-display-${item.milestone.id}" onclick="startEditingMilestoneName('${item.milestone.id}')" title="Click to edit milestone name">${item.milestone.name}</span>
+                    <input type="text" class="milestone-name-input" id="name-input-${item.milestone.id}" value="${item.milestone.name}" style="display: none;" onkeydown="if(event.key==='Enter') saveMilestoneName('${item.milestone.id}'); if(event.key==='Escape') cancelEditingMilestoneName('${item.milestone.id}');">
+                    <div class="edit-controls" id="name-controls-${item.milestone.id}" style="display: none;">
+                      <button class="save-name-btn" onclick="saveMilestoneName('${item.milestone.id}')">Save</button>
+                      <button class="cancel-name-btn" onclick="cancelEditingMilestoneName('${item.milestone.id}')">Cancel</button>
+                    </div>
+                  </div>
+                  <div class="completion-controls" id="controls-${item.milestone.id}">
+                    <div class="time-input-group">
+                      <label>Actual hours:</label>
+                      <input type="number" step="0.25" min="0.25" max="24" value="${(item.scheduledHours || 0).toFixed(1)}" id="actual-hours-${item.milestone.id}" placeholder="Hours">
+                      <button class="save-progress-btn" onclick="saveMilestoneProgress('${item.milestone.id}', '${item.project.id}')" id="save-btn-${item.milestone.id}">Save Progress</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+                  
