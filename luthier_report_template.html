@@ -294,7 +294,15 @@
     const ms = Array.isArray(data.milestones) ? data.milestones : [];
 
     // Helpers
-    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = (v ?? ''); };
+    const setText = (id, v) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const s = (v ?? '');
+  // drop leading newlines that push text down inside .notes-box
+  el.textContent = typeof s === 'string' ? s.trim() : s;
+};
+
+
     const setCheck = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('checked', !!on); };
     const inch = (x) => (x === '' || x == null || isNaN(parseFloat(x))) ? '' : (parseFloat(x).toFixed(3) + '"');
 
