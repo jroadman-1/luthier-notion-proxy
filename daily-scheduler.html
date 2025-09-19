@@ -632,4 +632,34 @@
               <div class="milestone-row">
                 <input type="checkbox" class="milestone-checkbox" ${item.milestone.status === 'Completed' ? 'checked disabled' : ''}
                   onchange="toggleMilestoneCompletion('${item.milestone.id}', ${index})" id="checkbox-${item.milestone.id}">
-                <div class="milestone-
+                <div class="milestone-content">
+                  <div class="milestone-header">
+                    <div class="milestone-title">${item.project.name} - ${item.project.instrumentMake || ''} ${item.project.instrumentModel || ''}</div>
+                    <div class="milestone-time ${timeClass}">${(item.scheduledHours || 0).toFixed(1)}h</div>
+                  </div>
+                  <div class="milestone-details">
+                    <span class="badge complexity-${item.project.complexity || 3}">C${item.project.complexity || 3}</span>
+                    ${item.isQuick ? '<span class="badge quick">Quick</span>' : ''}
+                    <span>${dueText}</span>
+                    <span>• Priority: ${item.score.toFixed(2)}</span>
+                    ${workedText ? `<span>• ${workedText}</span>` : ''}
+                  </div>
+                  <div class="milestone-name">
+                    <span>Milestone: </span>
+                    <span class="milestone-name-display" id="name-display-${item.milestone.id}" onclick="startEditingMilestoneName('${item.milestone.id}')" title="Click to edit milestone name">${item.milestone.name}</span>
+                    <input type="text" class="milestone-name-input" id="name-input-${item.milestone.id}" value="${item.milestone.name}" style="display: none;" onkeydown="if(event.key==='Enter') saveMilestoneName('${item.milestone.id}'); if(event.key==='Escape') cancelEditingMilestoneName('${item.milestone.id}');">
+                    <div class="edit-controls" id="name-controls-${item.milestone.id}" style="display: none;">
+                      <button class="save-name-btn" onclick="saveMilestoneName('${item.milestone.id}')">Save</button>
+                      <button class="cancel-name-btn" onclick="cancelEditingMilestoneName('${item.milestone.id}')">Cancel</button>
+                    </div>
+                  </div>
+                  <div class="completion-controls" id="controls-${item.milestone.id}">
+                    <div class="time-input-group">
+                      <label>Actual hours:</label>
+                      <input type="number" step="0.25" min="0.25" max="24" value="${(item.scheduledHours || 0).toFixed(1)}" id="actual-hours-${item.milestone.id}" placeholder="Hours">
+                      <button class="save-progress-btn" onclick="saveMilestoneProgress('${item.milestone.id}', '${item.project.id}')" id="save-btn-${item.milestone.id}">Save Progress</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
