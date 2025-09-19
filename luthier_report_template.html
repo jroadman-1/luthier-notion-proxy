@@ -41,14 +41,11 @@
     .left-column, .right-column { min-height: 400px; }
 
     /* Section Styling */
-    .section { margin-bottom: 25px; break-inside: avoid; }
-    .section-title { font-size: 14px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 3px; margin-bottom: 12px; }
+    .section { margin-bottom: 20px; break-inside: avoid; }
+    .section-title { font-size: 14px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 3px; margin-bottom: 10px; }
     
     /* Remove fixed heights and let content flow naturally */
-    .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 20px; align-items: start; }
-    
-    /* Ensure consistent spacing between sections */
-    .section { margin-bottom: 25px; }
+    .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 15px; align-items: start; }
 
     /* Measurements Table */
     .measurements-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px; }
@@ -77,10 +74,8 @@
       border: 1px solid #dee2e6; 
       border-radius: 4px; 
       padding: 15px; 
-      margin-top: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      margin-top: 15px;
+      position: relative;
     }
     .billing-title { 
       font-size: 14px; 
@@ -88,12 +83,20 @@
       color: #2c3e50; 
       text-transform: uppercase;
       margin: 0;
+      border-bottom: 2px solid #2c3e50; 
+      padding-bottom: 3px; 
+      margin-bottom: 10px;
     }
     .billing-amount { 
       font-size: 16px; 
       font-weight: bold; 
       color: #2c3e50; 
       margin: 0;
+      text-align: right;
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
     }
 
     /* Print Button */
@@ -261,8 +264,11 @@
 
     <!-- Billing Section at Bottom -->
     <div class="billing-section" id="billingSection" style="display:none;">
-      <div class="billing-title">Total Amount</div>
-      <div class="billing-amount" id="billingTotal">$0.00</div>
+      <div class="billing-title">Billing</div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Total Amount:</span>
+        <span class="billing-amount" id="billingTotal">$0.00</span>
+      </div>
     </div>
   </div>
 
