@@ -60,16 +60,18 @@
     .checkbox.checked::after { content: '✓'; position: absolute; left: 1px; top: -2px; font-size: 10px; font-weight: bold; }
 
     /* Notes Section */
-    .notes-box { 
-  border: 1px solid #dee2e6; 
-  min-height: 80px; 
-  padding: 10px; 
-  background: #fafafa; 
-  font-size: 11px; 
-  line-height: 1.5; 
-  white-space: pre-wrap; 
-  text-align: left;
-  vertical-align: top;
+    .notes-box {
+  border: 1px solid #dee2e6;
+  min-height: 80px;
+  padding: 10px;
+  background: #fafafa;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+
+  display: flex;          /* enable flexbox */
+  align-items: flex-start; /* anchor text at the top */
+  justify-content: flex-start; /* align text left */
 }
 
     /* Signature Section */
