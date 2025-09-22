@@ -6,145 +6,147 @@
   <title>String Spacing Calculator (Equal Edge Gaps)</title>
   <style>
     body{font-family:sans-serif;background:#0f172a;color:#e5e7eb;margin:0;padding:20px}
-    .panel{max-width:1100px;margin:auto;background:#111827;padding:20px;border-radius:10px}
+    h1{margin-top:0}
     label{display:block;margin-top:10px}
-    input,select,button{padding:8px;margin-top:4px;border-radius:6px;border:1px solid #333;background:#0b1220;color:#e5e7eb}
+    input,select,button{padding:6px;margin-top:4px;border-radius:4px;border:1px solid #444;background:#111827;color:#e5e7eb}
     button{cursor:pointer}
-    table{width:100%;border-collapse:collapse;margin-top:15px}
-    th,td{padding:6px;border:1px solid #333;text-align:right}
+    table{margin-top:20px;width:100%;border-collapse:collapse}
+    th,td{padding:6px;border-bottom:1px solid #333;text-align:right}
     th:first-child,td:first-child{text-align:left}
   </style>
 </head>
 <body>
-  <div class="panel">
-    <h1>String Spacing Calculator</h1>
-    <p>Equal edge-to-edge gaps with fixed outside center spacing. Results rounded to .001″.</p>
+  <h1>String Spacing Calculator</h1>
+  <p>Equal edge-to-edge gaps with fixed outside center spacing. Results rounded to <strong>.001″</strong>.</p>
 
-    <label for="spacing">Outside spacing (S, inches)</label>
-    <input id="spacing" type="number" step="0.001" value="1.373">
+  <label for="spacing">Outside spacing S (inches)</label>
+  <input id="spacing" type="number" step="0.001" value="1.373" />
 
-    <label for="preset">String gauge set</label>
-    <select id="preset"></select>
+  <label for="preset">String gauge set</label>
+  <select id="preset"></select>
 
-    <p>Gauges (inches, high → low)</p>
-    <div id="gauges"></div>
-
-    <button id="calcBtn">Calculate</button>
-
-    <h2>Results</h2>
-    <p>Equal edge gap g: <span id="gap">—</span></p>
-    <p>Check (pos₆ − pos₁): <span id="check">—</span></p>
-
-    <table>
-      <thead>
-        <tr>
-          <th>String</th>
-          <th>Gauge dᵢ (in)</th>
-          <th>Center pos (in)</th>
-          <th>Step to next (in)</th>
-        </tr>
-      </thead>
-      <tbody id="outTable"></tbody>
-    </table>
+  <p>Custom gauges (high → low, inches):</p>
+  <div>
+    <input id="g1" type="number" step="0.001" value="0.010" />
+    <input id="g2" type="number" step="0.001" value="0.013" />
+    <input id="g3" type="number" step="0.001" value="0.017" />
+    <input id="g4" type="number" step="0.001" value="0.026" />
+    <input id="g5" type="number" step="0.001" value="0.036" />
+    <input id="g6" type="number" step="0.001" value="0.046" />
   </div>
 
+  <div style="margin-top:10px">
+    <button id="calcBtn" type="button">Calculate</button>
+    <button id="copyBtn" type="button">Copy table</button>
+    <button id="csvBtn" type="button">Download CSV</button>
+  </div>
+
+  <h2>Results</h2>
+  <p>Equal edge gap g: <span id="gap">—</span></p>
+  <p>Check (pos₆ − pos₁): <span id="check">—</span></p>
+
+  <table>
+    <thead>
+      <tr><th>String</th><th>Gauge (in)</th><th>Center pos (in)</th><th>Step to next (in)</th></tr>
+    </thead>
+    <tbody id="outBody"></tbody>
+  </table>
+
   <script>
-    const gaugeDiv = document.getElementById('gauges');
-    const presets = [
-      { group:'Electric', name:'10–46 (regular 10s)', gauges:[0.010,0.013,0.017,0.026,0.036,0.046] },
-      { group:'Electric', name:'09–42', gauges:[0.009,0.011,0.016,0.024,0.032,0.042] },
-      { group:'Acoustic', name:'12–53 (light)', gauges:[0.012,0.016,0.024,0.032,0.042,0.053] },
-      { group:'Acoustic', name:'13–56 (medium)', gauges:[0.013,0.017,0.026,0.035,0.045,0.056] }
+    const presetEl=document.getElementById('preset');
+    const inputs=[...Array(6)].map((_,i)=>document.getElementById('g'+(i+1)));
+    const spacingEl=document.getElementById('spacing');
+    const outBody=document.getElementById('outBody');
+    const gapEl=document.getElementById('gap');
+    const checkEl=document.getElementById('check');
+
+    const presets=[
+      {group:'Electric',name:'09–42',gauges:[0.009,0.011,0.016,0.024,0.032,0.042]},
+      {group:'Electric',name:'10–46',gauges:[0.010,0.013,0.017,0.026,0.036,0.046]},
+      {group:'Acoustic',name:'12–53',gauges:[0.012,0.016,0.024,0.032,0.042,0.053]},
+      {group:'Acoustic',name:'13–56',gauges:[0.013,0.017,0.026,0.035,0.045,0.056]}
     ];
 
-    function buildGauges(defaults){
-      gaugeDiv.innerHTML = '';
-      defaults.forEach((g,i)=>{
-        const inp = document.createElement('input');
-        inp.type = 'number'; inp.step = '0.001'; inp.value = g.toFixed(3);
-        inp.id = 'g'+(i+1);
-        gaugeDiv.appendChild(inp);
-      });
-    }
-
     function buildPresetDropdown(){
-      const sel = document.getElementById('preset');
-      const custom = document.createElement('option');
-      custom.value = 'custom'; custom.textContent = 'Custom';
-      sel.appendChild(custom);
+      const frag=document.createDocumentFragment();
+      const custom=document.createElement('option');
+      custom.value='custom';custom.textContent='Custom';
+      frag.appendChild(custom);
       presets.forEach(p=>{
-        const opt = document.createElement('option');
-        opt.value = p.name;
-        opt.textContent = p.group+': '+p.name;
-        sel.appendChild(opt);
+        const opt=document.createElement('option');
+        opt.value=p.name;opt.textContent=`${p.group} ${p.name}`;
+        frag.appendChild(opt);
       });
-      sel.value = presets[0].name;
-      buildGauges(presets[0].gauges);
+      presetEl.appendChild(frag);
+      presetEl.value='10–46';
+      applyPreset();
     }
 
-    function readGauges(){
-      return [...document.querySelectorAll('#gauges input')].map(inp=>parseFloat(inp.value));
+    function round3(x){return Math.round((+x+Number.EPSILON)*1000)/1000}
+    function readGauges(){return inputs.map(el=>parseFloat(el.value||0));}
+    function setGauges(gs){gs.forEach((v,i)=>inputs[i].value=v.toFixed(3));}
+
+    function applyPreset(){
+      if(presetEl.value==='custom')return;
+      const p=presets.find(pp=>pp.name===presetEl.value);
+      if(p) setGauges(p.gauges);
+      calculate();
     }
 
     function calcGap(S,gs){
-      const n = gs.length;
-      const innerSum = gs.slice(1,n-1).reduce((a,b)=>a+b,0);
-      return (S - ((gs[0]/2)+(gs[n-1]/2)) - innerSum) / (n-1);
+      const n=gs.length;
+      const inner=gs.slice(1,n-1).reduce((a,b)=>a+b,0);
+      return (S-((gs[0]/2)+(gs[n-1]/2))-inner)/(n-1);
     }
 
-    function positionsAndSteps(S,gs){
-      const g = calcGap(S,gs);
-      const pos=[0];
-      const steps=[];
-      for(let i=0;i<gs.length-1;i++){
+    function positions(S,gs){
+      const n=gs.length;const g=calcGap(S,gs);const pos=[0];const steps=[];
+      for(let i=0;i<n-1;i++){
         const step=(gs[i]+gs[i+1])/2+g;
         steps.push(step);
         pos.push(pos[pos.length-1]+step);
       }
-      return {g,pos,steps};
+      return{g,pos,steps};
     }
-
-    function round3(x){return Math.round(x*1000)/1000}
 
     function calculate(){
-      const S=parseFloat(document.getElementById('spacing').value);
-      const gs=readGauges();
-      const {g,pos,steps}=positionsAndSteps(S,gs);
-      document.getElementById('gap').textContent=round3(g).toFixed(3);
-      document.getElementById('check').textContent=(round3(pos[pos.length-1]-pos[0])).toFixed(3);
-      const tbody=document.getElementById('outTable');
-      tbody.innerHTML='';
+      const S=parseFloat(spacingEl.value||0);const gs=readGauges();
+      const {g,pos,steps}=positions(S,gs);
+      gapEl.textContent=g.toFixed(3);
+      checkEl.textContent=(pos[pos.length-1]-pos[0]).toFixed(3);
+      outBody.innerHTML='';
       for(let i=0;i<gs.length;i++){
         const tr=document.createElement('tr');
-        const step=i<steps.length?round3(steps[i]).toFixed(3):'';
+        const step=i<steps.length?steps[i].toFixed(3):'';
         [i+1,gs[i].toFixed(3),pos[i].toFixed(3),step].forEach(val=>{
-          const td=document.createElement('td'); td.textContent=val; tr.appendChild(td);
+          const td=document.createElement('td');td.textContent=val;tr.appendChild(td);
         });
-        tbody.appendChild(tr);
+        outBody.appendChild(tr);
       }
+      window.__lastCSV=[["String","Gauge (in)","Center pos (in)","Step to next (in)"]]
+        .concat(gs.map((g,i)=>[i+1,g.toFixed(3),pos[i].toFixed(3),i<steps.length?steps[i].toFixed(3):'']))
+        .map(r=>r.join(",")).join("\n");
     }
 
-    document.getElementById('calcBtn').addEventListener('click',calculate);
-    document.getElementById('preset').addEventListener('change',e=>{
-      if(e.target.value==='custom'){return;}
-      const set=presets.find(p=>p.name===e.target.value);
-      buildGauges(set.gauges);
+    document.getElementById('calcBtn').addEventListener('click',()=>calculate());
+    document.getElementById('copyBtn').addEventListener('click',async()=>{
+      calculate();
+      try{await navigator.clipboard.writeText(window.__lastCSV||'');}catch{}
     });
+    document.getElementById('csvBtn').addEventListener('click',()=>{
+      calculate();
+      const blob=new Blob([window.__lastCSV||''],{type:'text/csv'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='string_spacing.csv';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    });
+
+    presetEl.addEventListener('change',applyPreset);
+    inputs.concat([spacingEl]).forEach(el=>el.addEventListener('input',()=>{presetEl.value='custom';calculate();}));
+    window.addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
 
     buildPresetDropdown();
     calculate();
-    // Patch: ensure buttons are type=button and clicks always recalc
-    ['calcBtn','copyBtn','csvBtn'].forEach(id=>{
-      const b=document.getElementById(id);
-      if(b && !b.hasAttribute('type')) b.setAttribute('type','button');
-    });
-    const _calcBtn = document.getElementById('calcBtn');
-    if(_calcBtn){ _calcBtn.addEventListener('click', ()=>{ calculate(); statusEl.textContent='Recalculated'; }); }
-    const _copyBtn = document.getElementById('copyBtn');
-    if(_copyBtn){ _copyBtn.addEventListener('click', ()=>{ calculate(); }); }
-    const _csvBtn = document.getElementById('csvBtn');
-    if(_csvBtn){ _csvBtn.addEventListener('click', ()=>{ calculate(); }); }
-    window.addEventListener('keydown', e=>{ if(e.key==='Enter'){ calculate(); statusEl.textContent='Recalculated'; }});
   </script>
 </body>
 </html>
