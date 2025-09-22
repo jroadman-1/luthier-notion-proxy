@@ -5,146 +5,598 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>String Spacing Calculator (Equal Edge Gaps)</title>
   <style>
-    body{font-family:sans-serif;background:#0f172a;color:#e5e7eb;margin:0;padding:20px}
-    h1{margin-top:0}
-    label{display:block;margin-top:10px}
-    input,select,button{padding:6px;margin-top:4px;border-radius:4px;border:1px solid #444;background:#111827;color:#e5e7eb}
-    button{cursor:pointer}
-    table{margin-top:20px;width:100%;border-collapse:collapse}
-    th,td{padding:6px;border-bottom:1px solid #333;text-align:right}
+    :root{--bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#9ca3af;--accent:#22d3ee;--card:#0b1220;--border:#243244}
+    *{box-sizing:border-box}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans",sans-serif;background:linear-gradient(180deg,#0b1220,#0f172a 30%,#0b1220 100%);color:var(--text)}
+    .wrap{max-width:1100px;margin:40px auto;padding:24px}
+    .panel{background:rgba(17,24,39,.65);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    h1{font-size:28px;margin:0 0 10px 0;letter-spacing:.2px}
+    p.lead{margin:0 0 18px 0;color:var(--muted)}
+    .grid{display:grid;gap:16px}
+    @media(min-width:900px){.grid{grid-template-columns:1.1fr .9fr}}
+    label{display:block;font-size:14px;color:#cbd5e1;margin-bottom:6px}
+    input,select,button,textarea{font-size:15px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+    input,select{padding:10px 12px;width:100%}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{cursor:pointer;padding:10px 14px;border:1px solid #2a3b50;background:#101a2a;color:#e6faff;border-radius:12px}
+    .btn:hover{border-color:#39506a}
+    .btn.primary{background:linear-gradient(180deg,#082a35,#0a3b4b);border-color:#0e5b70}
+    .muted{color:var(--muted)}
+    .card{background:rgba(9,14,26,.6);border:1px solid var(--border);border-radius:14px;padding:14px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 8px;text-align:right;border-bottom:1px dashed #243244}
     th:first-child,td:first-child{text-align:left}
+    kbd{background:#07111e;border:1px solid #1c2b40;border-radius:6px;padding:2px 6px}
+    .badge{display:inline-block;background:#0a1b2c;border:1px solid #1f3246;border-radius:999px;padding:5px 10px;font-size:12px;color:#bfe8ff}
+    .inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .note{font-size:12.5px;color:#9fb3c8}
+    .gauge-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .hr{height:1px;background:linear-gradient(90deg,transparent,#23344a,transparent);margin:14px 0}
+    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   </style>
 </head>
 <body>
-  <h1>String Spacing Calculator</h1>
-  <p>Equal edge-to-edge gaps with fixed outside center spacing. Results rounded to <strong>.001″</strong>.</p>
+  <div class="wrap panel">
+    <h1>String Spacing Calculator</h1>
+    <p class="lead">Equal edge-to-edge gaps with fixed outside center spacing. Results rounded to <strong>.001″</strong>.</p>
 
-  <label for="spacing">Outside spacing S (inches)</label>
-  <input id="spacing" type="number" step="0.001" value="1.373" />
+    <div class="grid">
+      <!-- Inputs -->
+      <section class="card" aria-label="Inputs">
+        <div class="row">
+          <div>
+            <label for="spacing">Outside spacing S (center‑to‑center), inches</label>
+            <input id="spacing" type="number" step="0.001" min="0" value="1.373" />
+          </div>
+          <div>
+            <label for="preset">String gauge set</label>
+            <select id="preset"></select>
+          </div>
+        </div>
 
-  <label for="preset">String gauge set</label>
-  <select id="preset"></select>
+        <div class="hr"></div>
 
-  <p>Custom gauges (high → low, inches):</p>
-  <div>
-    <input id="g1" type="number" step="0.001" value="0.010" />
-    <input id="g2" type="number" step="0.001" value="0.013" />
-    <input id="g3" type="number" step="0.001" value="0.017" />
-    <input id="g4" type="number" step="0.001" value="0.026" />
-    <input id="g5" type="number" step="0.001" value="0.036" />
-    <input id="g6" type="number" step="0.001" value="0.046" />
+        <div>
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Gauges (inches), high → low</span>
+            <span class="badge" id="setLabel">Custom</span>
+          </div>
+          <div class="gauge-grid" style="margin-top:8px">
+            <div>
+              <label for="g1">d₁</label>
+              <input id="g1" type="number" step="0.001" min="0.004" value="0.010" />
+            </div>
+            <div>
+              <label for="g2">d₂</label>
+              <input id="g2" type="number" step="0.001" min="0.006" value="0.013" />
+            </div>
+            <div>
+              <label for="g3">d₃</label>
+              <input id="g3" type="number" step="0.001" min="0.008" value="0.017" />
+            </div>
+            <div>
+              <label for="g4">d₄</label>
+              <input id="g4" type="number" step="0.001" min="0.010" value="0.026" />
+            </div>
+            <div>
+              <label for="g5">d₅</label>
+              <input id="g5" type="number" step="0.001" min="0.012" value="0.036" />
+            </div>
+            <div>
+              <label for="g6">d₆</label>
+              <input id="g6" type="number" step="0.001" min="0.014" value="0.046" />
+            </div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <div class="flex">
+          <button class="btn primary" id="calcBtn" type="button">Calculate</button>
+          <button class="btn" id="copyBtn" type="button">Copy table</button>
+          <button class="btn" id="csvBtn" type="button">Download CSV</button>
+          <span class="note">Tip: values auto‑update when you change inputs; <kbd>Enter</kbd> recalculates.</span>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section class="card" aria-label="Results">
+        <div class="inline" style="justify-content:space-between;margin-bottom:8px">
+          <h2 style="margin:0;font-size:18px">Results</h2>
+          <span class="badge" id="status">Ready</span>
+        </div>
+        <div class="row">
+          <div>
+            <div class="muted">Equal edge gap g (in)</div>
+            <div id="gap" style="font-size:28px;line-height:1.1;margin-top:4px">—</div>
+          </div>
+          <div>
+            <div class="muted">Check (pos₆ − pos₁)</div>
+            <div id="check" style="font-size:28px;line-height:1.1;margin-top:4px">—</div>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div style="overflow:auto">
+          <table id="outTable" aria-label="Output table">
+            <thead>
+              <tr>
+                <th>String</th>
+                <th>Gauge dᵢ (in)</th>
+                <th>Center pos (in)</th>
+                <th>Step to next (in)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="hr"></div>
+        <div class="note">Formula: g = (S − (d₁/2 + dₙ/2) − Σ d₂..dₙ₋₁) / (n − 1). Positions: pos₁ = 0; posᵢ₊₁ = posᵢ + (dᵢ + dᵢ₊₁)/2 + g.</div>
+      </section>
+    </div>
   </div>
-
-  <div style="margin-top:10px">
-    <button id="calcBtn" type="button">Calculate</button>
-    <button id="copyBtn" type="button">Copy table</button>
-    <button id="csvBtn" type="button">Download CSV</button>
-  </div>
-
-  <h2>Results</h2>
-  <p>Equal edge gap g: <span id="gap">—</span></p>
-  <p>Check (pos₆ − pos₁): <span id="check">—</span></p>
-
-  <table>
-    <thead>
-      <tr><th>String</th><th>Gauge (in)</th><th>Center pos (in)</th><th>Step to next (in)</th></tr>
-    </thead>
-    <tbody id="outBody"></tbody>
-  </table>
 
   <script>
-    const presetEl=document.getElementById('preset');
-    const inputs=[...Array(6)].map((_,i)=>document.getElementById('g'+(i+1)));
-    const spacingEl=document.getElementById('spacing');
-    const outBody=document.getElementById('outBody');
-    const gapEl=document.getElementById('gap');
-    const checkEl=document.getElementById('check');
+    const presetEl = document.getElementById('preset');
+    const setLabel = document.getElementById('setLabel');
+    const inputs = [...Array(6)].map((_,i)=>document.getElementById('g'+(i+1)));
+    const spacingEl = document.getElementById('spacing');
+    const outBody = document.querySelector('#outTable tbody');
+    const gapEl = document.getElementById('gap');
+    const checkEl = document.getElementById('check');
+    const statusEl = document.getElementById('status');
 
-    const presets=[
-      {group:'Electric',name:'09–42',gauges:[0.009,0.011,0.016,0.024,0.032,0.042]},
-      {group:'Electric',name:'10–46',gauges:[0.010,0.013,0.017,0.026,0.036,0.046]},
-      {group:'Acoustic',name:'12–53',gauges:[0.012,0.016,0.024,0.032,0.042,0.053]},
-      {group:'Acoustic',name:'13–56',gauges:[0.013,0.017,0.026,0.035,0.045,0.056]}
+    const presets = [
+      { group:'Electric', name:'09–42 (super light)', gauges:[0.009,0.011,0.016,0.024,0.032,0.042] },
+      { group:'Electric', name:'09–46 (hybrid)',      gauges:[0.009,0.011,0.016,0.026,0.036,0.046] },
+      { group:'Electric', name:'10–46 (regular 10s)', gauges:[0.010,0.013,0.017,0.026,0.036,0.046] },
+      { group:'Electric', name:'10–52 (heavy bottom)',gauges:[0.010,0.013,0.017,0.030,0.042,0.052] },
+      { group:'Electric', name:'11–49',               gauges:[0.011,0.014,0.018,0.028,0.038,0.049] },
+      { group:'Electric', name:'11–52',               gauges:[0.011,0.014,0.018,0.030,0.042,0.052] },
+      { group:'Acoustic', name:'11–52 (custom light)',gauges:[0.011,0.015,0.022,0.032,0.042,0.052] },
+      { group:'Acoustic', name:'12–53 (light)',       gauges:[0.012,0.016,0.024,0.032,0.042,0.053] },
+      { group:'Acoustic', name:'12–54 (light+)',      gauges:[0.012,0.016,0.024,0.035,0.045,0.054] },
+      { group:'Acoustic', name:'13–56 (medium)',      gauges:[0.013,0.017,0.026,0.035,0.045,0.056] },
     ];
 
     function buildPresetDropdown(){
-      const frag=document.createDocumentFragment();
-      const custom=document.createElement('option');
-      custom.value='custom';custom.textContent='Custom';
+      const byGroup = presets.reduce((acc,p)=>{(acc[p.group]??=[]).push(p);return acc;},{});
+      const frag = document.createDocumentFragment();
+      // Custom option first
+      const custom = document.createElement('option');
+      custom.value = 'custom'; custom.textContent = 'Custom (enter below)';
       frag.appendChild(custom);
-      presets.forEach(p=>{
-        const opt=document.createElement('option');
-        opt.value=p.name;opt.textContent=`${p.group} ${p.name}`;
-        frag.appendChild(opt);
-      });
+      for(const [group,items] of Object.entries(byGroup)){
+        const og = document.createElement('optgroup');
+        og.label = group;
+        items.forEach((p,i)=>{
+          const opt = document.createElement('option');
+          opt.value = `${group}:${p.name}`;
+          opt.textContent = `${p.name}`;
+          og.appendChild(opt);
+        });
+        frag.appendChild(og);
+      }
       presetEl.appendChild(frag);
-      presetEl.value='10–46';
-      applyPreset();
+      presetEl.value = 'Electric:10–46 (regular 10s)';
+      applyPresetFromSelect();
     }
 
-    function round3(x){return Math.round((+x+Number.EPSILON)*1000)/1000}
-    function readGauges(){return inputs.map(el=>parseFloat(el.value||0));}
-    function setGauges(gs){gs.forEach((v,i)=>inputs[i].value=v.toFixed(3));}
+    function round3(x){return Math.round((+x + Number.EPSILON)*1000)/1000}
 
-    function applyPreset(){
-      if(presetEl.value==='custom')return;
-      const p=presets.find(pp=>pp.name===presetEl.value);
-      if(p) setGauges(p.gauges);
+    function readGauges(){
+      return inputs.map(el=>parseFloat(el.value||0));
+    }
+
+    function setGauges(gs){
+      gs.forEach((v,i)=>{inputs[i].value = (typeof v==='number'? v : parseFloat(v)||0).toFixed(3)});
+    }
+
+    function findPresetByValue(val){
+      const [group,name] = val.split(':');
+      return presets.find(p=>`${p.group}:${p.name}`===val);
+    }
+
+    function applyPresetFromSelect(){
+      if(presetEl.value==='custom'){ setLabel.textContent='Custom'; return; }
+      const p = findPresetByValue(presetEl.value);
+      if(!p) return;
+      setGauges(p.gauges);
+      setLabel.textContent = `${p.group} • ${p.name}`;
       calculate();
     }
 
-    function calcGap(S,gs){
-      const n=gs.length;
-      const inner=gs.slice(1,n-1).reduce((a,b)=>a+b,0);
-      return (S-((gs[0]/2)+(gs[n-1]/2))-inner)/(n-1);
+    function calcGap(S, gs){
+      const n = gs.length;
+      if(n<2) return NaN;
+      const innerSum = gs.slice(1,n-1).reduce((a,b)=>a+b,0);
+      return (S - ((gs[0]/2)+(gs[n-1]/2)) - innerSum) / (n-1);
     }
 
-    function positions(S,gs){
-      const n=gs.length;const g=calcGap(S,gs);const pos=[0];const steps=[];
+    function positionsAndSteps(S, gs){
+      const n = gs.length;
+      const g = calcGap(S, gs);
+      const pos = [0];
+      const steps = [];
       for(let i=0;i<n-1;i++){
-        const step=(gs[i]+gs[i+1])/2+g;
+        const step = (gs[i]+gs[i+1])/2 + g; // center-to-center increment
         steps.push(step);
-        pos.push(pos[pos.length-1]+step);
+        pos.push(pos[pos.length-1] + step);
       }
-      return{g,pos,steps};
+      return {g,pos,steps};
+    }
+
+    function asCSV(rows){
+      return rows.map(r=>r.map(v=>String(v)).join(",")).join("
+");
     }
 
     function calculate(){
-      const S=parseFloat(spacingEl.value||0);const gs=readGauges();
-      const {g,pos,steps}=positions(S,gs);
-      gapEl.textContent=g.toFixed(3);
-      checkEl.textContent=(pos[pos.length-1]-pos[0]).toFixed(3);
-      outBody.innerHTML='';
+      const S = parseFloat(spacingEl.value||0);
+      const gs = readGauges();
+      // sanity checks
+      if(!isFinite(S) || S<=0){ statusEl.textContent='Enter a valid spacing'; return; }
+      if(gs.some(v=>!isFinite(v)||v<=0)){ statusEl.textContent='Check gauges'; return; }
+
+      const {g,pos,steps} = positionsAndSteps(S, gs);
+      const g3 = round3(g);
+      gapEl.textContent = isFinite(g3)? g3.toFixed(3) : '—';
+      const check = round3(pos[pos.length-1] - pos[0]);
+      checkEl.textContent = check.toFixed(3) + ' in';
+      statusEl.textContent = 'OK';
+
+      // render table
+      outBody.innerHTML = '';
+      const rows = [];
       for(let i=0;i<gs.length;i++){
-        const tr=document.createElement('tr');
-        const step=i<steps.length?steps[i].toFixed(3):'';
-        [i+1,gs[i].toFixed(3),pos[i].toFixed(3),step].forEach(val=>{
-          const td=document.createElement('td');td.textContent=val;tr.appendChild(td);
+        const tr = document.createElement('tr');
+        const step = i<steps.length ? round3(steps[i]).toFixed(3) : '';
+        const cells = [
+          i+1,
+          round3(gs[i]).toFixed(3),
+          round3(pos[i]).toFixed(3),
+          step
+        ];
+        rows.push(cells);
+        cells.forEach((c,j)=>{
+          const td=document.createElement('td');
+          td.textContent=c; tr.appendChild(td);
         });
         outBody.appendChild(tr);
       }
-      window.__lastCSV=[["String","Gauge (in)","Center pos (in)","Step to next (in)"]]
-        .concat(gs.map((g,i)=>[i+1,g.toFixed(3),pos[i].toFixed(3),i<steps.length?steps[i].toFixed(3):'']))
-        .map(r=>r.join(",")).join("\n");
+      // expose csv in memory
+      window.__lastCSV = asCSV([["String","Gauge (in)","Center pos (in)","Step to next (in)"], ...rows]);
     }
 
-    document.getElementById('calcBtn').addEventListener('click',()=>calculate());
-    document.getElementById('copyBtn').addEventListener('click',async()=>{
+    // Buttons
+    document.getElementById('calcBtn').addEventListener('click', ()=>{ calculate(); });
+    document.getElementById('copyBtn').addEventListener('click', async ()=>{
       calculate();
-      try{await navigator.clipboard.writeText(window.__lastCSV||'');}catch{}
+      try{
+        await navigator.clipboard.writeText(window.__lastCSV||'');
+        statusEl.textContent='Copied CSV';
+      }catch{ statusEl.textContent='Copy failed'; }
     });
-    document.getElementById('csvBtn').addEventListener('click',()=>{
+    document.getElementById('csvBtn').addEventListener('click', ()=>{
       calculate();
-      const blob=new Blob([window.__lastCSV||''],{type:'text/csv'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');a.href=url;a.download='string_spacing.csv';a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const blob = new Blob([window.__lastCSV||''], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'string_spacing.csv'; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
     });
 
-    presetEl.addEventListener('change',applyPreset);
-    inputs.concat([spacingEl]).forEach(el=>el.addEventListener('input',()=>{presetEl.value='custom';calculate();}));
-    window.addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
+    // Events
+    presetEl.addEventListener('change', ()=>{
+      applyPresetFromSelect();
+    });
+    [...inputs, spacingEl].forEach(el=>{
+      el.addEventListener('input', ()=>{
+        presetEl.value='custom'; setLabel.textContent='Custom'; calculate();
+      });
+      el.addEventListener('keydown', e=>{ if(e.key==='Enter'){ calculate(); }});
+    });
 
+    // init
+    buildPresetDropdown();
+    calculate();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>String Spacing Calculator (Equal Edge Gaps)</title>
+  <style>
+    :root{--bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#9ca3af;--accent:#22d3ee;--card:#0b1220;--border:#243244}
+    *{box-sizing:border-box}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans",sans-serif;background:linear-gradient(180deg,#0b1220,#0f172a 30%,#0b1220 100%);color:var(--text)}
+    .wrap{max-width:1100px;margin:40px auto;padding:24px}
+    .panel{background:rgba(17,24,39,.65);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    h1{font-size:28px;margin:0 0 10px 0;letter-spacing:.2px}
+    p.lead{margin:0 0 18px 0;color:var(--muted)}
+    .grid{display:grid;gap:16px}
+    @media(min-width:900px){.grid{grid-template-columns:1.1fr .9fr}}
+    label{display:block;font-size:14px;color:#cbd5e1;margin-bottom:6px}
+    input,select,button,textarea{font-size:15px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+    input,select{padding:10px 12px;width:100%}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{cursor:pointer;padding:10px 14px;border:1px solid #2a3b50;background:#101a2a;color:#e6faff;border-radius:12px}
+    .btn:hover{border-color:#39506a}
+    .btn.primary{background:linear-gradient(180deg,#082a35,#0a3b4b);border-color:#0e5b70}
+    .muted{color:var(--muted)}
+    .card{background:rgba(9,14,26,.6);border:1px solid var(--border);border-radius:14px;padding:14px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 8px;text-align:right;border-bottom:1px dashed #243244}
+    th:first-child,td:first-child{text-align:left}
+    kbd{background:#07111e;border:1px solid #1c2b40;border-radius:6px;padding:2px 6px}
+    .badge{display:inline-block;background:#0a1b2c;border:1px solid #1f3246;border-radius:999px;padding:5px 10px;font-size:12px;color:#bfe8ff}
+    .inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .note{font-size:12.5px;color:#9fb3c8}
+    .gauge-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .hr{height:1px;background:linear-gradient(90deg,transparent,#23344a,transparent);margin:14px 0}
+    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="wrap panel">
+    <h1>String Spacing Calculator</h1>
+    <p class="lead">Equal edge-to-edge gaps with fixed outside center spacing. Results rounded to <strong>.001″</strong>.</p>
+
+    <div class="grid">
+      <!-- Inputs -->
+      <section class="card" aria-label="Inputs">
+        <div class="row">
+          <div>
+            <label for="spacing">Outside spacing S (center‑to‑center), inches</label>
+            <input id="spacing" type="number" step="0.001" min="0" value="1.373" />
+          </div>
+          <div>
+            <label for="preset">String gauge set</label>
+            <select id="preset"></select>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div>
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Gauges (inches), high → low</span>
+            <span class="badge" id="setLabel">Custom</span>
+          </div>
+          <div class="gauge-grid" style="margin-top:8px">
+            <div>
+              <label for="g1">d₁</label>
+              <input id="g1" type="number" step="0.001" min="0.004" value="0.010" />
+            </div>
+            <div>
+              <label for="g2">d₂</label>
+              <input id="g2" type="number" step="0.001" min="0.006" value="0.013" />
+            </div>
+            <div>
+              <label for="g3">d₃</label>
+              <input id="g3" type="number" step="0.001" min="0.008" value="0.017" />
+            </div>
+            <div>
+              <label for="g4">d₄</label>
+              <input id="g4" type="number" step="0.001" min="0.010" value="0.026" />
+            </div>
+            <div>
+              <label for="g5">d₅</label>
+              <input id="g5" type="number" step="0.001" min="0.012" value="0.036" />
+            </div>
+            <div>
+              <label for="g6">d₆</label>
+              <input id="g6" type="number" step="0.001" min="0.014" value="0.046" />
+            </div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <div class="flex">
+          <button class="btn primary" id="calcBtn" type="button">Calculate</button>
+          <button class="btn" id="copyBtn" type="button">Copy table</button>
+          <button class="btn" id="csvBtn" type="button">Download CSV</button>
+          <span class="note">Tip: values auto‑update when you change inputs; <kbd>Enter</kbd> recalculates.</span>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section class="card" aria-label="Results">
+        <div class="inline" style="justify-content:space-between;margin-bottom:8px">
+          <h2 style="margin:0;font-size:18px">Results</h2>
+          <span class="badge" id="status">Ready</span>
+        </div>
+        <div class="row">
+          <div>
+            <div class="muted">Equal edge gap g (in)</div>
+            <div id="gap" style="font-size:28px;line-height:1.1;margin-top:4px">—</div>
+          </div>
+          <div>
+            <div class="muted">Check (pos₆ − pos₁)</div>
+            <div id="check" style="font-size:28px;line-height:1.1;margin-top:4px">—</div>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div style="overflow:auto">
+          <table id="outTable" aria-label="Output table">
+            <thead>
+              <tr>
+                <th>String</th>
+                <th>Gauge dᵢ (in)</th>
+                <th>Center pos (in)</th>
+                <th>Step to next (in)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="hr"></div>
+        <div class="note">Formula: g = (S − (d₁/2 + dₙ/2) − Σ d₂..dₙ₋₁) / (n − 1). Positions: pos₁ = 0; posᵢ₊₁ = posᵢ + (dᵢ + dᵢ₊₁)/2 + g.</div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const presetEl = document.getElementById('preset');
+    const setLabel = document.getElementById('setLabel');
+    const inputs = [...Array(6)].map((_,i)=>document.getElementById('g'+(i+1)));
+    const spacingEl = document.getElementById('spacing');
+    const outBody = document.querySelector('#outTable tbody');
+    const gapEl = document.getElementById('gap');
+    const checkEl = document.getElementById('check');
+    const statusEl = document.getElementById('status');
+
+    const presets = [
+      { group:'Electric', name:'09–42 (super light)', gauges:[0.009,0.011,0.016,0.024,0.032,0.042] },
+      { group:'Electric', name:'09–46 (hybrid)',      gauges:[0.009,0.011,0.016,0.026,0.036,0.046] },
+      { group:'Electric', name:'10–46 (regular 10s)', gauges:[0.010,0.013,0.017,0.026,0.036,0.046] },
+      { group:'Electric', name:'10–52 (heavy bottom)',gauges:[0.010,0.013,0.017,0.030,0.042,0.052] },
+      { group:'Electric', name:'11–49',               gauges:[0.011,0.014,0.018,0.028,0.038,0.049] },
+      { group:'Electric', name:'11–52',               gauges:[0.011,0.014,0.018,0.030,0.042,0.052] },
+      { group:'Acoustic', name:'11–52 (custom light)',gauges:[0.011,0.015,0.022,0.032,0.042,0.052] },
+      { group:'Acoustic', name:'12–53 (light)',       gauges:[0.012,0.016,0.024,0.032,0.042,0.053] },
+      { group:'Acoustic', name:'12–54 (light+)',      gauges:[0.012,0.016,0.024,0.035,0.045,0.054] },
+      { group:'Acoustic', name:'13–56 (medium)',      gauges:[0.013,0.017,0.026,0.035,0.045,0.056] },
+    ];
+
+    function buildPresetDropdown(){
+      const byGroup = presets.reduce((acc,p)=>{(acc[p.group]??=[]).push(p);return acc;},{});
+      const frag = document.createDocumentFragment();
+      // Custom option first
+      const custom = document.createElement('option');
+      custom.value = 'custom'; custom.textContent = 'Custom (enter below)';
+      frag.appendChild(custom);
+      for(const [group,items] of Object.entries(byGroup)){
+        const og = document.createElement('optgroup');
+        og.label = group;
+        items.forEach((p,i)=>{
+          const opt = document.createElement('option');
+          opt.value = `${group}:${p.name}`;
+          opt.textContent = `${p.name}`;
+          og.appendChild(opt);
+        });
+        frag.appendChild(og);
+      }
+      presetEl.appendChild(frag);
+      presetEl.value = 'Electric:10–46 (regular 10s)';
+      applyPresetFromSelect();
+    }
+
+    function round3(x){return Math.round((+x + Number.EPSILON)*1000)/1000}
+
+    function readGauges(){
+      return inputs.map(el=>parseFloat(el.value||0));
+    }
+
+    function setGauges(gs){
+      gs.forEach((v,i)=>{inputs[i].value = (typeof v==='number'? v : parseFloat(v)||0).toFixed(3)});
+    }
+
+    function findPresetByValue(val){
+      const [group,name] = val.split(':');
+      return presets.find(p=>`${p.group}:${p.name}`===val);
+    }
+
+    function applyPresetFromSelect(){
+      if(presetEl.value==='custom'){ setLabel.textContent='Custom'; return; }
+      const p = findPresetByValue(presetEl.value);
+      if(!p) return;
+      setGauges(p.gauges);
+      setLabel.textContent = `${p.group} • ${p.name}`;
+      calculate();
+    }
+
+    function calcGap(S, gs){
+      const n = gs.length;
+      if(n<2) return NaN;
+      const innerSum = gs.slice(1,n-1).reduce((a,b)=>a+b,0);
+      return (S - ((gs[0]/2)+(gs[n-1]/2)) - innerSum) / (n-1);
+    }
+
+    function positionsAndSteps(S, gs){
+      const n = gs.length;
+      const g = calcGap(S, gs);
+      const pos = [0];
+      const steps = [];
+      for(let i=0;i<n-1;i++){
+        const step = (gs[i]+gs[i+1])/2 + g; // center-to-center increment
+        steps.push(step);
+        pos.push(pos[pos.length-1] + step);
+      }
+      return {g,pos,steps};
+    }
+
+    function asCSV(rows){
+      return rows.map(r=>r.map(v=>String(v)).join(",")).join("
+");
+    }
+
+    function calculate(){
+      const S = parseFloat(spacingEl.value||0);
+      const gs = readGauges();
+      // sanity checks
+      if(!isFinite(S) || S<=0){ statusEl.textContent='Enter a valid spacing'; return; }
+      if(gs.some(v=>!isFinite(v)||v<=0)){ statusEl.textContent='Check gauges'; return; }
+
+      const {g,pos,steps} = positionsAndSteps(S, gs);
+      const g3 = round3(g);
+      gapEl.textContent = isFinite(g3)? g3.toFixed(3) : '—';
+      const check = round3(pos[pos.length-1] - pos[0]);
+      checkEl.textContent = check.toFixed(3) + ' in';
+      statusEl.textContent = 'OK';
+
+      // render table
+      outBody.innerHTML = '';
+      const rows = [];
+      for(let i=0;i<gs.length;i++){
+        const tr = document.createElement('tr');
+        const step = i<steps.length ? round3(steps[i]).toFixed(3) : '';
+        const cells = [
+          i+1,
+          round3(gs[i]).toFixed(3),
+          round3(pos[i]).toFixed(3),
+          step
+        ];
+        rows.push(cells);
+        cells.forEach((c,j)=>{
+          const td=document.createElement('td');
+          td.textContent=c; tr.appendChild(td);
+        });
+        outBody.appendChild(tr);
+      }
+      // expose csv in memory
+      window.__lastCSV = asCSV([["String","Gauge (in)","Center pos (in)","Step to next (in)"], ...rows]);
+    }
+
+    // Buttons
+    document.getElementById('calcBtn').addEventListener('click', ()=>{ calculate(); });
+    document.getElementById('copyBtn').addEventListener('click', async ()=>{
+      calculate();
+      try{
+        await navigator.clipboard.writeText(window.__lastCSV||'');
+        statusEl.textContent='Copied CSV';
+      }catch{ statusEl.textContent='Copy failed'; }
+    });
+    document.getElementById('csvBtn').addEventListener('click', ()=>{
+      calculate();
+      const blob = new Blob([window.__lastCSV||''], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'string_spacing.csv'; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    });
+
+    // Events
+    presetEl.addEventListener('change', ()=>{
+      applyPresetFromSelect();
+    });
+    [...inputs, spacingEl].forEach(el=>{
+      el.addEventListener('input', ()=>{
+        presetEl.value='custom'; setLabel.textContent='Custom'; calculate();
+      });
+      el.addEventListener('keydown', e=>{ if(e.key==='Enter'){ calculate(); }});
+    });
+
+    // init
     buildPresetDropdown();
     calculate();
   </script>
