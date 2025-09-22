@@ -223,63 +223,76 @@
             font-size: 1.1em;
         }
 
-        .slider-container {
+        .gap-distribution {
             text-align: center;
-            margin-bottom: 10px;
         }
 
-        .slider-container label {
-            display: block;
+        .distribution-description {
+            color: #7f8c8d;
+            font-style: italic;
             margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .gap-inputs {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .gap-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .gap-input label {
+            font-size: 12px;
+            font-weight: 600;
             color: #34495e;
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+
+        .gap-input input {
+            width: 60px;
+            padding: 8px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 0;
+        }
+
+        .gap-input input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .gap-input span {
+            font-size: 14px;
+            color: #7f8c8d;
             font-weight: 500;
         }
 
-        #spacingSlider {
-            width: 80%;
-            height: 8px;
-            border-radius: 5px;
-            background: #ddd;
-            outline: none;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-            margin-bottom: 10px;
+        .total-display {
+            padding: 10px;
+            background: #ecf0f1;
+            border-radius: 8px;
+            font-size: 16px;
         }
 
-        #spacingSlider:hover {
-            opacity: 1;
-        }
-
-        #spacingSlider::-webkit-slider-thumb {
-            appearance: none;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-        }
-
-        #spacingSlider::-moz-range-thumb {
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            border: none;
-        }
-
-        .slider-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: #667eea;
-        }
-
-        .slider-description {
+        .total-display .warning {
+            display: block;
+            color: #e74c3c;
             font-size: 14px;
-            color: #7f8c8d;
-            text-align: center;
-            font-style: italic;
-            margin: 0;
+            margin-top: 5px;
+        }
+
+        .total-display .warning.hidden {
+            display: none;
         }
 
         .hidden {
@@ -304,6 +317,15 @@
             #spacingSlider {
                 width: 95%;
             }
+
+            .gap-inputs {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .gap-input input {
+                width: 50px;
+            }
         }
     </style>
 </head>
@@ -313,15 +335,41 @@
         <p class="subtitle">Calculate precise string positioning using center-to-center spacing</p>
         
         <div class="spacing-adjustment">
-            <h3>Spacing Adjustment</h3>
-            <div class="slider-container">
-                <label for="spacingSlider">Bass ← Even Spacing → Treble</label>
-                <input type="range" id="spacingSlider" min="-20" max="20" value="0" step="1" />
-                <div class="slider-value">
-                    <span id="sliderValue">0%</span>
+            <h3>Gap Distribution</h3>
+            <div class="gap-distribution">
+                <p class="distribution-description">Distribute the total gap space as percentages (must total 100%)</p>
+                <div class="gap-inputs">
+                    <div class="gap-input">
+                        <label>6th → 5th:</label>
+                        <input type="number" id="gap65" min="0" max="100" step="0.1" value="20" />
+                        <span>%</span>
+                    </div>
+                    <div class="gap-input">
+                        <label>5th → 4th:</label>
+                        <input type="number" id="gap54" min="0" max="100" step="0.1" value="20" />
+                        <span>%</span>
+                    </div>
+                    <div class="gap-input">
+                        <label>4th → 3rd:</label>
+                        <input type="number" id="gap43" min="0" max="100" step="0.1" value="20" />
+                        <span>%</span>
+                    </div>
+                    <div class="gap-input">
+                        <label>3rd → 2nd:</label>
+                        <input type="number" id="gap32" min="0" max="100" step="0.1" value="20" />
+                        <span>%</span>
+                    </div>
+                    <div class="gap-input">
+                        <label>2nd → 1st:</label>
+                        <input type="number" id="gap21" min="0" max="100" step="0.1" value="20" />
+                        <span>%</span>
+                    </div>
+                </div>
+                <div class="total-display">
+                    <strong>Total: <span id="totalPercent">100.0</span>%</strong>
+                    <span id="totalWarning" class="warning hidden">Must equal 100%</span>
                 </div>
             </div>
-            <p class="slider-description">Adjust spacing bias: negative values widen treble gaps, positive values widen bass gaps</p>
         </div>
         
         <div class="input-section">
@@ -429,14 +477,34 @@
             }
         });
 
-        document.getElementById('spacingSlider').addEventListener('input', function() {
-            const value = this.value;
-            document.getElementById('sliderValue').textContent = value + '%';
+        // Update total percentage display and auto-calculate
+        function updateTotalPercent() {
+            const gaps = ['gap65', 'gap54', 'gap43', 'gap32', 'gap21'];
+            let total = 0;
+            
+            gaps.forEach(gapId => {
+                const value = parseFloat(document.getElementById(gapId).value) || 0;
+                total += value;
+            });
+            
+            document.getElementById('totalPercent').textContent = total.toFixed(1);
+            
+            const warningElement = document.getElementById('totalWarning');
+            if (Math.abs(total - 100) > 0.1) { // Allow small rounding differences
+                warningElement.classList.remove('hidden');
+            } else {
+                warningElement.classList.add('hidden');
+            }
             
             // Auto-calculate if we have valid inputs
-            if (document.getElementById('totalSpacing').value) {
+            if (document.getElementById('totalSpacing').value && document.getElementById('gauge1').value) {
                 calculate();
             }
+        }
+
+        // Add event listeners for gap percentage inputs
+        ['gap65', 'gap54', 'gap43', 'gap32', 'gap21'].forEach(gapId => {
+            document.getElementById(gapId).addEventListener('input', updateTotalPercent);
         });
 
         document.getElementById('totalSpacing').addEventListener('input', function() {
@@ -472,36 +540,30 @@
                 gauges.push(gauge);
             }
 
-            // Get spacing adjustment percentage
-            const spacingAdjustment = parseFloat(document.getElementById('spacingSlider').value);
+            // Get gap percentages
+            const gapPercentages = [
+                parseFloat(document.getElementById('gap65').value) || 0,
+                parseFloat(document.getElementById('gap54').value) || 0,
+                parseFloat(document.getElementById('gap43').value) || 0,
+                parseFloat(document.getElementById('gap32').value) || 0,
+                parseFloat(document.getElementById('gap21').value) || 0
+            ];
 
-            // Apply the nut calculation equation to get base gap
+            // Check if percentages total 100%
+            const totalPercent = gapPercentages.reduce((sum, percent) => sum + percent, 0);
+            if (Math.abs(totalPercent - 100) > 0.1) {
+                return; // Don't calculate if percentages don't add up to 100%
+            }
+
+            // Calculate total available gap space using your original equation
             const d1 = gauges[0];
             const d6 = gauges[5];
             const sumMiddleStrings = gauges[1] + gauges[2] + gauges[3] + gauges[4];
             
-            const baseGap = (totalSpacing - (d1/2 + d6/2) - sumMiddleStrings) / 5;
+            const totalGapSpace = totalSpacing - (d1/2 + d6/2) - sumMiddleStrings;
 
-            // Apply spacing adjustments
-            // Gap multipliers: 6-5, 5-4, 4-3, 3-2, 2-1
-            // At 0%: all multipliers = 1.0 (even spacing)
-            // At +20%: bass gaps get larger, treble gaps get smaller
-            // At -20%: bass gaps get smaller, treble gaps get larger
-            
-            const adjustmentFactor = spacingAdjustment / 100; // Convert percentage to decimal
-            
-            // Define adjustment multipliers for each gap (from bass to treble)
-            // Gap 4 (between strings 4-3) remains unchanged as pivot point
-            const gapMultipliers = [
-                1.0 + (adjustmentFactor * 0.8),  // Gap 0: 6-5 strings (most adjustment)
-                1.0 + (adjustmentFactor * 0.4),  // Gap 1: 5-4 strings (medium adjustment)
-                1.0,                             // Gap 2: 4-3 strings (no adjustment - pivot)
-                1.0 - (adjustmentFactor * 0.4),  // Gap 3: 3-2 strings (opposite medium adjustment)
-                1.0 - (adjustmentFactor * 0.8)   // Gap 4: 2-1 strings (opposite most adjustment)
-            ];
-
-            // Calculate adjusted gaps
-            const adjustedGaps = gapMultipliers.map(multiplier => baseGap * multiplier);
+            // Calculate individual gaps based on percentages
+            const adjustedGaps = gapPercentages.map(percent => (totalGapSpace * percent) / 100);
 
             // Calculate string positions using adjusted gaps
             const positions = [];
@@ -515,11 +577,14 @@
                 positions[i] = prevPos + (prevDiameter + currentDiameter) / 2 + adjustedGaps[gapIndex];
             }
 
+            // Calculate what the even spacing gap would be for reference
+            const evenGap = totalGapSpace / 5;
+
             // Display results
-            displayResults(gauges, positions, adjustedGaps, baseGap);
+            displayResults(gauges, positions, adjustedGaps, evenGap);
         }
 
-        function displayResults(gauges, positions, adjustedGaps, baseGap) {
+        function displayResults(gauges, positions, adjustedGaps, evenGap) {
             const resultsDiv = document.getElementById('results');
             const noResultsDiv = document.getElementById('noResults');
             const resultsGrid = document.getElementById('resultsGrid');
@@ -566,7 +631,7 @@
             }
 
             // Gap information with individual gaps
-            let gapInfoHTML = `<strong>Base gap (even spacing):</strong> ${baseGap.toFixed(3)}"<br>`;
+            let gapInfoHTML = `<strong>Even spacing gap:</strong> ${evenGap.toFixed(3)}"<br>`;
             gapInfoHTML += '<strong>Actual gaps:</strong><br>';
             const gapLabels = ['6-5', '5-4', '4-3', '3-2', '2-1'];
             for (let i = 0; i < 5; i++) {
