@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4-String Bass Nut Spacing Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .spacing-adjustment {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .spacing-adjustment h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .gap-distribution {
+            text-align: center;
+        }
+
+        .distribution-description {
+            color: #7f8c8d;
+            font-style: italic;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .gap-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .gap-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .gap-input label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+
+        .gap-input input {
+            width: 75px;
+            padding: 8px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 0;
+        }
+
+        .gap-input input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .gap-input span {
+            font-size: 14px;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .total-display {
+            padding: 10px;
+            background: #ecf0f1;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .total-display .warning {
+            display: block;
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .total-display .warning.hidden {
+            display: none;
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .input-group h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .gauge-inputs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .gauge-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gauge-input label {
+            min-width: 60px;
+            margin-bottom: 0;
+            font-size: 14px;
+        }
+
+        .gauge-input input {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin: 20px 0;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .results-content {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            height: 100%;
+        }
+
+        .no-results {
+            background: #ecf0f1;
+            color: #7f8c8d;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .no-results h3 {
+            margin-bottom: 15px;
+            color: #95a5a6;
+        }
+
+        .results {
+            background: #2c3e50;
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .results h3 {
+            margin-bottom: 20px;
+            color: #ecf0f1;
+            font-size: 1.3em;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: auto auto auto auto;
+            gap: 15px 30px;
+            align-items: center;
+        }
+
+        .results-header {
+            font-weight: 600;
+            color: #3498db;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #34495e;
+        }
+
+        .results-row {
+            padding: 8px 0;
+        }
+
+        .string-number {
+            font-weight: 600;
+            color: #e74c3c;
+        }
+
+        .measurement {
+            font-family: 'Courier New', monospace;
+            color: #2ecc71;
+            font-weight: 600;
+        }
+
+        .gap-info {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .gap-info strong {
+            color: #f39c12;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .input-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .gauge-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .results-grid {
+                grid-template-columns: auto auto;
+                gap: 10px 20px;
+            }
+
+            .gap-inputs {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .gap-input input {
+                width: 65px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>4-String Bass Nut Spacing Calculator</h1>
+        <p class="subtitle">Calculate precise string positioning using center-to-center spacing</p>
+        
+
+        
+        <div class="input-section">
+            <div class="input-group">
+                <h3>Inputs</h3>
+                <label for="totalSpacing">Outside Center-to-Center Distance (inches):</label>
+                <input type="number" id="totalSpacing" step="0.001" placeholder="e.g., 1.625" />
+                
+                <label for="gaugeType">Gauge Set:</label>
+                <select id="gaugeType">
+                    <option value="">Select a standard set...</option>
+                    <option value="bass-extra-light">Extra Light (.040-.095)</option>
+                    <option value="bass-light">Light (.045-.100)</option>
+                    <option value="bass-regular">Regular (.045-.105)</option>
+                    <option value="bass-medium">Medium (.050-.105)</option>
+                    <option value="bass-heavy">Heavy (.055-.110)</option>
+                    <option value="bass-5string-medium">5-String Medium (.045-.130)</option>
+                </select>
+                
+                <div class="gauge-inputs">
+                    <div class="gauge-input">
+                        <label>String 1:</label>
+                        <input type="number" id="gauge1" step="0.001" placeholder=".045" />
+                    </div>
+                    <div class="gauge-input">
+                        <label>String 2:</label>
+                        <input type="number" id="gauge2" step="0.001" placeholder=".065" />
+                    </div>
+                    <div class="gauge-input">
+                        <label>String 3:</label>
+                        <input type="number" id="gauge3" step="0.001" placeholder=".085" />
+                    </div>
+                    <div class="gauge-input">
+                        <label>String 4:</label>
+                        <input type="number" id="gauge4" step="0.001" placeholder=".105" />
+                    </div>
+                </div>
+                
+                <button class="calculate-btn" onclick="calculate()">Calculate String Positions</button>
+            </div>
+            
+            <div class="input-group">
+                <div id="results" class="results-content hidden">
+                    <h3>String Positions from Zero Point</h3>
+                    <div class="results-grid" id="resultsGrid">
+                        <!-- Results will be populated here -->
+                    </div>
+                    <div class="gap-info" id="gapInfo">
+                        <!-- Gap information will be populated here -->
+                    </div>
+                </div>
+                <div id="noResults" class="no-results">
+                    <h3>Calculations</h3>
+                    <p>Enter spacing distance and string gauges, then click Calculate to see results.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const standardGauges = {
+            'bass-extra-light': [0.040, 0.060, 0.075, 0.095],
+            'bass-light': [0.045, 0.065, 0.080, 0.100],
+            'bass-regular': [0.045, 0.065, 0.085, 0.105],
+            'bass-medium': [0.050, 0.070, 0.085, 0.105],
+            'bass-heavy': [0.055, 0.075, 0.090, 0.110],
+            'bass-5string-medium': [0.045, 0.065, 0.085, 0.105] // For 4-string use, excluding the low B
+        };
+
+        document.getElementById('gaugeType').addEventListener('change', function() {
+            const selectedType = this.value;
+            
+            if (selectedType && standardGauges[selectedType]) {
+                const gauges = standardGauges[selectedType];
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`gauge${i}`).value = gauges[i-1];
+                }
+                // Auto-calculate if spacing is already entered
+                if (document.getElementById('totalSpacing').value) {
+                    calculate();
+                }
+            }
+        });
+
+        document.getElementById('totalSpacing').addEventListener('input', function() {
+            // Auto-calculate if we have gauge values
+            if (document.getElementById('gauge1').value) {
+                calculate();
+            }
+        });
+
+        // Auto-calculate when any gauge changes
+        for (let i = 1; i <= 4; i++) {
+            document.getElementById(`gauge${i}`).addEventListener('input', function() {
+                if (document.getElementById('totalSpacing').value) {
+                    calculate();
+                }
+            });
+        }
+
+        function calculate() {
+            const totalSpacing = parseFloat(document.getElementById('totalSpacing').value);
+            
+            if (!totalSpacing || totalSpacing <= 0) {
+                return; // Don't show error, just don't calculate
+            }
+
+            // Get string gauges
+            let gauges = [];
+            for (let i = 1; i <= 4; i++) {
+                const gauge = parseFloat(document.getElementById(`gauge${i}`).value);
+                if (!gauge || gauge <= 0) {
+                    return; // Don't show error, just don't calculate
+                }
+                gauges.push(gauge);
+            }
+
+            // Apply the bass nut calculation equation for even spacing
+            // g = (S - (d1/2 + d4/2) - sum(d2..d3)) / 3
+            const d1 = gauges[0];
+            const d4 = gauges[3];
+            const sumMiddleStrings = gauges[1] + gauges[2];
+            
+            const g = (totalSpacing - (d1/2 + d4/2) - sumMiddleStrings) / 3;
+
+            // Calculate string positions
+            const positions = [];
+            positions[0] = 0.000; // String 1 starts at zero
+
+            for (let i = 1; i < 4; i++) {
+                const prevPos = positions[i-1];
+                const prevDiameter = gauges[i-1];
+                const currentDiameter = gauges[i];
+                positions[i] = prevPos + (prevDiameter + currentDiameter) / 2 + g;
+            }
+
+            // Display results
+            displayResults(gauges, positions, g);
+        }
+
+        function displayResults(gauges, positions, gap) {
+            const resultsDiv = document.getElementById('results');
+            const noResultsDiv = document.getElementById('noResults');
+            const resultsGrid = document.getElementById('resultsGrid');
+            const gapInfo = document.getElementById('gapInfo');
+            
+            resultsGrid.innerHTML = '';
+            
+            // Add headers
+            const headers = ['String', 'Gauge', 'Position', 'Note'];
+            const notes = ['G', 'D', 'A', 'E (Low)'];
+            
+            headers.forEach(header => {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'results-header';
+                headerDiv.textContent = header;
+                resultsGrid.appendChild(headerDiv);
+            });
+
+            // Add data rows
+            for (let i = 0; i < 4; i++) {
+                // String number
+                const stringDiv = document.createElement('div');
+                stringDiv.className = 'results-row string-number';
+                stringDiv.textContent = i + 1;
+                resultsGrid.appendChild(stringDiv);
+                
+                // Gauge
+                const gaugeDiv = document.createElement('div');
+                gaugeDiv.className = 'results-row';
+                gaugeDiv.textContent = gauges[i].toFixed(3) + '"';
+                resultsGrid.appendChild(gaugeDiv);
+                
+                // Position
+                const positionDiv = document.createElement('div');
+                positionDiv.className = 'results-row measurement';
+                positionDiv.textContent = positions[i].toFixed(3) + '"';
+                resultsGrid.appendChild(positionDiv);
+                
+                // Note
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'results-row';
+                noteDiv.textContent = notes[i];
+                resultsGrid.appendChild(noteDiv);
+            }
+
+            // Gap information
+            gapInfo.innerHTML = `<strong>Edge-to-edge gap between strings:</strong> ${gap.toFixed(3)}"`;
+            
+            // Show results, hide placeholder
+            noResultsDiv.classList.add('hidden');
+            resultsDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
