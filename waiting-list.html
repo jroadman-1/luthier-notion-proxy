@@ -182,13 +182,27 @@
           showMessage('Workflows could not be loaded, continuing without them', 'info');
         }
 
-        // Filter to only show "On Deck" projects
-        allProjects = (data.projects || []).filter(p => p.status === 'On Deck');
+        // Debug: Log all projects and their statuses
+        console.log('All projects received:', data.projects?.length || 0);
+        if (data.projects) {
+          data.projects.forEach(p => {
+            console.log(`Project: ${p.name}, Status: "${p.status}"`);
+          });
+        }
+
+        // Filter to only show "On Deck" projects (case-insensitive, trimmed)
+        allProjects = (data.projects || []).filter(p => {
+          const status = (p.status || '').trim().toLowerCase();
+          return status === 'on deck';
+        });
+        
+        console.log('Filtered On Deck projects:', allProjects.length);
+        
         allMilestones = data.milestones || [];
         allWorkflows = workflows.workflows || [];
 
         displayProjectsList();
-        showMessage(`Loaded ${allProjects.length} on deck projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
+        showMessage(`Loaded ${allProjects.length} on deck projects (${data.projects?.length || 0} total), ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
       } catch (error) {
         console.error('Failed to refresh projects:', error);
         const errorMsg = `Failed to load projects: ${error.message}`;
