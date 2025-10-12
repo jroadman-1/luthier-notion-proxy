@@ -1,7 +1,44 @@
-// Make these two changes in your notion-proxy.js API file:
+// /api/notion-proxy.js - Complete system API with billing fields
+const { Client } = require('@notionhq/client');
 
-// CHANGE 1: Update the handleGet function to pass 'req' to getAllData
-// Find this function and update the default case:
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  
+  try {
+    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+    
+    if (!NOTION_TOKEN || !NOTION_DATABASE_ID || !NOTION_MILESTONES_DATABASE_ID) {
+      return res.status(500).json({ error: 'Missing required environment variables' });
+    }
+    
+    const notion = new Client({ auth: NOTION_TOKEN });
+    
+    switch (req.method) {
+      case 'GET':
+        return await handleGet(req, res, notion);
+      case 'POST':
+        return await handlePost(req, res, notion);
+      case 'PUT':
+        return await handlePut(req, res, notion);
+      case 'DELETE':
+        return await handleDelete(req, res, notion);
+      default:
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    
+  } catch (err) {
+    console.error('Notion proxy error:', err);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      detail: err?.message || String(err)
+    });
+  }
+};
+
 async function handleGet(req, res, notion) {
   const { action } = req.query;
   const { NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
@@ -12,18 +49,69 @@ async function handleGet(req, res, notion) {
     case 'debug-project-schema':
       return await debugProjectSchema(res, notion, NOTION_DATABASE_ID);
     default:
-      // ADD 'req' as first parameter here:
       return await getAllData(req, res, notion, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID);
   }
 }
 
-// CHANGE 2: Replace the entire getAllData function with this version:
+async function handlePost(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'create-project':
+      return await createProject(res, notion, NOTION_DATABASE_ID, data);
+    case 'create-milestones':
+      return await createMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'save-progress':
+      return await saveProgress(res, notion, NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, data);
+    case 'save-milestones':
+      return await saveMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'create-workflow':
+      return await createWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
+
+async function handlePut(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'update-milestone':
+      return await updateMilestone(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'update-project':
+      return await updateProject(res, notion, NOTION_DATABASE_ID, data);
+    case 'update-workflow':
+      return await updateWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
+
+async function handleDelete(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'delete-workflow':
+      return await deleteWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
+
+// Get all projects and milestones for scheduling
 async function getAllData(req, res, notion, projectsDbId, milestonesDbId) {
   try {
-    // Get the status parameter from query string
-    // Default to "On The Bench" if not specified
+    // Get the status parameter from query string, default to "On The Bench"
     const { status } = req.query || {};
     const filterStatus = status || 'On The Bench';
+    
+    console.log(`getAllData called with status filter: "${filterStatus}"`);
     
     let allProjects = [];
     let hasMore = true;
@@ -71,11 +159,1053 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId) {
     return res.json({ projects, milestones });
   } catch (error) {
     console.error('Failed to fetch data:', error);
-    throw new Error(`Failed to fetch data: ${error.message}`);
+    return res.status(500).json({ 
+      error: 'Failed to fetch data', 
+      detail: error.message 
+    });
   }
 }
 
-// That's it! After making these changes:
-// - Your "On The Bench" page: calls API without params → gets "On The Bench" projects (default)
-// - Your "On Deck" page: calls API with ?status=On Deck → gets only "On Deck" projects
-// - Efficient and fast - only fetches the data each page actually needs!
+// Create new project
+async function createProject(res, notion, projectsDbId, data) {
+  const { 
+    name, projectId, status, instrumentMake, instrumentModel, complexity, profitability, 
+    dueDate, store, intakeNotes,
+    // Measurement fields
+    neckReliefBefore, before1stString1stFret, before1stString12thFret, 
+    before6thString1stFret, before6thString12thFret,
+    neckReliefAfter, after1stString1stFret, after1stString12thFret, 
+    after6thString1stFret, after6thString12thFret,
+    // Instrument details
+    instrumentFinish, serialNumber, instrumentType, stringBrand, stringGauge,
+    tuning, tremolo, fretboardRadius, fretwire,
+    // Actions
+    actions, additionalActions,
+    // Billing fields
+    total, commission, notes
+  } = data;
+  
+  console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
+  
+  try {
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Project name is required' });
+    }
+    
+    // Build the properties object for the new project
+    const properties = {
+      'Name': {
+        title: [{ text: { content: name.trim() } }]
+      },
+      'Status': {
+        select: { name: status || 'On The Bench' }
+      }
+    };
+    
+    // Add Project ID field (corrected to number type)
+    if (projectId !== undefined && projectId !== '') {
+      const idNumber = parseInt(projectId, 10);
+      if (!isNaN(idNumber)) {
+        properties['ID'] = { number: idNumber };
+      }
+    }
+    
+    // Add basic project fields
+    if (instrumentMake !== undefined) {
+      properties['Instrument Make'] = { 
+        rich_text: [{ text: { content: instrumentMake || '' } }] 
+      };
+    }
+    
+    if (instrumentModel !== undefined) {
+      properties['Instrument Model'] = { 
+        rich_text: [{ text: { content: instrumentModel || '' } }] 
+      };
+    }
+    
+    if (complexity !== undefined) {
+      properties['Complexity'] = { number: complexity };
+    }
+    
+    if (profitability !== undefined) {
+      properties['Profitability'] = { number: profitability };
+    }
+
+    if (store !== undefined && store !== '') {
+      properties['Store'] = { 
+        select: { name: store }
+      };
+    }
+
+    if (intakeNotes !== undefined) {
+      properties['Intake Notes'] = { 
+        rich_text: [{ text: { content: intakeNotes || '' } }] 
+      };
+    }
+    if (notes !== undefined) {
+      properties['Notes'] = { 
+        rich_text: [{ text: { content: notes || '' } }] 
+      };
+    }
+
+    // Add billing fields
+    if (total !== undefined && total !== null && total !== '') {
+      properties['Total'] = { number: parseFloat(total) };
+    }
+    
+    if (commission !== undefined && commission !== null && commission !== '') {
+      properties['Commission'] = { number: parseFloat(commission) };
+    }
+    
+    // Add measurement fields
+    if (neckReliefBefore !== undefined && neckReliefBefore !== null) {
+      properties['Neck Relief Before'] = { number: neckReliefBefore };
+    }
+    if (before1stString1stFret !== undefined && before1stString1stFret !== null) {
+      properties['Before 1st string at 1st fret'] = { number: before1stString1stFret };
+    }
+    if (before1stString12thFret !== undefined && before1stString12thFret !== null) {
+      properties['Before 1st string at 12th fret'] = { number: before1stString12thFret };
+    }
+    if (before6thString1stFret !== undefined && before6thString1stFret !== null) {
+      properties['Before 6th string at 1st fret'] = { number: before6thString1stFret };
+    }
+    if (before6thString12thFret !== undefined && before6thString12thFret !== null) {
+      properties['Before 6th string at 12th fret'] = { number: before6thString12thFret };
+    }
+    if (neckReliefAfter !== undefined && neckReliefAfter !== null) {
+      properties['Neck Relief After'] = { number: neckReliefAfter };
+    }
+    if (after1stString1stFret !== undefined && after1stString1stFret !== null) {
+      properties['After 1st string at 1st fret'] = { number: after1stString1stFret };
+    }
+    if (after1stString12thFret !== undefined && after1stString12thFret !== null) {
+      properties['After 1st string at 12th fret'] = { number: after1stString12thFret };
+    }
+    if (after6thString1stFret !== undefined && after6thString1stFret !== null) {
+      properties['After 6th string at 1st fret'] = { number: after6thString1stFret };
+    }
+    if (after6thString12thFret !== undefined && after6thString12thFret !== null) {
+      properties['After 6th string at 12th fret'] = { number: after6thString12thFret };
+    }
+
+    // Add instrument detail fields
+    if (instrumentFinish !== undefined) {
+      properties['Instrument Finish'] = { 
+        rich_text: [{ text: { content: instrumentFinish || '' } }] 
+      };
+    }
+    if (serialNumber !== undefined) {
+      properties['Serial Number'] = { 
+        rich_text: [{ text: { content: serialNumber || '' } }] 
+      };
+    }
+    
+    if (instrumentType !== undefined) {
+      if (instrumentType === null || instrumentType === '') {
+        properties['Instrument Type'] = { select: null };
+      } else {
+        properties['Instrument Type'] = { select: { name: instrumentType } };
+      }
+    }
+    
+    if (stringBrand !== undefined) {
+      properties['String Brand'] = { 
+        rich_text: [{ text: { content: stringBrand || '' } }] 
+      };
+    }
+    if (stringGauge !== undefined) {
+      properties['String Gauge'] = { 
+        rich_text: [{ text: { content: stringGauge || '' } }] 
+      };
+    }
+    if (tuning !== undefined) {
+      if (tuning === null || tuning === '') {
+        properties['Tuning'] = { select: null };
+      } else {
+        properties['Tuning'] = { select: { name: tuning } };
+      }
+    }
+    if (tremolo !== undefined) {
+      properties['Tremolo'] = { 
+        rich_text: [{ text: { content: tremolo || '' } }] 
+      };
+    }
+    if (fretboardRadius !== undefined && fretboardRadius !== null) {
+      properties['Fretboard Radius'] = { number: fretboardRadius };
+    }
+    if (fretwire !== undefined) {
+      properties['Fretwire'] = { 
+        rich_text: [{ text: { content: fretwire || '' } }] 
+      };
+    }
+
+    // Add actions as multi-select (field name corrected to "Standard Actions")
+    if (actions && typeof actions === 'object') {
+      const actionsList = [];
+      if (actions.adjustedHeightRadius) actionsList.push({ name: 'Adjusted Height and Radius' });
+      if (actions.adjustedIntonation) actionsList.push({ name: 'Adjusted Intonation' });
+      if (actions.adjustedPickupHeight) actionsList.push({ name: 'Adjusted Pickup Height' });
+      if (actions.adjustedTrussRod) actionsList.push({ name: 'Adjusted Truss Rod' });
+      if (actions.adjustedStringSlots) actionsList.push({ name: 'Adjusted String Slots' });
+      if (actions.cleanedPolished) actionsList.push({ name: 'Cleaned and Polished' });
+      if (actions.installedStretchedStrings) actionsList.push({ name: 'Installed and Stretched Strings' });
+      if (actions.lubricatedStringSlots) actionsList.push({ name: 'Lubricated String Slots' });
+      if (actions.oiledFretboard) actionsList.push({ name: 'Oiled Fretboard' });
+      if (actions.polishedFrets) actionsList.push({ name: 'Polished Frets' });
+      if (actions.testedElectronics) actionsList.push({ name: 'Tested Electronics' });
+      if (actions.tightenedHardware) actionsList.push({ name: 'Tightened Hardware' });
+      if (actions.adjustedTremoloTension) actionsList.push({ name: 'Adjusted Tremolo Tension' });
+      if (actions.adjustedNeckAngle) actionsList.push({ name: 'Adjusted Neck Angle' });
+      
+      if (actionsList.length > 0) {
+        properties['Standard Actions'] = { multi_select: actionsList };
+      }
+    }
+
+    // Add additional actions
+    if (additionalActions !== undefined) {
+      properties['Additional Actions'] = { 
+        rich_text: [{ text: { content: additionalActions || '' } }] 
+      };
+    }
+    
+    if (dueDate) {
+      properties['Due Date'] = { date: { start: dueDate } };
+    }
+    
+    // Set the current date for "Date Created" if the field exists
+    const nowISO = new Date().toISOString().split('T')[0];
+    properties['Date Created'] = { date: { start: nowISO } };
+    
+    console.log('Creating project with properties:', JSON.stringify(properties, null, 2));
+    
+    // Create the project in Notion
+    const response = await notion.pages.create({
+      parent: { database_id: projectsDbId },
+      properties
+    });
+    
+    console.log('Project created successfully:', response.id);
+    
+    // Map the response to our project format
+    const createdProject = mapProject(response);
+    
+    return res.json({ 
+      success: true, 
+      message: 'Project created successfully',
+      project: createdProject
+    });
+    
+  } catch (error) {
+    console.error('Project creation error:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      body: error.body
+    });
+    
+    return res.status(500).json({ 
+      error: 'Failed to create project', 
+      detail: error.message,
+      code: error.code,
+      notionError: error.body 
+    });
+  }
+}
+
+// Update project information - ENHANCED VERSION with billing fields
+async function updateProject(res, notion, projectsDbId, data) {
+  const { projectId, ...updates } = data;
+  
+  console.log('updateProject called with:', { projectId, updates });
+  
+  try {
+    const properties = {};
+    
+    // Basic fields
+    if (updates.name) {
+      properties.Name = { title: [{ text: { content: updates.name } }] };
+      console.log('Setting Name:', updates.name);
+    }
+    if (updates.projectId !== undefined) {
+      if (updates.projectId === null || updates.projectId === '') {
+        properties['ID'] = { number: null };
+      } else {
+        const idNumber = parseInt(updates.projectId, 10);
+        if (!isNaN(idNumber)) {
+          properties['ID'] = { number: idNumber };
+        }
+      }
+      console.log('Setting Project ID:', updates.projectId);
+    }
+    if (updates.status) {
+      properties.Status = { select: { name: updates.status } };
+      console.log('Setting Status:', updates.status);
+    }
+    if (updates.instrumentMake !== undefined) {
+      properties['Instrument Make'] = { 
+        rich_text: [{ text: { content: updates.instrumentMake || '' } }] 
+      };
+      console.log('Setting Instrument Make:', updates.instrumentMake);
+    }
+    if (updates.instrumentModel !== undefined) {
+      properties['Instrument Model'] = { 
+        rich_text: [{ text: { content: updates.instrumentModel || '' } }] 
+      };
+      console.log('Setting Instrument Model:', updates.instrumentModel);
+    }
+    if (updates.complexity !== undefined) {
+      properties['Complexity'] = { number: updates.complexity };
+      console.log('Setting Complexity:', updates.complexity);
+    }
+    if (updates.profitability !== undefined) {
+      properties['Profitability'] = { number: updates.profitability };
+      console.log('Setting Profitability:', updates.profitability);
+    }
+    if (updates.store !== undefined) {
+      if (updates.store === null || updates.store === '') {
+        properties['Store'] = { select: null };
+        console.log('Clearing Store');
+      } else {
+        properties['Store'] = { select: { name: updates.store } };
+        console.log('Setting Store:', updates.store);
+      }
+    }
+    if (updates.dueDate !== undefined) {
+      if (updates.dueDate === null || updates.dueDate === '') {
+        properties['Due Date'] = { date: null };
+        console.log('Clearing Due Date');
+      } else {
+        properties['Due Date'] = { date: { start: updates.dueDate } };
+        console.log('Setting Due Date:', updates.dueDate);
+      }
+    }
+    if (updates.intakeNotes !== undefined) {
+      properties['Intake Notes'] = { 
+        rich_text: [{ text: { content: updates.intakeNotes || '' } }] 
+      };
+      console.log('Setting Intake Notes:', updates.intakeNotes);
+    }
+
+    // Billing fields
+    if (updates.total !== undefined) {
+      if (updates.total === null || updates.total === '') {
+        properties['Total'] = { number: null };
+        console.log('Clearing Total');
+      } else {
+        properties['Total'] = { number: parseFloat(updates.total) };
+        console.log('Setting Total:', updates.total);
+      }
+    }
+    
+    if (updates.commission !== undefined) {
+      if (updates.commission === null || updates.commission === '') {
+        properties['Commission'] = { number: null };
+        console.log('Clearing Commission');
+      } else {
+        properties['Commission'] = { number: parseFloat(updates.commission) };
+        console.log('Setting Commission:', updates.commission);
+      }
+    }
+
+    // Measurement fields
+    if (updates.neckReliefBefore !== undefined) {
+      properties['Neck Relief Before'] = updates.neckReliefBefore !== null ? { number: updates.neckReliefBefore } : { number: null };
+    }
+    if (updates.before1stString1stFret !== undefined) {
+      properties['Before 1st string at 1st fret'] = updates.before1stString1stFret !== null ? { number: updates.before1stString1stFret } : { number: null };
+    }
+    if (updates.before1stString12thFret !== undefined) {
+      properties['Before 1st string at 12th fret'] = updates.before1stString12thFret !== null ? { number: updates.before1stString12thFret } : { number: null };
+    }
+    if (updates.before6thString1stFret !== undefined) {
+      properties['Before 6th string at 1st fret'] = updates.before6thString1stFret !== null ? { number: updates.before6thString1stFret } : { number: null };
+    }
+    if (updates.before6thString12thFret !== undefined) {
+      properties['Before 6th string at 12th fret'] = updates.before6thString12thFret !== null ? { number: updates.before6thString12thFret } : { number: null };
+    }
+    if (updates.neckReliefAfter !== undefined) {
+      properties['Neck Relief After'] = updates.neckReliefAfter !== null ? { number: updates.neckReliefAfter } : { number: null };
+    }
+    if (updates.after1stString1stFret !== undefined) {
+      properties['After 1st string at 1st fret'] = updates.after1stString1stFret !== null ? { number: updates.after1stString1stFret } : { number: null };
+    }
+    if (updates.after1stString12thFret !== undefined) {
+      properties['After 1st string at 12th fret'] = updates.after1stString12thFret !== null ? { number: updates.after1stString12thFret } : { number: null };
+    }
+    if (updates.after6thString1stFret !== undefined) {
+      properties['After 6th string at 1st fret'] = updates.after6thString1stFret !== null ? { number: updates.after6thString1stFret } : { number: null };
+    }
+    if (updates.after6thString12thFret !== undefined) {
+      properties['After 6th string at 12th fret'] = updates.after6thString12thFret !== null ? { number: updates.after6thString12thFret } : { number: null };
+    }
+
+    // Instrument detail fields
+    if (updates.instrumentFinish !== undefined) {
+      properties['Instrument Finish'] = { 
+        rich_text: [{ text: { content: updates.instrumentFinish || '' } }] 
+      };
+    }
+    if (updates.serialNumber !== undefined) {
+      properties['Serial Number'] = { 
+        rich_text: [{ text: { content: updates.serialNumber || '' } }] 
+      };
+    }
+    if (updates.instrumentType !== undefined) {
+      if (updates.instrumentType === null || updates.instrumentType === '') {
+        properties['Instrument Type'] = { select: null };
+      } else {
+        properties['Instrument Type'] = { select: { name: updates.instrumentType } };
+      }
+    }
+    if (updates.stringBrand !== undefined) {
+      properties['String Brand'] = { 
+        rich_text: [{ text: { content: updates.stringBrand || '' } }] 
+      };
+    }
+    if (updates.stringGauge !== undefined) {
+      properties['String Gauge'] = { 
+        rich_text: [{ text: { content: updates.stringGauge || '' } }] 
+      };
+    }
+    if (updates.tremolo !== undefined) {
+      properties['Tremolo'] = { 
+        rich_text: [{ text: { content: updates.tremolo || '' } }] 
+      };
+    }
+    if (updates.fretboardRadius !== undefined) {
+      properties['Fretboard Radius'] = updates.fretboardRadius !== null ? { number: updates.fretboardRadius } : { number: null };
+    }
+    if (updates.fretwire !== undefined) {
+      properties['Fretwire'] = { 
+        rich_text: [{ text: { content: updates.fretwire || '' } }] 
+      };
+    }
+    if (updates.tuning !== undefined) {
+      if (updates.tuning === null || updates.tuning === '') {
+        properties['Tuning'] = { select: null };
+      } else {
+        properties['Tuning'] = { select: { name: updates.tuning } };
+      }
+    }
+
+    // Actions as multi-select
+    if (updates.actions && typeof updates.actions === 'object') {
+      const actionsList = [];
+      if (updates.actions.adjustedHeightRadius) actionsList.push({ name: 'Adjusted Height and Radius' });
+      if (updates.actions.adjustedIntonation) actionsList.push({ name: 'Adjusted Intonation' });
+      if (updates.actions.adjustedPickupHeight) actionsList.push({ name: 'Adjusted Pickup Height' });
+      if (updates.actions.adjustedTrussRod) actionsList.push({ name: 'Adjusted Truss Rod' });
+      if (updates.actions.adjustedStringSlots) actionsList.push({ name: 'Adjusted String Slots' });
+      if (updates.actions.cleanedPolished) actionsList.push({ name: 'Cleaned and Polished' });
+      if (updates.actions.installedStretchedStrings) actionsList.push({ name: 'Installed and Stretched Strings' });
+      if (updates.actions.lubricatedStringSlots) actionsList.push({ name: 'Lubricated String Slots' });
+      if (updates.actions.oiledFretboard) actionsList.push({ name: 'Oiled Fretboard' });
+      if (updates.actions.polishedFrets) actionsList.push({ name: 'Polished Frets' });
+      if (updates.actions.testedElectronics) actionsList.push({ name: 'Tested Electronics' });
+      if (updates.actions.tightenedHardware) actionsList.push({ name: 'Tightened Hardware' });
+      if (updates.actions.adjustedTremoloTension) actionsList.push({ name: 'Adjusted Tremolo Tension' });
+      if (updates.actions.adjustedNeckAngle) actionsList.push({ name: 'Adjusted Neck Angle' });
+      
+      properties['Standard Actions'] = { multi_select: actionsList };
+      console.log('Setting Standard Actions:', actionsList.map(a => a.name));
+    }
+
+    // Additional actions
+    if (updates.additionalActions !== undefined) {
+      properties['Additional Actions'] = { 
+        rich_text: [{ text: { content: updates.additionalActions || '' } }] 
+      };
+      console.log('Setting Additional Actions:', updates.additionalActions);
+    }
+
+    if (updates.notes !== undefined) {
+      properties['Notes'] = { 
+        rich_text: [{ text: { content: updates.notes || '' } }] 
+      };
+      console.log('Setting Notes:', updates.notes);
+    }
+
+    console.log('Final properties to update:', JSON.stringify(properties, null, 2));
+
+    const updateResult = await notion.pages.update({
+      page_id: projectId,
+      properties
+    });
+
+    console.log('Project update successful, updated page:', updateResult.id);
+    return res.json({ success: true, message: 'Project updated successfully' });
+    
+  } catch (error) {
+    console.error('Project update error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      body: error.body
+    });
+    
+    return res.status(500).json({ 
+      error: 'Project update failed', 
+      detail: error.message,
+      code: error.code,
+      notionError: error.body 
+    });
+  }
+}
+
+// Enhanced mapping functions with billing fields
+function mapProject(page) {
+  const props = page.properties;
+
+  // Helper function to extract actions from multi-select (field name corrected)
+  const extractActions = (multiSelectProp) => {
+    if (!multiSelectProp?.multi_select) return {};
+    
+    const actions = {};
+    const actionMap = {
+      'Adjusted Height and Radius': 'adjustedHeightRadius',
+      'Adjusted Intonation': 'adjustedIntonation',
+      'Adjusted Pickup Height': 'adjustedPickupHeight',
+      'Adjusted Truss Rod': 'adjustedTrussRod',
+      'Adjusted String Slots': 'adjustedStringSlots',
+      'Cleaned and Polished': 'cleanedPolished',
+      'Installed and Stretched Strings': 'installedStretchedStrings',
+      'Lubricated String Slots': 'lubricatedStringSlots',
+      'Oiled Fretboard': 'oiledFretboard',
+      'Polished Frets': 'polishedFrets',
+      'Tested Electronics': 'testedElectronics',
+      'Tightened Hardware': 'tightenedHardware',
+      'Adjusted Tremolo Tension': 'adjustedTremoloTension',
+      'Adjusted Neck Angle': 'adjustedNeckAngle'
+    };
+
+    multiSelectProp.multi_select.forEach(item => {
+      const key = actionMap[item.name];
+      if (key) actions[key] = true;
+    });
+
+    return actions;
+  };
+
+  return {
+    id: page.id,
+    name: props['Name']?.title?.[0]?.plain_text ?? 'Untitled',
+    projectId: props['ID']?.number ? String(props['ID'].number) : '',
+    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
+    status: props['Status']?.select?.name ?? 'Unknown',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    store: props['Store']?.select?.name ?? '',
+    intakeNotes: props['Intake Notes']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Numeric fields
+    complexity: props['Complexity']?.number ?? 3,
+    profitability: props['Profitability']?.number ?? 3,
+
+    // Billing fields
+    total: props['Total']?.number ?? null,
+    commission: props['Commission']?.number ?? null,
+    minusCommission: props['Minus Commission']?.formula?.number ?? null,
+
+    // Dates for "days since worked"
+    lastWorked: props['Last Worked']?.date?.start ?? null,
+    dateCreated: props['Date Created']?.date?.start ?? null,
+    createdTime: page.created_time,
+
+    // Measurement fields
+    neckReliefBefore: props['Neck Relief Before']?.number ?? null,
+    before1stString1stFret: props['Before 1st string at 1st fret']?.number ?? null,
+    before1stString12thFret: props['Before 1st string at 12th fret']?.number ?? null,
+    before6thString1stFret: props['Before 6th string at 1st fret']?.number ?? null,
+    before6thString12thFret: props['Before 6th string at 12th fret']?.number ?? null,
+    neckReliefAfter: props['Neck Relief After']?.number ?? null,
+    after1stString1stFret: props['After 1st string at 1st fret']?.number ?? null,
+    after1stString12thFret: props['After 1st string at 12th fret']?.number ?? null,
+    after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
+    after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
+
+    // Instrument detail fields (updated field types)
+    instrumentFinish: props['Instrument Finish']?.rich_text?.[0]?.plain_text ?? '',
+    serialNumber: props['Serial Number']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentType: props['Instrument Type']?.select?.name ?? '',
+    stringBrand: props['String Brand']?.rich_text?.[0]?.plain_text ?? '',
+    stringGauge: props['String Gauge']?.rich_text?.[0]?.plain_text ?? '',
+    tuning: props['Tuning']?.select?.name ?? '',
+    tremolo: props['Tremolo']?.rich_text?.[0]?.plain_text ?? '',
+    fretboardRadius: props['Fretboard Radius']?.number ?? null,
+    fretwire: props['Fretwire']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Actions (field name corrected to "Standard Actions")
+    actions: extractActions(props['Standard Actions']),
+    additionalActions: props['Additional Actions']?.rich_text?.[0]?.plain_text ?? '',
+    notes: props['Notes']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Rollups/formulas (existing functionality)
+    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
+    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
+    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
+    progress: props['Progress %']?.formula?.number ?? 0
+  };
+}
+
+// Get workflow templates
+async function getWorkflows(res, notion, workflowsDbId) {
+  console.log('getWorkflows called with workflowsDbId:', workflowsDbId);
+  
+  if (!workflowsDbId) {
+    console.log('No workflows database ID provided');
+    return res.json({ workflows: [], error: 'No workflows database ID configured' });
+  }
+  
+  try {
+    console.log('Attempting to fetch workflows from database:', workflowsDbId);
+    
+    // First, try to retrieve the database info to verify access
+    try {
+      const dbInfo = await notion.databases.retrieve({
+        database_id: workflowsDbId
+      });
+      console.log('Workflows database found:', dbInfo.title?.[0]?.plain_text || 'Untitled');
+    } catch (dbError) {
+      console.error('Cannot access workflows database:', dbError.message);
+      return res.json({ 
+        workflows: [], 
+        error: `Cannot access workflows database: ${dbError.message}` 
+      });
+    }
+    
+    let allWorkflows = [];
+    let hasMore = true;
+    let nextCursor = undefined;
+    
+    while (hasMore) {
+      const response = await notion.databases.query({
+        database_id: workflowsDbId,
+        page_size: 100,
+        start_cursor: nextCursor
+      });
+      
+      console.log(`Fetched ${response.results.length} workflows (batch)`);
+      allWorkflows = allWorkflows.concat(response.results);
+      hasMore = response.has_more;
+      nextCursor = response.next_cursor;
+    }
+    
+    console.log(`Total workflows retrieved: ${allWorkflows.length}`);
+    
+    const workflows = allWorkflows.map(page => {
+      const workflow = {
+        id: page.id,
+        name: page.properties?.Name?.title?.[0]?.plain_text ?? 'Untitled',
+        data: page.properties?.Data?.rich_text?.[0]?.plain_text ?? '[]'
+      };
+      console.log('Mapped workflow:', workflow.name, 'data length:', workflow.data.length);
+      return workflow;
+    });
+    
+    console.log(`Returning ${workflows.length} workflows`);
+    return res.json({ workflows });
+  } catch (error) {
+    console.error('Error fetching workflows:', {
+      message: error.message,
+      code: error.code,
+      status: error.status
+    });
+    return res.json({ 
+      workflows: [], 
+      error: `Failed to fetch workflows: ${error.message}`,
+      errorCode: error.code 
+    });
+  }
+}
+
+// Debug function to check project database schema
+async function debugProjectSchema(res, notion, projectsDbId) {
+  try {
+    console.log('Debugging project database schema...');
+    
+    const database = await notion.databases.retrieve({
+      database_id: projectsDbId
+    });
+    
+    const properties = Object.keys(database.properties).map(key => ({
+      name: key,
+      type: database.properties[key].type,
+      config: database.properties[key]
+    }));
+    
+    console.log('Project database properties:', properties);
+    
+    const sampleResponse = await notion.databases.query({
+      database_id: projectsDbId,
+      page_size: 1
+    });
+    
+    let sampleData = null;
+    if (sampleResponse.results.length > 0) {
+      const sampleProject = sampleResponse.results[0];
+      sampleData = {
+        id: sampleProject.id,
+        properties: Object.keys(sampleProject.properties).reduce((acc, key) => {
+          acc[key] = sampleProject.properties[key];
+          return acc;
+        }, {})
+      };
+    }
+    
+    return res.json({ 
+      databaseProperties: properties,
+      sampleProject: sampleData 
+    });
+  } catch (error) {
+    console.error('Debug project schema error:', error);
+    return res.json({ error: error.message });
+  }
+}
+
+// Create milestones from various sources
+async function createMilestones(res, notion, milestonesDbId, data) {
+  const { projectId, milestones, source } = data;
+  
+  try {
+    const createdMilestones = [];
+    
+    for (const milestone of milestones) {
+      const response = await notion.pages.create({
+        parent: { database_id: milestonesDbId },
+        properties: {
+          'Name': {
+            title: [{ text: { content: milestone.name } }]
+          },
+          'Work Order': {
+            relation: [{ id: projectId }]
+          },
+          'Estimated Hours': {
+            number: milestone.estimatedHours || 1
+          },
+          'Order (Sequence)': {
+            number: milestone.order || 1
+          },
+          'Status': {
+            select: { name: 'Not Started' }
+          },
+          'Milestone Type': {
+            select: { name: source || 'Individual' }
+          }
+        }
+      });
+      
+      createdMilestones.push(mapMilestone(response));
+    }
+    
+    return res.json({ success: true, milestones: createdMilestones });
+  } catch (error) {
+    throw new Error(`Failed to create milestones: ${error.message}`);
+  }
+}
+
+// Save progress (completed milestones and actual hours)
+async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
+  const { completedMilestones } = data || {};
+
+  // 1) Validate payload
+  if (!Array.isArray(completedMilestones) || completedMilestones.length === 0) {
+    return res.status(400).json({ success: false, message: 'No completed milestones provided.' });
+  }
+
+  try {
+    // 2) Build milestone updates + collect affected project IDs
+    const projectIds = new Set();
+    const milestoneUpdates = completedMilestones.map(({ milestoneId, projectId, actualHours }) => {
+      if (!milestoneId || !projectId || typeof actualHours !== 'number') {
+        throw new Error('Each item must include milestoneId, projectId, and numeric actualHours.');
+      }
+      projectIds.add(projectId);
+
+      return notion.pages.update({
+        page_id: milestoneId,
+        properties: {
+          'Status': { select: { name: 'Completed' } },
+          'Actual Hours': { number: actualHours }
+        }
+      });
+    });
+
+    // 3) Build project updates: stamp "Last Worked" for each affected project
+    const nowISO = new Date().toISOString();
+    const projectUpdates = Array.from(projectIds).map(projectId =>
+      notion.pages.update({
+        page_id: projectId,
+        properties: { 'Last Worked': { date: { start: nowISO } } }
+      })
+    );
+
+    // 4) Execute all updates
+    await Promise.all([...milestoneUpdates, ...projectUpdates]);
+
+    // 5) Respond with a summary (and echo lastWorked for immediate UI sync)
+    return res.json({
+      success: true,
+      message: 'Progress saved successfully.',
+      updatedMilestones: completedMilestones.map(m => m.milestoneId),
+      updatedProjects: Array.from(projectIds),
+      lastWorked: nowISO
+    });
+  } catch (error) {
+    const detail = error?.body ? JSON.stringify(error.body) : error.message;
+    return res.status(500).json({ success: false, message: `Failed to save progress: ${detail}` });
+  }
+}
+
+// Update single milestone
+async function updateMilestone(res, notion, milestonesDbId, data) {
+  const { milestoneId, ...updates } = data;
+  
+  try {
+    const properties = {};
+    
+    if (updates.name) {
+      properties.Name = { title: [{ text: { content: updates.name } }] };
+    }
+    if (updates.estimatedHours !== undefined) {
+      properties['Estimated Hours'] = { number: updates.estimatedHours };
+    }
+    if (updates.actualHours !== undefined) {
+      properties['Actual Hours'] = { number: updates.actualHours };
+    }
+    if (updates.status) {
+      properties.Status = { select: { name: updates.status } };
+    }
+    if (updates.order !== undefined) {
+      properties['Order (Sequence)'] = { number: updates.order };
+    }
+    if (updates.dueDate !== undefined) {
+      properties['Due Date'] = updates.dueDate ? { date: { start: updates.dueDate } } : { date: null };
+    }
+    if (updates.notes !== undefined) {
+      properties.Notes = { rich_text: [{ text: { content: updates.notes || '' } }] };
+    }
+
+    await notion.pages.update({
+      page_id: milestoneId,
+      properties
+    });
+
+    return res.json({ success: true, message: 'Milestone updated successfully' });
+  } catch (error) {
+    throw new Error(`Failed to update milestone: ${error.message}`);
+  }
+}
+
+// Save complete milestone set for a project
+async function saveMilestones(res, notion, milestonesDbId, data) {
+  const { projectId, milestones } = data;
+  
+  try {
+    const existingResponse = await notion.databases.query({
+      database_id: milestonesDbId,
+      filter: {
+        property: 'Work Order',
+        relation: {
+          contains: projectId
+        }
+      }
+    });
+    
+    const existingMilestones = existingResponse.results.map(mapMilestone);
+    const updates = [];
+    
+    for (let i = 0; i < milestones.length; i++) {
+      const milestone = milestones[i];
+      
+      if (milestone.id && existingMilestones.find(m => m.id === milestone.id)) {
+        const updatePromise = notion.pages.update({
+          page_id: milestone.id,
+          properties: {
+            'Name': { title: [{ text: { content: milestone.name } }] },
+            'Estimated Hours': { number: milestone.estimatedHours },
+            'Order (Sequence)': { number: i + 1 },
+            'Status': { select: { name: milestone.status || 'Not Started' } }
+          }
+        });
+        updates.push(updatePromise);
+      } else {
+        const createPromise = notion.pages.create({
+          parent: { database_id: milestonesDbId },
+          properties: {
+            'Name': { title: [{ text: { content: milestone.name } }] },
+            'Work Order': { relation: [{ id: projectId }] },
+            'Estimated Hours': { number: milestone.estimatedHours },
+            'Order (Sequence)': { number: i + 1 },
+            'Status': { select: { name: milestone.status || 'Not Started' } },
+            'Milestone Type': { select: { name: 'Individual' } }
+          }
+        });
+        updates.push(createPromise);
+      }
+    }
+    
+    const milestoneIds = milestones.filter(m => m.id).map(m => m.id);
+    const toDelete = existingMilestones.filter(m => !milestoneIds.includes(m.id));
+    
+    for (const milestone of toDelete) {
+      const deletePromise = notion.pages.update({
+        page_id: milestone.id,
+        archived: true
+      });
+      updates.push(deletePromise);
+    }
+    
+    await Promise.all(updates);
+    
+    return res.json({ 
+      success: true, 
+      message: `Updated ${milestones.length} milestones, deleted ${toDelete.length} milestones`
+    });
+  } catch (error) {
+    throw new Error(`Failed to save milestones: ${error.message}`);
+  }
+}
+
+// Create new workflow
+async function createWorkflow(res, notion, workflowsDbId, data) {
+  const { name, data: workflowData } = data;
+  
+  console.log('Creating workflow:', { name, dataLength: workflowData?.length });
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  try {
+    try {
+      JSON.parse(workflowData || '[]');
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
+    }
+    
+    const response = await notion.pages.create({
+      parent: { database_id: workflowsDbId },
+      properties: {
+        'Name': {
+          title: [{ text: { content: name || 'Untitled Workflow' } }]
+        },
+        'Data': {
+          rich_text: [{ text: { content: workflowData || '[]' } }]
+        }
+      }
+    });
+    
+    const createdWorkflow = {
+      id: response.id,
+      name: name || 'Untitled Workflow',
+      data: workflowData || '[]'
+    };
+    
+    console.log('Workflow created successfully:', createdWorkflow.id);
+    return res.json({ success: true, workflow: createdWorkflow });
+  } catch (error) {
+    console.error('Failed to create workflow:', error);
+    throw new Error(`Failed to create workflow: ${error.message}`);
+  }
+}
+
+// Update existing workflow
+async function updateWorkflow(res, notion, workflowsDbId, data) {
+  const { id, name, data: workflowData } = data;
+  
+  console.log('Updating workflow:', { id, name, dataLength: workflowData?.length });
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Workflow ID is required for update' });
+  }
+  
+  try {
+    try {
+      JSON.parse(workflowData || '[]');
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
+    }
+    
+    await notion.pages.update({
+      page_id: id,
+      properties: {
+        'Name': {
+          title: [{ text: { content: name || 'Untitled Workflow' } }]
+        },
+        'Data': {
+          rich_text: [{ text: { content: workflowData || '[]' } }]
+        }
+      }
+    });
+    
+    console.log('Workflow updated successfully:', id);
+    return res.json({ success: true, message: 'Workflow updated successfully' });
+  } catch (error) {
+    console.error('Failed to update workflow:', error);
+    throw new Error(`Failed to update workflow: ${error.message}`);
+  }
+}
+
+// Delete workflow
+async function deleteWorkflow(res, notion, workflowsDbId, data) {
+  const { id } = data;
+  
+  console.log('Deleting workflow:', id);
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Workflow ID is required for deletion' });
+  }
+  
+  try {
+    await notion.pages.update({
+      page_id: id,
+      archived: true
+    });
+    
+    console.log('Workflow deleted successfully:', id);
+    return res.json({ success: true, message: 'Workflow deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete workflow:', error);
+    throw new Error(`Failed to delete workflow: ${error.message}`);
+  }
+}
+
+function parseIntSafe(v) {
+  const n = typeof v === 'number' ? v : parseInt(String(v ?? '').trim(), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+function mapMilestone(page) {
+  const props = page.properties;
+  
+  return {
+    id: page.id,
+    projectId: props['Work Order']?.relation?.[0]?.id || null,
+    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
+    estimatedHours: props['Estimated Hours']?.number ?? 1,
+    actualHours: props['Actual Hours']?.number ?? 0,
+    order: props['Order (Sequence)']?.number ?? 1,
+    status: props.Status?.select?.name ?? 'Not Started',
+    milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    notes: props.Notes?.rich_text?.[0]?.plain_text ?? ''
+  };
+}
+
+function parseRatingValue(ratingStr) {
+  if (!ratingStr) return 3;
+  if (typeof ratingStr === 'number') return ratingStr;
+  const match = ratingStr.match(/^(\d+)-/);
+  return match ? parseInt(match[1]) : 3;
+}
