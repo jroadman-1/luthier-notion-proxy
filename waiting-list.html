@@ -162,7 +162,7 @@
         showMessage('Loading projects...', 'info');
 
         const [dataResponse, workflowsResponse] = await Promise.all([
-          fetch(`${API_URL}?status=all`),
+          fetch(`${API_URL}?status=On%20Deck`),
           fetch(`${API_URL}?action=workflows`)
         ]);
 
@@ -182,27 +182,19 @@
           showMessage('Workflows could not be loaded, continuing without them', 'info');
         }
 
-        // Debug: Log all projects and their statuses
-        console.log('All projects received:', data.projects?.length || 0);
-        if (data.projects) {
-          data.projects.forEach(p => {
-            console.log(`Project: ${p.name}, Status: "${p.status}"`);
-          });
-        }
-
-        // Filter to only show "On Deck" projects (case-insensitive, trimmed)
-        allProjects = (data.projects || []).filter(p => {
-          const status = (p.status || '').trim().toLowerCase();
-          return status === 'on deck';
-        });
+        // API now returns only "On Deck" projects, no client-side filtering needed
+        allProjects = data.projects || [];
         
-        console.log('Filtered On Deck projects:', allProjects.length);
+        console.log('Received projects from API:', allProjects.length);
+        if (allProjects.length > 0) {
+          console.log('Sample project:', allProjects[0].name, 'Status:', allProjects[0].status);
+        }
         
         allMilestones = data.milestones || [];
         allWorkflows = workflows.workflows || [];
 
         displayProjectsList();
-        showMessage(`Loaded ${allProjects.length} on deck projects (${data.projects?.length || 0} total), ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
+        showMessage(`Loaded ${allProjects.length} on deck projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
       } catch (error) {
         console.error('Failed to refresh projects:', error);
         const errorMsg = `Failed to load projects: ${error.message}`;
