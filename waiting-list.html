@@ -162,7 +162,7 @@
         showMessage('Loading projects...', 'info');
 
         const [dataResponse, workflowsResponse] = await Promise.all([
-          fetch(API_URL),
+          fetch(`${API_URL}?status=all`),
           fetch(`${API_URL}?action=workflows`)
         ]);
 
