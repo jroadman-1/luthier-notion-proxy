@@ -118,7 +118,7 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId) {
     let nextCursor = undefined;
     
     while (hasMore) {
-      const projectsResponse = await notion.databases.query({
+      const queryOptions = {
         database_id: projectsDbId,
         filter: {
           property: 'Status',
@@ -128,7 +128,19 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId) {
         },
         page_size: 100,
         start_cursor: nextCursor
-      });
+      };
+      
+      // Sort "On Deck" projects by creation date (oldest first)
+      if (filterStatus === 'On Deck') {
+        queryOptions.sorts = [
+          {
+            property: 'Date Created',
+            direction: 'ascending'
+          }
+        ];
+      }
+      
+      const projectsResponse = await notion.databases.query(queryOptions);
       
       allProjects = allProjects.concat(projectsResponse.results);
       hasMore = projectsResponse.has_more;
