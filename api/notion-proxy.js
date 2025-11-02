@@ -915,6 +915,9 @@ async function createMilestones(res, notion, milestonesDbId, data) {
           },
           'Milestone Type': {
             select: { name: milestone.milestoneType || 'Individual' }
+          },
+          'includeInEstimate': {
+            checkbox: milestone.includeInEstimate !== false
           }
         }
       });
@@ -983,6 +986,9 @@ async function updateMilestone(res, notion, milestonesDbId, data) {
     if (updates.notes !== undefined) {
       properties.Notes = { rich_text: [{ text: { content: updates.notes || '' } }] };
     }
+    if (updates.includeInEstimate !== undefined) {
+      properties.includeInEstimate = { checkbox: updates.includeInEstimate };
+    }
 
     await notion.pages.update({
       page_id: milestoneId,
@@ -1023,7 +1029,8 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
             'Name': { title: [{ text: { content: milestone.name } }] },
             'Estimated Hours': { number: milestone.estimatedHours },
             'Order (Sequence)': { number: i + 1 },
-            'Status': { select: { name: milestone.status || 'Not Started' } }
+            'Status': { select: { name: milestone.status || 'Not Started' } },
+            'includeInEstimate': { checkbox: milestone.includeInEstimate !== false }
           }
         });
         updates.push(updatePromise);
@@ -1036,7 +1043,8 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
             'Estimated Hours': { number: milestone.estimatedHours },
             'Order (Sequence)': { number: i + 1 },
             'Status': { select: { name: milestone.status || 'Not Started' } },
-            'Milestone Type': { select: { name: 'Individual' } }
+            'Milestone Type': { select: { name: 'Individual' } },
+            'includeInEstimate': { checkbox: milestone.includeInEstimate !== false }
           }
         });
         updates.push(createPromise);
@@ -1195,7 +1203,8 @@ function mapMilestone(page) {
     status: props.Status?.select?.name ?? 'Not Started',
     milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
     dueDate: props['Due Date']?.date?.start ?? null,
-    notes: props.Notes?.rich_text?.[0]?.plain_text ?? ''
+    notes: props.Notes?.rich_text?.[0]?.plain_text ?? '',
+    includeInEstimate: props.includeInEstimate?.checkbox ?? true
   };
 }
 
