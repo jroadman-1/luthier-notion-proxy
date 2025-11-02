@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   
   try {
-    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
     
     if (!NOTION_TOKEN || !NOTION_DATABASE_ID || !NOTION_MILESTONES_DATABASE_ID) {
       return res.status(500).json({ error: 'Missing required environment variables' });
@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
 
 async function handleGet(req, res, notion) {
   const { action } = req.query;
-  const { NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  const { NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
   
   switch (action) {
     case 'workflows':
@@ -49,14 +49,14 @@ async function handleGet(req, res, notion) {
     case 'debug-project-schema':
       return await debugProjectSchema(res, notion, NOTION_DATABASE_ID);
     default:
-      return await getAllData(req, res, notion, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID);
+      return await getAllData(req, res, notion, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID);
   }
 }
 
 async function handlePost(req, res, notion) {
   const { action } = req.query;
   const data = req.body;
-  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
   
   switch (action) {
     case 'create-project':
@@ -67,6 +67,8 @@ async function handlePost(req, res, notion) {
       return await saveProgress(res, notion, NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, data);
     case 'save-milestones':
       return await saveMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'save-parts':
+      return await saveParts(res, notion, NOTION_PARTS_DATABASE_ID, data);
     case 'create-workflow':
       return await createWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
     default:
@@ -105,7 +107,7 @@ async function handleDelete(req, res, notion) {
 }
 
 // Get all projects and milestones for scheduling
-async function getAllData(req, res, notion, projectsDbId, milestonesDbId) {
+async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsDbId) {
   try {
     // Get the status parameter from query string, default to "On The Bench"
     const { status } = req.query || {};
@@ -163,12 +165,31 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId) {
       nextCursor = milestonesResponse.next_cursor;
     }
     
+    let allParts = [];
+    if (partsDbId) {
+      hasMore = true;
+      nextCursor = undefined;
+      
+      while (hasMore) {
+        const partsResponse = await notion.databases.query({
+          database_id: partsDbId,
+          page_size: 100,
+          start_cursor: nextCursor
+        });
+        
+        allParts = allParts.concat(partsResponse.results);
+        hasMore = partsResponse.has_more;
+        nextCursor = partsResponse.next_cursor;
+      }
+    }
+    
     const projects = allProjects.map(mapProject);
     const milestones = allMilestones.map(mapMilestone);
+    const parts = allParts.map(mapPart);
     
-    console.log(`API returning ${projects.length} projects with status "${filterStatus}" and ${milestones.length} milestones`);
+    console.log(`API returning ${projects.length} projects with status "${filterStatus}", ${milestones.length} milestones, and ${parts.length} parts`);
     
-    return res.json({ projects, milestones });
+    return res.json({ projects, milestones, parts });
   } catch (error) {
     console.error('Failed to fetch data:', error);
     return res.status(500).json({ 
@@ -1171,6 +1192,96 @@ function mapMilestone(page) {
     dueDate: props['Due Date']?.date?.start ?? null,
     notes: props.Notes?.rich_text?.[0]?.plain_text ?? ''
   };
+}
+
+function mapPart(page) {
+  const props = page.properties;
+  
+  return {
+    id: page.id,
+    projectId: props['Work Order']?.relation?.[0]?.id || null,
+    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled Part',
+    quantity: props.Quantity?.number ?? 1,
+    pricePerItem: props['Price Per Item']?.number ?? 0,
+    order: props['Order']?.number ?? 1
+  };
+}
+
+// Save complete parts set for a project
+async function saveParts(res, notion, partsDbId, data) {
+  const { projectId, parts } = data;
+  
+  if (!partsDbId) {
+    return res.status(500).json({ error: 'Parts database not configured' });
+  }
+  
+  try {
+    const existingResponse = await notion.databases.query({
+      database_id: partsDbId,
+      filter: {
+        property: 'Work Order',
+        relation: {
+          contains: projectId
+        }
+      }
+    });
+    
+    const existingParts = existingResponse.results.map(mapPart);
+    const updates = [];
+    
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      
+      if (part.id && existingParts.find(p => p.id === part.id)) {
+        // Update existing part
+        const updatePromise = notion.pages.update({
+          page_id: part.id,
+          properties: {
+            'Name': { title: [{ text: { content: part.name } }] },
+            'Quantity': { number: part.quantity || 1 },
+            'Price Per Item': { number: part.pricePerItem || 0 },
+            'Order': { number: i + 1 }
+          }
+        });
+        updates.push(updatePromise);
+      } else {
+        // Create new part
+        const createPromise = notion.pages.create({
+          parent: { database_id: partsDbId },
+          properties: {
+            'Name': { title: [{ text: { content: part.name } }] },
+            'Work Order': { relation: [{ id: projectId }] },
+            'Quantity': { number: part.quantity || 1 },
+            'Price Per Item': { number: part.pricePerItem || 0 },
+            'Order': { number: i + 1 }
+          }
+        });
+        updates.push(createPromise);
+      }
+    }
+    
+    // Delete parts that are no longer in the list
+    const partIds = parts.filter(p => p.id).map(p => p.id);
+    const toDelete = existingParts.filter(p => !partIds.includes(p.id));
+    
+    for (const part of toDelete) {
+      const deletePromise = notion.pages.update({
+        page_id: part.id,
+        archived: true
+      });
+      updates.push(deletePromise);
+    }
+    
+    await Promise.all(updates);
+    
+    return res.json({ 
+      success: true, 
+      message: `Updated ${parts.length} parts, deleted ${toDelete.length} parts`
+    });
+  } catch (error) {
+    console.error('Failed to save parts:', error);
+    throw new Error(`Failed to save parts: ${error.message}`);
+  }
 }
 
 function parseRatingValue(ratingStr) {
