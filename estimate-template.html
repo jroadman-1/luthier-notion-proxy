@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Estimate - Roadman Guitars</title>
+  <style>
+    @page { size: letter; margin: 0.5in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Times New Roman', serif;
+      margin: 0; padding: 0; color: #333; line-height: 1.4; font-size: 12px;
+    }
+    .estimate-container { max-width: 8.5in; margin: 0 auto; background: white; min-height: 11in; padding: 20px; }
+
+    /* Letterhead Section */
+    .letterhead {
+      border-bottom: 3px solid #2c3e50; margin-bottom: 20px; padding-bottom: 15px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo-section {
+      flex: 0 0 120px; height: 80px; background: #f8f9fa; border: none;
+      display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; text-align: center;
+    }
+    .company-info { flex: 1; text-align: center; margin: 0 20px; }
+    .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
+    .company-tagline { font-size: 14px; color: #666; font-style: italic; margin-bottom: 8px; }
+    .contact-info { font-size: 11px; color: #555; }
+    .report-date { flex: 0 0 140px; text-align: right; font-size: 11px; color: #444; line-height: 1.6; }
+
+    /* Project Header */
+    .project-header { background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; border-radius: 4px; margin-bottom: 20px; }
+    .project-title { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-align: center; }
+    .project-basic-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .info-item { display: flex; flex-direction: column; }
+    .info-label { font-weight: bold; font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 3px; }
+    .info-value { font-size: 13px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 2px; min-height: 16px; }
+
+    /* Estimate Items Section */
+    .estimate-section { margin-top: 30px; }
+    .section-title { font-size: 16px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; margin-bottom: 15px; }
+    
+    .estimate-items { border: 1px solid #dee2e6; border-radius: 4px; overflow: hidden; }
+    .estimate-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 15px;
+      border-bottom: 1px solid #dee2e6;
+      background: white;
+    }
+    .estimate-item:last-child { border-bottom: none; }
+    .estimate-item:nth-child(even) { background: #f8f9fa; }
+    .item-name { font-size: 13px; color: #333; flex: 1; }
+    .item-amount { font-size: 13px; font-weight: bold; color: #2c3e50; min-width: 100px; text-align: right; }
+
+    /* Total Section */
+    .estimate-total {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f39c12;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-label { font-size: 16px; font-weight: bold; color: white; }
+    .total-amount { font-size: 20px; font-weight: bold; color: white; }
+
+    /* Notes Section */
+    .estimate-notes {
+      margin-top: 30px;
+      padding: 15px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+    }
+    .estimate-notes p {
+      margin: 5px 0;
+      font-size: 11px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* Print Button */
+    .print-button { 
+      position: fixed; 
+      top: 10px; 
+      right: 10px; 
+      background: #007bff; 
+      color: white; 
+      border: none; 
+      padding: 10px 20px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 14px; 
+    }
+    .print-button:hover { background: #0056b3; }
+    @media print { 
+      .print-button { display: none; } 
+      .estimate-container { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <button class="print-button" onclick="window.print()">🖨️ Print Estimate</button>
+
+  <div class="estimate-container">
+    <!-- Letterhead -->
+    <header class="letterhead">
+      <div class="logo-section">
+        <div style="width: 80px; height: 60px; background: white; border: 2px solid #2c3e50; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 24px; font-weight: bold; color: #2c3e50;">R</span>
+        </div>
+      </div>
+      <div class="company-info">
+        <div class="company-name">Roadman Guitars</div>
+        <div class="company-tagline">Professional Guitar Setup & Repair</div>
+        <div class="contact-info">
+          San Antonio, Texas • (210) 764-3738 • roadmanguitars@gmail.com
+        </div>
+      </div>
+      <div class="report-date">
+        <strong>Service Estimate</strong><br>
+        <span id="estimateDate"></span><br><br>
+        <strong>Project ID:</strong><br>
+        <span id="projId"></span>
+      </div>
+    </header>
+
+    <!-- Project Header -->
+    <div class="project-header">
+      <div class="project-title">SERVICE ESTIMATE</div>
+      <div class="project-basic-info">
+        <div class="info-item">
+          <div class="info-label">Customer</div>
+          <div class="info-value" id="customerName"></div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Instrument</div>
+          <div class="info-value" id="instrumentName"></div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Status</div>
+          <div class="info-value" id="statusText"></div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Store</div>
+          <div class="info-value" id="storeName"></div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Serial Number</div>
+          <div class="info-value" id="serialNumberText"></div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Finish</div>
+          <div class="info-value" id="finishText"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estimate Items -->
+    <div class="estimate-section">
+      <div class="section-title">ESTIMATED SERVICES</div>
+      <div class="estimate-items" id="estimateItems">
+        <!-- Items will be populated by JavaScript -->
+      </div>
+      
+      <div class="estimate-total">
+        <div class="total-label">ESTIMATED TOTAL</div>
+        <div class="total-amount" id="totalAmount">$0.00</div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="estimate-notes">
+      <p><strong>Note:</strong> This is an estimate based on initial assessment. Final charges may vary depending on actual work required and parts needed.</p>
+      <p>Estimate valid for 30 days from date of issue.</p>
+      <p>All work guaranteed. Payment due upon completion.</p>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    // Pull payload saved by the management page
+    const raw = localStorage.getItem('luthierEstimateData');
+    const data = raw ? JSON.parse(raw) : {};
+    const p = (data && data.project) ? data.project : {};
+    const ms = Array.isArray(data.milestones) ? data.milestones : [];
+
+    // Hourly rate
+    const HOURLY_RATE = 100;
+
+    // Helpers
+    const setText = (id, v) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = (v ?? '');
+    };
+
+    // Letterhead
+    const estimateDate = (new Date()).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    setText('estimateDate', estimateDate);
+    setText('projId', p.projectId ? ('#' + p.projectId) : (p.id ? ('#' + String(p.id).slice(0,8)) : ''));
+
+    // Header info
+    const instrumentName = [p.instrumentMake, p.instrumentModel].filter(Boolean).join(' ');
+    setText('customerName', p.name || '');
+    setText('instrumentName', instrumentName || p.instrumentType || '');
+    setText('statusText', p.status || '');
+    setText('storeName', p.store || '');
+    setText('serialNumberText', p.serialNumber || '');
+    setText('finishText', p.instrumentFinish || '');
+
+    // Build estimate items from milestones
+    const itemsContainer = document.getElementById('estimateItems');
+    let totalEstimate = 0;
+
+    // Filter and sort milestones
+    const sortedMilestones = ms
+      .filter(m => m && m.name) // Only include milestones with names
+      .sort((a, b) => (a.order || 0) - (b.order || 0)); // Sort by order
+
+    if (sortedMilestones.length > 0) {
+      sortedMilestones.forEach(milestone => {
+        const estimatedHours = parseFloat(milestone.estimatedHours) || 0;
+        const cost = estimatedHours * HOURLY_RATE;
+        totalEstimate += cost;
+
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'estimate-item';
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'item-name';
+        nameDiv.textContent = milestone.name;
+        
+        const amountDiv = document.createElement('div');
+        amountDiv.className = 'item-amount';
+        amountDiv.textContent = '$' + cost.toFixed(2);
+        
+        itemDiv.appendChild(nameDiv);
+        itemDiv.appendChild(amountDiv);
+        itemsContainer.appendChild(itemDiv);
+      });
+    } else {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'estimate-item';
+      emptyDiv.style.fontStyle = 'italic';
+      emptyDiv.style.color = '#999';
+      emptyDiv.textContent = 'No milestones defined for this project';
+      itemsContainer.appendChild(emptyDiv);
+    }
+
+    // Set total
+    setText('totalAmount', '$' + totalEstimate.toFixed(2));
+  })();
+  </script>
+</body>
+</html>
