@@ -1237,6 +1237,9 @@ async function saveParts(res, notion, partsDbId, data) {
   
   const { projectId, parts } = data;
   
+  // Initialize parts as empty array if not provided
+  const partsList = parts || [];
+  
   if (!partsDbId) {
     console.warn('Parts database not configured - NOTION_PARTS_DATABASE_ID is not set');
     return res.status(200).json({ 
@@ -1254,16 +1257,9 @@ async function saveParts(res, notion, partsDbId, data) {
     });
   }
   
-  if (!parts || parts.length === 0) {
-    console.log('No parts to save');
-    return res.json({ 
-      success: true, 
-      message: 'No parts to save' 
-    });
-  }
-  
   try {
     console.log(`Querying parts database ${partsDbId} for project ${projectId}`);
+    console.log(`Parts to save: ${partsList.length}`);
     
     const existingResponse = await notion.databases.query({
       database_id: partsDbId,
@@ -1280,8 +1276,8 @@ async function saveParts(res, notion, partsDbId, data) {
     const existingParts = existingResponse.results.map(mapPart);
     const updates = [];
     
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
+    for (let i = 0; i < partsList.length; i++) {
+      const part = partsList[i];
       console.log(`Processing part ${i + 1}:`, part.name);
       
       if (part.id && existingParts.find(p => p.id === part.id)) {
@@ -1315,7 +1311,7 @@ async function saveParts(res, notion, partsDbId, data) {
     }
     
     // Delete parts that are no longer in the list
-    const partIds = parts.filter(p => p.id).map(p => p.id);
+    const partIds = partsList.filter(p => p.id).map(p => p.id);
     const toDelete = existingParts.filter(p => !partIds.includes(p.id));
     
     console.log(`Deleting ${toDelete.length} removed parts`);
@@ -1333,7 +1329,7 @@ async function saveParts(res, notion, partsDbId, data) {
     console.log('Parts saved successfully');
     return res.json({ 
       success: true, 
-      message: `Saved ${parts.length} parts, deleted ${toDelete.length} parts`
+      message: `Saved ${partsList.length} parts, deleted ${toDelete.length} parts`
     });
   } catch (error) {
     console.error('Failed to save parts - Full error:', error);
