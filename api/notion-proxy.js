@@ -167,19 +167,24 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsD
     
     let allParts = [];
     if (partsDbId) {
-      hasMore = true;
-      nextCursor = undefined;
-      
-      while (hasMore) {
-        const partsResponse = await notion.databases.query({
-          database_id: partsDbId,
-          page_size: 100,
-          start_cursor: nextCursor
-        });
+      try {
+        hasMore = true;
+        nextCursor = undefined;
         
-        allParts = allParts.concat(partsResponse.results);
-        hasMore = partsResponse.has_more;
-        nextCursor = partsResponse.next_cursor;
+        while (hasMore) {
+          const partsResponse = await notion.databases.query({
+            database_id: partsDbId,
+            page_size: 100,
+            start_cursor: nextCursor
+          });
+          
+          allParts = allParts.concat(partsResponse.results);
+          hasMore = partsResponse.has_more;
+          nextCursor = partsResponse.next_cursor;
+        }
+      } catch (partsError) {
+        console.warn('Parts database not accessible:', partsError.message);
+        // Continue without parts - it's optional
       }
     }
     
@@ -1212,7 +1217,12 @@ async function saveParts(res, notion, partsDbId, data) {
   const { projectId, parts } = data;
   
   if (!partsDbId) {
-    return res.status(500).json({ error: 'Parts database not configured' });
+    console.warn('Parts database not configured - skipping parts save');
+    return res.status(200).json({ 
+      success: false, 
+      error: 'Parts database not configured',
+      message: 'Parts feature is not available. Add NOTION_PARTS_DATABASE_ID to enable it.' 
+    });
   }
   
   try {
