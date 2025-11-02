@@ -1528,33 +1528,30 @@
           await milestoneResponse.json();
         }
 
-        // Save parts if database is configured (optional)
-        if (currentParts.length > 0) {
-          try {
-            const partsResponse = await fetch(`${API_URL}?action=save-parts`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                projectId: currentProject.id,
-                parts: currentParts
-              })
-            });
-            
-            const partsResult = await partsResponse.json();
-            
-            if (partsResponse.ok && partsResult.success) {
-              console.log('Parts saved successfully:', partsResult.message);
-              showMessage('Project and parts saved successfully', 'success');
-            } else {
-              console.warn('Parts not saved:', partsResult);
-              const errorMsg = partsResult.detail || partsResult.error || 'Unknown error';
-              const hint = partsResult.hint || '';
-              showMessage(`Project saved, but parts not saved: ${errorMsg}. ${hint}`, 'info');
-            }
-          } catch (partsError) {
-            console.error('Parts feature error:', partsError);
-            showMessage('Project saved, but parts feature encountered an error. Check console for details.', 'info');
+        // Save parts (including deletions) - always call API to sync with Notion
+        try {
+          const partsResponse = await fetch(`${API_URL}?action=save-parts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: currentProject.id,
+              parts: currentParts
+            })
+          });
+          
+          const partsResult = await partsResponse.json();
+          
+          if (partsResponse.ok && partsResult.success) {
+            console.log('Parts saved successfully:', partsResult.message);
+          } else {
+            console.warn('Parts not saved:', partsResult);
+            const errorMsg = partsResult.detail || partsResult.error || 'Unknown error';
+            const hint = partsResult.hint || '';
+            showMessage(`Project saved, but parts not saved: ${errorMsg}. ${hint}`, 'info');
           }
+        } catch (partsError) {
+          console.error('Parts feature error:', partsError);
+          showMessage('Project saved, but parts feature encountered an error. Check console for details.', 'info');
         }
 
         hasUnsavedChanges = false;
