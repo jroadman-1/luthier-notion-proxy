@@ -1512,17 +1512,21 @@
                 parts: currentParts
               })
             });
-            if (partsResponse.ok) {
-              await partsResponse.json();
-              console.log('Parts saved successfully');
+            
+            const partsResult = await partsResponse.json();
+            
+            if (partsResponse.ok && partsResult.success) {
+              console.log('Parts saved successfully:', partsResult.message);
+              showMessage('Project and parts saved successfully', 'success');
             } else {
-              const errorData = await partsResponse.json();
-              console.warn('Parts not saved:', errorData.error);
-              // Don't throw error - parts are optional
+              console.warn('Parts not saved:', partsResult);
+              const errorMsg = partsResult.detail || partsResult.error || 'Unknown error';
+              const hint = partsResult.hint || '';
+              showMessage(`Project saved, but parts not saved: ${errorMsg}. ${hint}`, 'info');
             }
           } catch (partsError) {
-            console.warn('Parts feature not available:', partsError.message);
-            // Don't throw error - allow project to save without parts
+            console.error('Parts feature error:', partsError);
+            showMessage('Project saved, but parts feature encountered an error. Check console for details.', 'info');
           }
         }
 
