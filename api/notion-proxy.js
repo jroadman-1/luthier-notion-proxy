@@ -1214,18 +1214,39 @@ function mapPart(page) {
 
 // Save complete parts set for a project
 async function saveParts(res, notion, partsDbId, data) {
+  console.log('saveParts called with partsDbId:', partsDbId ? 'Set' : 'NOT SET');
+  console.log('Parts data:', JSON.stringify(data, null, 2));
+  
   const { projectId, parts } = data;
   
   if (!partsDbId) {
-    console.warn('Parts database not configured - skipping parts save');
+    console.warn('Parts database not configured - NOTION_PARTS_DATABASE_ID is not set');
     return res.status(200).json({ 
       success: false, 
       error: 'Parts database not configured',
-      message: 'Parts feature is not available. Add NOTION_PARTS_DATABASE_ID to enable it.' 
+      message: 'Add NOTION_PARTS_DATABASE_ID environment variable to Vercel to enable parts feature.' 
+    });
+  }
+  
+  if (!projectId) {
+    console.error('No projectId provided');
+    return res.status(400).json({ 
+      success: false,
+      error: 'Project ID is required' 
+    });
+  }
+  
+  if (!parts || parts.length === 0) {
+    console.log('No parts to save');
+    return res.json({ 
+      success: true, 
+      message: 'No parts to save' 
     });
   }
   
   try {
+    console.log(`Querying parts database ${partsDbId} for project ${projectId}`);
+    
     const existingResponse = await notion.databases.query({
       database_id: partsDbId,
       filter: {
@@ -1236,18 +1257,22 @@ async function saveParts(res, notion, partsDbId, data) {
       }
     });
     
+    console.log(`Found ${existingResponse.results.length} existing parts`);
+    
     const existingParts = existingResponse.results.map(mapPart);
     const updates = [];
     
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
+      console.log(`Processing part ${i + 1}:`, part.name);
       
       if (part.id && existingParts.find(p => p.id === part.id)) {
         // Update existing part
+        console.log(`Updating existing part: ${part.id}`);
         const updatePromise = notion.pages.update({
           page_id: part.id,
           properties: {
-            'Name': { title: [{ text: { content: part.name } }] },
+            'Name': { title: [{ text: { content: part.name || 'Unnamed Part' } }] },
             'Quantity': { number: part.quantity || 1 },
             'Price Per Item': { number: part.pricePerItem || 0 },
             'Order': { number: i + 1 }
@@ -1256,10 +1281,11 @@ async function saveParts(res, notion, partsDbId, data) {
         updates.push(updatePromise);
       } else {
         // Create new part
+        console.log(`Creating new part: ${part.name}`);
         const createPromise = notion.pages.create({
           parent: { database_id: partsDbId },
           properties: {
-            'Name': { title: [{ text: { content: part.name } }] },
+            'Name': { title: [{ text: { content: part.name || 'Unnamed Part' } }] },
             'Work Order': { relation: [{ id: projectId }] },
             'Quantity': { number: part.quantity || 1 },
             'Price Per Item': { number: part.pricePerItem || 0 },
@@ -1274,6 +1300,7 @@ async function saveParts(res, notion, partsDbId, data) {
     const partIds = parts.filter(p => p.id).map(p => p.id);
     const toDelete = existingParts.filter(p => !partIds.includes(p.id));
     
+    console.log(`Deleting ${toDelete.length} removed parts`);
     for (const part of toDelete) {
       const deletePromise = notion.pages.update({
         page_id: part.id,
@@ -1282,15 +1309,27 @@ async function saveParts(res, notion, partsDbId, data) {
       updates.push(deletePromise);
     }
     
+    console.log(`Executing ${updates.length} database operations`);
     await Promise.all(updates);
     
+    console.log('Parts saved successfully');
     return res.json({ 
       success: true, 
-      message: `Updated ${parts.length} parts, deleted ${toDelete.length} parts`
+      message: `Saved ${parts.length} parts, deleted ${toDelete.length} parts`
     });
   } catch (error) {
-    console.error('Failed to save parts:', error);
-    throw new Error(`Failed to save parts: ${error.message}`);
+    console.error('Failed to save parts - Full error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error status:', error.status);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to save parts',
+      detail: error.message,
+      code: error.code,
+      hint: 'Check that NOTION_PARTS_DATABASE_ID is correct and the integration has access to the Parts database'
+    });
   }
 }
 
