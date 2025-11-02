@@ -41,6 +41,7 @@
     .btn.success:hover { background: var(--green-700); }
 
     .milestone-item { background: var(--gray-100); border-left: 4px solid var(--blue); padding: 14px; margin-bottom: 10px; border-radius: 6px; }
+    .milestone-item.urgent { border-left: 4px solid var(--red); background: #fff5f5; }
     .milestone-item.complex { border-left-color: var(--red); background: #fdf2f2; }
     .milestone-item.completed { opacity: 0.6; background: #d4edda; border-left-color: #28a745; }
     .milestone-row { display: flex; align-items: flex-start; gap: 12px; }
@@ -522,9 +523,10 @@
           const complexClass = item.isComplex ? 'complex' : '';
           const timeClass = item.isComplex ? 'complex' : '';
           const completedClass = item.milestone.status === 'Completed' ? 'completed' : '';
+          const urgentClass = item.milestone.urgent ? 'urgent' : '';
           const safeName = item.project.name.replace(/"/g, '&quot;');
           html += `
-            <div class="milestone-item ${complexClass} ${completedClass}" id="milestone-${item.milestone.id}">
+            <div class="milestone-item ${complexClass} ${urgentClass} ${completedClass}" id="milestone-${item.milestone.id}">
               <div class="milestone-row">
                 <input type="checkbox" class="milestone-checkbox" data-milestone-id="${item.milestone.id}" ${item.milestone.status === 'Completed' ? 'checked disabled' : ''} id="checkbox-${item.milestone.id}">
                 <div class="milestone-content">
@@ -534,6 +536,7 @@
                   </div>
                   <div class="milestone-details">
                     <span class="badge complexity-${item.project.complexity || 3}">C${item.project.complexity || 3}</span>
+                    ${item.milestone.urgent ? '<span class="badge" style="background: var(--red);">🚨 URGENT</span>' : ''}
                     ${item.isQuick ? '<span class="badge quick">Quick</span>' : ''}
                     <span>${dueText}</span>
                     <span>• Priority: ${item.score.toFixed(2)}</span>
@@ -661,10 +664,20 @@
       }
       let prioritized = calculatePriorities(candidate);
       prioritized = prioritized.sort((a, b) => {
+        // 1. Urgent milestones always come first
+        const aUrgent = a.milestone.urgent || false;
+        const bUrgent = b.milestone.urgent || false;
+        if (aUrgent !== bUrgent) return aUrgent ? -1 : 1;
+        
+        // 2. Then overdue milestones
         if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+        
+        // 3. For overdue items in the same project, maintain order
         if (a.overdue && b.overdue && a.project.id === b.project.id) {
           return (a.milestone.order || 0) - (b.milestone.order || 0);
         }
+        
+        // 4. Finally sort by priority score
         return b.score - a.score;
       });
       const result = balanceComplexity(prioritized, availableHoursInput);
