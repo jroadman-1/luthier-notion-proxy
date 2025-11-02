@@ -285,19 +285,23 @@
       itemsContainer.appendChild(emptyDiv);
     }
 
-    // Handle discount
-    const discount = (p.discount != null && p.discount !== '') ? parseFloat(p.discount) : 0;
+    // Handle discount (as percentage)
+    const discountPercent = (p.discount != null && p.discount !== '') ? parseFloat(p.discount) : 0;
+    let discountAmount = 0;
     let finalTotal = subtotal;
     
     // Set subtotal
     setText('subtotalAmount', '$' + subtotal.toFixed(2));
     
     // Show discount if it exists
-    if (discount > 0) {
+    if (discountPercent > 0) {
+      discountAmount = (subtotal * discountPercent) / 100;
       const discountSection = document.getElementById('discountSection');
+      const discountLabel = discountSection.querySelector('.discount-label');
       discountSection.style.display = 'flex';
-      setText('discountAmount', '-$' + discount.toFixed(2));
-      finalTotal = subtotal - discount;
+      discountLabel.textContent = 'DISCOUNT (' + discountPercent + '%)';
+      setText('discountAmount', '-$' + discountAmount.toFixed(2));
+      finalTotal = subtotal - discountAmount;
     }
     
     // Set final total
