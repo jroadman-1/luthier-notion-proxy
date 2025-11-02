@@ -41,6 +41,10 @@
     .milestone-include{width:60px;text-align:center;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
     .milestone-include input[type="checkbox"]{margin:0;cursor:pointer}
     .milestone-include label{font-size:10px;color:#666;text-align:center;line-height:1.1}
+    .milestone-urgent{width:60px;text-align:center;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
+    .milestone-urgent input[type="checkbox"]{margin:0;cursor:pointer}
+    .milestone-urgent label{font-size:10px;color:#d32f2f;text-align:center;line-height:1.1;font-weight:bold}
+    .milestone-row.urgent{border-left-color:#ff5252;background:#fff5f5}
     .milestone-row.dragging{opacity:.5;z-index:1000}
     .milestone-row.over{outline:2px dashed #2196f3}
     .milestone-row.ready{border-left-color:#4caf50}
@@ -885,7 +889,7 @@
       }
 
       return currentMilestones.map((milestone, index) => `
-        <div class="milestone-row ${(milestone.status || 'Not Started').toLowerCase().replace(' ', '-')}"
+        <div class="milestone-row ${(milestone.status || 'Not Started').toLowerCase().replace(' ', '-')} ${milestone.urgent ? 'urgent' : ''}"
              draggable="true"
              data-milestone-index="${index}">
           <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
@@ -922,6 +926,14 @@
               <option value="Ready" ${milestone.status === 'Ready' ? 'selected' : ''}>Ready</option>
               <option value="Completed" ${milestone.status === 'Completed' ? 'selected' : ''}>Completed</option>
             </select>
+          </div>
+          <div class="milestone-urgent">
+            <input type="checkbox" 
+                   ${milestone.urgent ? 'checked' : ''}
+                   onchange="updateMilestone(${index}, 'urgent', this.checked)"
+                   id="urgent-${index}"
+                   title="Mark as urgent - appears first in scheduler">
+            <label for="urgent-${index}">Urgent</label>
           </div>
           <div class="milestone-include">
             <input type="checkbox" 
@@ -1055,7 +1067,8 @@
         actualHours: 0,
         order: currentMilestones.length + 1,
         status: 'Not Started',
-        includeInEstimate: true
+        includeInEstimate: true,
+        urgent: false
       };
       currentMilestones.push(newMilestone);
       refreshMilestoneList();
@@ -1072,7 +1085,8 @@
           actualHours: 0,
           order: start + i + 1,
           status: 'Not Started',
-          includeInEstimate: true
+          includeInEstimate: true,
+          urgent: false
         });
       }
       refreshMilestoneList();
