@@ -1501,20 +1501,29 @@
           await milestoneResponse.json();
         }
 
+        // Save parts if database is configured (optional)
         if (currentParts.length > 0) {
-          const partsResponse = await fetch(`${API_URL}?action=save-parts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId: currentProject.id,
-              parts: currentParts
-            })
-          });
-          if (!partsResponse.ok) {
-            const errorText = await partsResponse.text();
-            throw new Error(`Failed to save parts: ${errorText}`);
+          try {
+            const partsResponse = await fetch(`${API_URL}?action=save-parts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                projectId: currentProject.id,
+                parts: currentParts
+              })
+            });
+            if (partsResponse.ok) {
+              await partsResponse.json();
+              console.log('Parts saved successfully');
+            } else {
+              const errorData = await partsResponse.json();
+              console.warn('Parts not saved:', errorData.error);
+              // Don't throw error - parts are optional
+            }
+          } catch (partsError) {
+            console.warn('Parts feature not available:', partsError.message);
+            // Don't throw error - allow project to save without parts
           }
-          await partsResponse.json();
         }
 
         hasUnsavedChanges = false;
