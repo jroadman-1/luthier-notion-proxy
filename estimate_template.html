@@ -263,9 +263,9 @@
     const itemsContainer = document.getElementById('estimateItems');
     let subtotal = 0;
 
-    // Filter and sort milestones
+    // Filter and sort milestones - only include those marked for estimate
     const sortedMilestones = ms
-      .filter(m => m && m.name) // Only include milestones with names
+      .filter(m => m && m.name && m.includeInEstimate !== false) // Only include milestones with names AND includeInEstimate is true (or undefined)
       .sort((a, b) => (a.order || 0) - (b.order || 0)); // Sort by order
 
     if (sortedMilestones.length > 0) {
