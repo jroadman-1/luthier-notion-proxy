@@ -755,11 +755,11 @@
                        placeholder="0.00">
               </div>
               <div class="form-group">
-                <label>Discount ($)</label>
-                <input type="number" step="0.01" min="0" id="discount" 
+                <label>Discount (%)</label>
+                <input type="number" step="1" min="0" max="100" id="discount" 
                        value="${currentProject.discount || ''}" 
                        onchange="markChanged()" 
-                       placeholder="0.00">
+                       placeholder="0">
               </div>
               <div class="form-group full-width">
                 <label>Minus Commission (Calculated)</label>
@@ -1294,7 +1294,7 @@
           // Billing data
           total: parseFloat(document.getElementById('total').value) || null,
           commission: parseFloat(document.getElementById('commission').value) || null,
-          discount: parseFloat(document.getElementById('discount').value) || null,
+          discount: parseInt(document.getElementById('discount').value) || null,
           
           // Measurement data
           neckReliefBefore: parseFloat(document.getElementById('neckReliefBefore').value) || null,
@@ -1457,7 +1457,7 @@
     const discountEl = document.getElementById('discount');
     if (totalEl) currentProject.total = totalEl.value ? parseFloat(totalEl.value) : null;
     if (commissionEl) currentProject.commission = commissionEl.value ? parseFloat(commissionEl.value) : null;
-    if (discountEl) currentProject.discount = discountEl.value ? parseFloat(discountEl.value) : null;
+    if (discountEl) currentProject.discount = discountEl.value ? parseInt(discountEl.value) : null;
 
     // Measurements (only if section expanded—safe to read anyway)
     const num = id => {
