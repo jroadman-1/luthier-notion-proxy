@@ -93,6 +93,12 @@
     .billing-summary h4{margin:0 0 10px;color:#1976d2}
     .billing-stat .label{font-size:12px;color:#666;margin-top:2px}
     .readonly-display{background:#f8f9fa;color:#666;font-weight:bold;text-align:center;padding:8px 12px;border:1px solid #e9ecef;border-radius:4px;margin-top:5px}
+    .parts-list{max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:10px;background:#fafafa;margin-bottom:15px}
+    .part-row{display:grid;grid-template-columns:2fr 100px 120px 120px 60px;gap:10px;align-items:center;padding:8px;margin-bottom:5px;background:#fff;border-radius:4px;border-left:3px solid #4caf50}
+    .part-row input{width:100%;border:1px solid #ddd;padding:6px 8px;border-radius:3px;font-size:14px}
+    .part-row input[readonly]{background:#f5f5f5;color:#666}
+    .part-row .remove-part{background:#ff5252;color:#fff;border:none;border-radius:3px;padding:6px 10px;cursor:pointer;font-size:11px}
+    .parts-total{background:#e8f5e8;padding:12px 15px;border-radius:4px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid #4caf50;font-weight:bold}
   </style>
 </head>
 <body>
@@ -147,8 +153,10 @@
     let allProjects = [];
     let allMilestones = [];
     let allWorkflows = [];
+    let allParts = [];
     let currentProject = null;
     let currentMilestones = [];
+    let currentParts = [];
     let hasUnsavedChanges = false;
     let isNewProject = false;
 
@@ -184,10 +192,11 @@
 
         allProjects = data.projects || [];
         allMilestones = data.milestones || [];
+        allParts = data.parts || [];
         allWorkflows = workflows.workflows || [];
 
         displayProjectsList();
-        showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allWorkflows.length} workflows`, 'success');
+        showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allParts.length} parts, ${allWorkflows.length} workflows`, 'success');
       } catch (error) {
         console.error('Failed to refresh projects:', error);
         const errorMsg = `Failed to load projects: ${error.message}`;
@@ -249,6 +258,7 @@
       };
 
       currentMilestones = [];
+      currentParts = [];
       isNewProject = true;
       hasUnsavedChanges = true;
 
@@ -327,6 +337,7 @@
 
       isNewProject = false;
       loadProjectMilestones(projectId);
+      loadProjectParts(projectId);
 
       displayProjectEditor();
       displayProjectsList();
@@ -729,6 +740,23 @@
 
 </div>
        
+        </div>
+
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('parts')">
+            <span id="partsToggle" class="collapsible-toggle">▶</span>
+            Parts
+          </h3>
+          <div id="partsContent" class="collapsible-content" style="display: none;">
+            <div class="parts-list" id="partsList">
+              ${renderPartsList()}
+            </div>
+            <button class="btn small success" onclick="addPart()">+ Add Part</button>
+            <div class="parts-total" id="partsTotal" style="margin-top:15px;">
+              <span>Parts Total:</span>
+              <span id="partsTotalAmount">$0.00</span>
+            </div>
+          </div>
         </div>
 
         
@@ -1254,6 +1282,85 @@
       markChanged();
     }
 
+    // Parts Management Functions
+    function renderPartsList() {
+      if (currentParts.length === 0) {
+        return '<div class="empty-state">No parts added yet. Click "Add Part" below.</div>';
+      }
+
+      return currentParts.map((part, index) => `
+        <div class="part-row">
+          <input type="text" value="${escapeHtml(part.name || '')}"
+                 onchange="updatePart(${index}, 'name', this.value)"
+                 placeholder="Part name">
+          <input type="number" step="1" min="1"
+                 value="${part.quantity || 1}"
+                 onchange="updatePart(${index}, 'quantity', this.value)"
+                 placeholder="Qty">
+          <input type="number" step="0.01" min="0"
+                 value="${part.pricePerItem || 0}"
+                 onchange="updatePart(${index}, 'pricePerItem', this.value)"
+                 placeholder="Price">
+          <input type="text" readonly value="$${((part.quantity || 0) * (part.pricePerItem || 0)).toFixed(2)}">
+          <button class="remove-part" onclick="removePart(${index})" title="Remove part">×</button>
+        </div>
+      `).join('');
+    }
+
+    function addPart() {
+      currentParts.push({
+        id: null,
+        name: '',
+        quantity: 1,
+        pricePerItem: 0,
+        order: currentParts.length + 1
+      });
+      refreshPartsList();
+      markChanged();
+    }
+
+    function removePart(index) {
+      currentParts.splice(index, 1);
+      currentParts.forEach((p, i) => p.order = i + 1);
+      refreshPartsList();
+      markChanged();
+    }
+
+    function updatePart(index, field, value) {
+      if (field === 'quantity') {
+        value = parseInt(value) || 1;
+      } else if (field === 'pricePerItem') {
+        value = parseFloat(value) || 0;
+      }
+      currentParts[index][field] = value;
+      refreshPartsList();
+      markChanged();
+    }
+
+    function refreshPartsList() {
+      const container = document.getElementById('partsList');
+      if (container) {
+        container.innerHTML = renderPartsList();
+        updatePartsTotal();
+      }
+    }
+
+    function updatePartsTotal() {
+      const total = currentParts.reduce((sum, part) => {
+        return sum + ((part.quantity || 0) * (part.pricePerItem || 0));
+      }, 0);
+      const totalElement = document.getElementById('partsTotalAmount');
+      if (totalElement) {
+        totalElement.textContent = '$' + total.toFixed(2);
+      }
+    }
+
+    function loadProjectParts(projectId) {
+      currentParts = allParts
+        .filter(p => p.projectId === projectId)
+        .sort((a, b) => a.order - b.order);
+    }
+
     function markChanged() {
       hasUnsavedChanges = true;
       updateSaveButton();
@@ -1392,6 +1499,22 @@
             throw new Error(`Failed to save milestones: ${errorText}`);
           }
           await milestoneResponse.json();
+        }
+
+        if (currentParts.length > 0) {
+          const partsResponse = await fetch(`${API_URL}?action=save-parts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: currentProject.id,
+              parts: currentParts
+            })
+          });
+          if (!partsResponse.ok) {
+            const errorText = await partsResponse.text();
+            throw new Error(`Failed to save parts: ${errorText}`);
+          }
+          await partsResponse.json();
         }
 
         hasUnsavedChanges = false;
