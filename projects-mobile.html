@@ -404,14 +404,48 @@
     // ===== CONFIGURATION =====
     const API_URL = 'https://luthier-notion-proxy.vercel.app/api/notion-proxy';
     
+    // Hourly rate for cost calculations
+    // TODO: Change this to fetch from Notion Settings/Parts database
+    const HOURLY_RATE = 100;
+    
     // ===== STATE =====
     let workflows = [];
+    let hourlyRate = HOURLY_RATE; // Default, will be updated from Notion
     
     // ===== INITIALIZATION =====
     document.addEventListener('DOMContentLoaded', async () => {
+      await loadHourlyRate();
       await loadWorkflows();
       setupEventListeners();
     });
+    
+    // ===== LOAD HOURLY RATE FROM PARTS DATABASE =====
+    async function loadHourlyRate() {
+      try {
+        // Fetch all data including parts
+        const response = await fetch(`${API_URL}`);
+        if (!response.ok) throw new Error('Failed to load data');
+        
+        const data = await response.json();
+        const parts = data.parts || [];
+        
+        // Look for a part named "Hourly Rate" or "Labor Rate"
+        const hourlyRatePart = parts.find(p => 
+          p.name?.toLowerCase() === 'hourly rate' || 
+          p.name?.toLowerCase() === 'labor rate'
+        );
+        
+        if (hourlyRatePart && hourlyRatePart.pricePerItem) {
+          hourlyRate = hourlyRatePart.pricePerItem;
+          console.log(`Loaded hourly rate from Notion: $${hourlyRate}`);
+        } else {
+          console.log(`No hourly rate found in Parts database, using default: $${HOURLY_RATE}`);
+        }
+      } catch (error) {
+        console.warn('Could not load hourly rate from Notion, using default:', error);
+        hourlyRate = HOURLY_RATE;
+      }
+    }
     
     // ===== LOAD WORKFLOWS =====
     async function loadWorkflows() {
@@ -491,9 +525,14 @@
             infoText += `<strong>${option.textContent}:</strong><br>`;
             if (description) infoText += `${description}`;
             if (hours) {
-              infoText += ` • ${hours}`;
               const hoursNum = parseFloat(hours);
-              if (!isNaN(hoursNum)) totalHours += hoursNum;
+              if (!isNaN(hoursNum)) {
+                totalHours += hoursNum;
+                const cost = hoursNum * hourlyRate;
+                infoText += ` • ${hoursNum.toFixed(1)} hours • $${cost.toFixed(0)}`;
+              } else {
+                infoText += ` • ${hours}`;
+              }
             }
             
             // Parse milestone count from description
@@ -504,7 +543,8 @@
           });
           
           if (selectedOptions.length > 1) {
-            infoText += `<br><br><strong>Combined Total:</strong> ${totalMilestones} milestones • ${totalHours} hours`;
+            const totalCost = totalHours * hourlyRate;
+            infoText += `<br><br><strong>Combined Total:</strong> ${totalMilestones} milestones • ${totalHours.toFixed(1)} hours • $${totalCost.toFixed(0)}`;
           }
           
           if (infoText) {
