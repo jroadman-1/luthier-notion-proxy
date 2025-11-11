@@ -314,8 +314,8 @@
           👤 Customer Information
         </div>
         <div class="form-group">
-          <label for="customerName" class="required">Customer Name</label>
-          <input type="text" id="customerName" name="customerName" required placeholder="John Smith">
+          <label for="name" class="required">Customer Name</label>
+          <input type="text" id="name" name="name" required placeholder="John Smith">
         </div>
       </div>
 
@@ -333,12 +333,8 @@
           <input type="text" id="instrumentModel" name="instrumentModel" placeholder="Stratocaster, Les Paul...">
         </div>
         <div class="form-group">
-          <label for="finish">Finish</label>
-          <input type="text" id="finish" name="finish" placeholder="Sunburst, Natural, Black...">
-        </div>
-        <div class="form-group">
-          <label for="color">Color</label>
-          <input type="text" id="color" name="color" placeholder="3-Tone Sunburst, Vintage White...">
+          <label for="instrumentFinish">Finish</label>
+          <input type="text" id="instrumentFinish" name="instrumentFinish" placeholder="Sunburst, Natural, Black...">
         </div>
       </div>
 
@@ -484,9 +480,9 @@
     async function handleSubmit(e) {
       e.preventDefault();
       
-      const customerName = document.getElementById('customerName').value.trim();
+      const name = document.getElementById('name').value.trim();
       
-      if (!customerName) {
+      if (!name) {
         showMessage('Customer name is required', 'error');
         return;
       }
@@ -494,21 +490,25 @@
       try {
         showLoading(true);
         
-        // Gather form data
+        // Gather form data using EXACT field names from your existing API
         const formData = {
-          customerName: customerName,
+          name: name,
           instrumentMake: document.getElementById('instrumentMake').value.trim(),
           instrumentModel: document.getElementById('instrumentModel').value.trim(),
-          finish: document.getElementById('finish').value.trim(),
-          color: document.getElementById('color').value.trim(),
+          instrumentFinish: document.getElementById('instrumentFinish').value.trim(),
           tuning: document.getElementById('tuning').value.trim(),
           stringGauge: document.getElementById('stringGauge').value.trim(),
           stringBrand: document.getElementById('stringBrand').value.trim(),
-          workflowId: document.getElementById('workflow').value,
           dueDate: document.getElementById('dueDate').value,
           intakeNotes: document.getElementById('intakeNotes').value.trim(),
           status: 'On The Bench'
         };
+        
+        // Add workflow as a relation if selected
+        const workflowId = document.getElementById('workflow').value;
+        if (workflowId) {
+          formData.workflowId = workflowId;
+        }
         
         // Send to API
         const response = await fetch(`${API_URL}?action=create-project`, {
