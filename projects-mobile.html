@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>New Project - Luthier</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #3498db;
+      --primary-dark: #2980b9;
+      --success: #27ae60;
+      --danger: #e74c3c;
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --text-light: #7f8c8d;
+      --border: #ddd;
+      --shadow: rgba(0,0,0,0.1);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+
+    .header {
+      background: var(--text);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+
+    .form-section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--text);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    label.required::after {
+      content: " *";
+      color: var(--danger);
+    }
+
+    input[type="text"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+      color: var(--text);
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232c3e50' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .workflow-info {
+      background: #e8f4f8;
+      border-left: 4px solid var(--primary);
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .workflow-info.show {
+      display: block;
+    }
+
+    .workflow-info strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .button-group {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 16px;
+      box-shadow: 0 -2px 8px var(--shadow);
+      display: flex;
+      gap: 12px;
+      z-index: 100;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:active {
+      background: var(--primary-dark);
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .btn-secondary:active {
+      background: #7f8c8d;
+      transform: scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .message {
+      position: fixed;
+      top: 80px;
+      left: 16px;
+      right: 16px;
+      padding: 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      text-align: center;
+      z-index: 1001;
+      display: none;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+
+    .input-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 400px) {
+      .input-group {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎸 New Project</h1>
+    <p>Create a new instrument project</p>
+  </div>
+
+  <div class="container">
+    <form id="projectForm">
+      <!-- Customer Information -->
+      <div class="form-section">
+        <div class="section-title">
+          👤 Customer Information
+        </div>
+        <div class="form-group">
+          <label for="customerName" class="required">Customer Name</label>
+          <input type="text" id="customerName" name="customerName" required placeholder="John Smith">
+        </div>
+      </div>
+
+      <!-- Instrument Details -->
+      <div class="form-section">
+        <div class="section-title">
+          🎸 Instrument Details
+        </div>
+        <div class="form-group">
+          <label for="instrumentMake">Make</label>
+          <input type="text" id="instrumentMake" name="instrumentMake" placeholder="Fender, Gibson, Martin...">
+        </div>
+        <div class="form-group">
+          <label for="instrumentModel">Model</label>
+          <input type="text" id="instrumentModel" name="instrumentModel" placeholder="Stratocaster, Les Paul...">
+        </div>
+        <div class="form-group">
+          <label for="finish">Finish</label>
+          <input type="text" id="finish" name="finish" placeholder="Sunburst, Natural, Black...">
+        </div>
+        <div class="form-group">
+          <label for="color">Color</label>
+          <input type="text" id="color" name="color" placeholder="3-Tone Sunburst, Vintage White...">
+        </div>
+      </div>
+
+      <!-- Setup Specifications -->
+      <div class="form-section">
+        <div class="section-title">
+          🔧 Setup Specifications
+        </div>
+        <div class="input-group">
+          <div class="form-group">
+            <label for="tuning">Tuning</label>
+            <input type="text" id="tuning" name="tuning" placeholder="Standard, Drop D...">
+          </div>
+          <div class="form-group">
+            <label for="stringGauge">String Gauge</label>
+            <input type="text" id="stringGauge" name="stringGauge" placeholder="10-46, 11-49...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="stringBrand">String Brand</label>
+          <input type="text" id="stringBrand" name="stringBrand" placeholder="D'Addario, Ernie Ball...">
+        </div>
+      </div>
+
+      <!-- Project Details -->
+      <div class="form-section">
+        <div class="section-title">
+          📋 Project Details
+        </div>
+        <div class="form-group">
+          <label for="workflow">Workflow</label>
+          <select id="workflow" name="workflow">
+            <option value="">Select a workflow...</option>
+          </select>
+          <div id="workflowInfo" class="workflow-info"></div>
+        </div>
+        <div class="form-group">
+          <label for="dueDate">Due Date</label>
+          <input type="date" id="dueDate" name="dueDate">
+          <div class="helper-text">Optional: Leave blank if no due date</div>
+        </div>
+        <div class="form-group">
+          <label for="intakeNotes">Intake Notes</label>
+          <textarea id="intakeNotes" name="intakeNotes" placeholder="Customer requests, condition notes, special instructions..."></textarea>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="button-group">
+    <button type="button" class="btn btn-secondary" onclick="window.location.href='view-projects.html'">
+      Cancel
+    </button>
+    <button type="submit" form="projectForm" class="btn btn-primary" id="submitBtn">
+      💾 Create Project
+    </button>
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="message" id="message"></div>
+
+  <script>
+    // ===== CONFIGURATION =====
+    // Replace this with your Vercel API URL
+    const API_URL = 'YOUR_VERCEL_API_URL_HERE';
+    
+    // ===== STATE =====
+    let workflows = [];
+    
+    // ===== INITIALIZATION =====
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadWorkflows();
+      setupEventListeners();
+    });
+    
+    // ===== LOAD WORKFLOWS =====
+    async function loadWorkflows() {
+      try {
+        showLoading(true);
+        
+        // Fetch workflows from your API
+        const response = await fetch(`${API_URL}?action=get-workflows`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to load workflows');
+        }
+        
+        const data = await response.json();
+        workflows = data.workflows || [];
+        
+        // Populate workflow dropdown
+        const workflowSelect = document.getElementById('workflow');
+        workflows.forEach(workflow => {
+          const option = document.createElement('option');
+          option.value = workflow.id;
+          option.textContent = workflow.name;
+          option.dataset.description = workflow.description || '';
+          option.dataset.estimatedHours = workflow.estimatedHours || '';
+          workflowSelect.appendChild(option);
+        });
+        
+        showLoading(false);
+      } catch (error) {
+        console.error('Error loading workflows:', error);
+        showMessage('Failed to load workflows. Please refresh the page.', 'error');
+        showLoading(false);
+      }
+    }
+    
+    // ===== EVENT LISTENERS =====
+    function setupEventListeners() {
+      // Workflow selection change
+      document.getElementById('workflow').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const workflowInfo = document.getElementById('workflowInfo');
+        
+        if (this.value) {
+          const description = selectedOption.dataset.description;
+          const hours = selectedOption.dataset.estimatedHours;
+          
+          let infoText = '';
+          if (description) infoText += `<strong>Description:</strong> ${description}`;
+          if (hours) infoText += `<br><strong>Estimated Hours:</strong> ${hours}`;
+          
+          if (infoText) {
+            workflowInfo.innerHTML = infoText;
+            workflowInfo.classList.add('show');
+          } else {
+            workflowInfo.classList.remove('show');
+          }
+        } else {
+          workflowInfo.classList.remove('show');
+        }
+      });
+      
+      // Form submission
+      document.getElementById('projectForm').addEventListener('submit', handleSubmit);
+    }
+    
+    // ===== FORM SUBMISSION =====
+    async function handleSubmit(e) {
+      e.preventDefault();
+      
+      const customerName = document.getElementById('customerName').value.trim();
+      
+      if (!customerName) {
+        showMessage('Customer name is required', 'error');
+        return;
+      }
+      
+      try {
+        showLoading(true);
+        
+        // Gather form data
+        const formData = {
+          customerName: customerName,
+          instrumentMake: document.getElementById('instrumentMake').value.trim(),
+          instrumentModel: document.getElementById('instrumentModel').value.trim(),
+          finish: document.getElementById('finish').value.trim(),
+          color: document.getElementById('color').value.trim(),
+          tuning: document.getElementById('tuning').value.trim(),
+          stringGauge: document.getElementById('stringGauge').value.trim(),
+          stringBrand: document.getElementById('stringBrand').value.trim(),
+          workflowId: document.getElementById('workflow').value,
+          dueDate: document.getElementById('dueDate').value,
+          intakeNotes: document.getElementById('intakeNotes').value.trim(),
+          status: 'On The Bench'
+        };
+        
+        // Send to API
+        const response = await fetch(`${API_URL}?action=create-project`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create project');
+        }
+        
+        const result = await response.json();
+        
+        showLoading(false);
+        showMessage('✓ Project created successfully!', 'success');
+        
+        // Reset form after short delay
+        setTimeout(() => {
+          document.getElementById('projectForm').reset();
+          document.getElementById('workflowInfo').classList.remove('show');
+          // Optionally redirect to view projects
+          // window.location.href = 'view-projects.html';
+        }, 1500);
+        
+      } catch (error) {
+        console.error('Error creating project:', error);
+        showLoading(false);
+        showMessage('Failed to create project. Please try again.', 'error');
+      }
+    }
+    
+    // ===== UTILITY FUNCTIONS =====
+    function showLoading(show) {
+      const overlay = document.getElementById('loadingOverlay');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      if (show) {
+        overlay.classList.add('show');
+        submitBtn.disabled = true;
+      } else {
+        overlay.classList.remove('show');
+        submitBtn.disabled = false;
+      }
+    }
+    
+    function showMessage(text, type) {
+      const messageEl = document.getElementById('message');
+      messageEl.textContent = text;
+      messageEl.className = `message ${type} show`;
+      
+      setTimeout(() => {
+        messageEl.classList.remove('show');
+      }, 4000);
+    }
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('dueDate').setAttribute('min', today);
+  </script>
+</body>
+</html>
