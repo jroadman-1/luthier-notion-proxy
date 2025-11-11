@@ -405,8 +405,15 @@
 
   <script>
     // ===== CONFIGURATION =====
-    // Replace this with your Vercel API URL
+    // 🚨 IMPORTANT: Replace this with your actual Vercel API URL
+    // Example: 'https://your-project.vercel.app/api/notion-proxy'
+    // You can find this in your Vercel dashboard under your deployment URL
     const API_URL = 'YOUR_VERCEL_API_URL_HERE';
+    
+    // Check if API URL is configured
+    if (API_URL === 'YOUR_VERCEL_API_URL_HERE') {
+      alert('⚠️ API URL not configured!\n\nPlease edit new-project.html and replace YOUR_VERCEL_API_URL_HERE with your actual Vercel API URL.\n\nExample:\nhttps://your-project.vercel.app/api/notion-proxy');
+    }
     
     // ===== STATE =====
     let workflows = [];
