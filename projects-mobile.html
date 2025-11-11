@@ -385,7 +385,7 @@
   </div>
 
   <div class="button-group">
-    <button type="button" class="btn btn-secondary" onclick="window.location.href='view-projects.html'">
+    <button type="button" class="btn btn-secondary" onclick="window.history.back()">
       Cancel
     </button>
     <button type="submit" form="projectForm" class="btn btn-primary" id="submitBtn">
@@ -417,15 +417,26 @@
       try {
         showLoading(true);
         
-        // Fetch workflows from your API
-        const response = await fetch(`${API_URL}?action=get-workflows`);
+        // Use your existing workflows endpoint
+        const response = await fetch(`${API_URL}?action=workflows`);
         
         if (!response.ok) {
-          throw new Error('Failed to load workflows');
+          throw new Error(`API returned ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
+        
+        // Check if there's an error in the response
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
         workflows = data.workflows || [];
+        
+        if (workflows.length === 0) {
+          console.warn('No workflows found in database');
+          showMessage('⚠️ No workflows found. You can still create a project without selecting a workflow.', 'error');
+        }
         
         // Populate workflow dropdown
         const workflowSelect = document.getElementById('workflow');
@@ -433,15 +444,28 @@
           const option = document.createElement('option');
           option.value = workflow.id;
           option.textContent = workflow.name;
-          option.dataset.description = workflow.description || '';
-          option.dataset.estimatedHours = workflow.estimatedHours || '';
+          
+          // Parse workflow data to show info
+          if (workflow.data) {
+            try {
+              const workflowData = JSON.parse(workflow.data);
+              if (Array.isArray(workflowData)) {
+                const totalHours = workflowData.reduce((sum, item) => sum + (item.estimatedHours || 0), 0);
+                option.dataset.description = `${workflowData.length} milestone${workflowData.length !== 1 ? 's' : ''}`;
+                option.dataset.estimatedHours = totalHours > 0 ? `${totalHours} hours` : '';
+              }
+            } catch (e) {
+              console.warn('Could not parse workflow data:', e);
+            }
+          }
+          
           workflowSelect.appendChild(option);
         });
         
         showLoading(false);
       } catch (error) {
         console.error('Error loading workflows:', error);
-        showMessage('Failed to load workflows. Please refresh the page.', 'error');
+        showMessage(`⚠️ Could not load workflows: ${error.message}\n\nYou can still create projects without selecting a workflow.`, 'error');
         showLoading(false);
       }
     }
