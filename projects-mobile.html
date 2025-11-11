@@ -31,6 +31,7 @@
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
+      padding-bottom: 80px;
     }
 
     .header {
@@ -38,6 +39,9 @@
       color: white;
       padding: 20px;
       text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
       box-shadow: 0 2px 8px var(--shadow);
     }
 
@@ -154,12 +158,16 @@
     }
 
     .button-group {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       background: white;
       padding: 16px;
       box-shadow: 0 -2px 8px var(--shadow);
       display: flex;
       gap: 12px;
-      margin-top: 20px;
+      z-index: 100;
     }
 
     .btn {
@@ -234,7 +242,7 @@
 
     .message {
       position: fixed;
-      top: 20px;
+      top: 80px;
       left: 16px;
       right: 16px;
       padding: 16px;
@@ -357,10 +365,11 @@
           📋 Project Details
         </div>
         <div class="form-group">
-          <label for="workflow">Workflow</label>
-          <select id="workflow" name="workflow">
-            <option value="">Select a workflow...</option>
+          <label for="workflow">Workflows</label>
+          <select id="workflow" name="workflow" multiple size="5">
+            <option value="">Loading workflows...</option>
           </select>
+          <div class="helper-text">Hold Ctrl (or Cmd on Mac) to select multiple workflows</div>
           <div id="workflowInfo" class="workflow-info"></div>
         </div>
         <div class="form-group">
@@ -466,16 +475,37 @@
     function setupEventListeners() {
       // Workflow selection change
       document.getElementById('workflow').addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
         const workflowInfo = document.getElementById('workflowInfo');
+        const selectedOptions = Array.from(this.selectedOptions);
         
-        if (this.value) {
-          const description = selectedOption.dataset.description;
-          const hours = selectedOption.dataset.estimatedHours;
-          
+        if (selectedOptions.length > 0 && selectedOptions[0].value !== '') {
           let infoText = '';
-          if (description) infoText += `<strong>Description:</strong> ${description}`;
-          if (hours) infoText += `<br><strong>Estimated Hours:</strong> ${hours}`;
+          let totalHours = 0;
+          let totalMilestones = 0;
+          
+          selectedOptions.forEach((option, index) => {
+            const description = option.dataset.description;
+            const hours = option.dataset.estimatedHours;
+            
+            if (index > 0) infoText += '<br><br>';
+            infoText += `<strong>${option.textContent}:</strong><br>`;
+            if (description) infoText += `${description}`;
+            if (hours) {
+              infoText += ` • ${hours}`;
+              const hoursNum = parseFloat(hours);
+              if (!isNaN(hoursNum)) totalHours += hoursNum;
+            }
+            
+            // Parse milestone count from description
+            const milestoneMatch = description?.match(/(\d+) milestone/);
+            if (milestoneMatch) {
+              totalMilestones += parseInt(milestoneMatch[1]);
+            }
+          });
+          
+          if (selectedOptions.length > 1) {
+            infoText += `<br><br><strong>Combined Total:</strong> ${totalMilestones} milestones • ${totalHours} hours`;
+          }
           
           if (infoText) {
             workflowInfo.innerHTML = infoText;
@@ -506,6 +536,12 @@
       try {
         showLoading(true);
         
+        // Get selected workflows
+        const workflowSelect = document.getElementById('workflow');
+        const selectedWorkflows = Array.from(workflowSelect.selectedOptions)
+          .filter(opt => opt.value !== '')
+          .map(opt => opt.value);
+        
         // Gather form data using EXACT field names from your existing API
         const formData = {
           name: name,
@@ -520,13 +556,7 @@
           status: 'On The Bench'
         };
         
-        // Add workflow as a relation if selected
-        const workflowId = document.getElementById('workflow').value;
-        if (workflowId) {
-          formData.workflowId = workflowId;
-        }
-        
-        // Send to API
+        // Create the project first
         const response = await fetch(`${API_URL}?action=create-project`, {
           method: 'POST',
           headers: {
@@ -540,9 +570,19 @@
         }
         
         const result = await response.json();
+        const projectId = result.project?.id;
+        
+        if (!projectId) {
+          throw new Error('Project created but no ID returned');
+        }
+        
+        // If workflows selected, create milestones from them
+        if (selectedWorkflows.length > 0) {
+          await createMilestonesFromWorkflows(projectId, selectedWorkflows);
+        }
         
         showLoading(false);
-        showMessage('✓ Project created successfully!', 'success');
+        showMessage(`✓ Project created successfully!${selectedWorkflows.length > 0 ? ' Milestones added from workflows.' : ''}`, 'success');
         
         // Reset form after short delay
         setTimeout(() => {
@@ -550,12 +590,73 @@
           document.getElementById('workflowInfo').classList.remove('show');
           // Optionally redirect to view projects
           // window.location.href = 'view-projects.html';
-        }, 1500);
+        }, 2000);
         
       } catch (error) {
         console.error('Error creating project:', error);
         showLoading(false);
         showMessage('Failed to create project. Please try again.', 'error');
+      }
+    }
+    
+    // ===== CREATE MILESTONES FROM WORKFLOWS =====
+    async function createMilestonesFromWorkflows(projectId, workflowIds) {
+      try {
+        // Get full workflow data for selected workflows
+        const selectedWorkflowData = workflows.filter(w => workflowIds.includes(w.id));
+        
+        // Collect all milestones from all selected workflows
+        let allMilestones = [];
+        let currentOrder = 1;
+        
+        for (const workflow of selectedWorkflowData) {
+          try {
+            const workflowMilestones = JSON.parse(workflow.data || '[]');
+            
+            // Add milestones with updated order
+            workflowMilestones.forEach(milestone => {
+              allMilestones.push({
+                name: milestone.name,
+                estimatedHours: milestone.estimatedHours || 1,
+                order: currentOrder++,
+                status: 'Not Started',
+                milestoneType: 'Individual',
+                includeInEstimate: true,
+                urgent: false
+              });
+            });
+          } catch (e) {
+            console.warn('Failed to parse workflow data for', workflow.name, e);
+          }
+        }
+        
+        if (allMilestones.length === 0) {
+          console.log('No milestones to create');
+          return;
+        }
+        
+        // Create milestones via API
+        const response = await fetch(`${API_URL}?action=create-milestones`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            projectId: projectId,
+            milestones: allMilestones
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create milestones');
+        }
+        
+        console.log(`Created ${allMilestones.length} milestones from ${selectedWorkflowData.length} workflow(s)`);
+        
+      } catch (error) {
+        console.error('Error creating milestones:', error);
+        // Don't throw - project was created successfully, just log the error
+        showMessage('⚠️ Project created but some milestones may not have been added', 'error');
       }
     }
     
