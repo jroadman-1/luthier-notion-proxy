@@ -5,115 +5,204 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Work Order - Luthier Services</title>
   <style>
-    @page { size: letter; margin: 0.5in; }
+    @page { size: letter; margin: 0.4in; }
     * { box-sizing: border-box; }
     body {
       font-family: 'Times New Roman', serif;
-      margin: 0; padding: 0; color: #333; line-height: 1.4; font-size: 12px;
+      margin: 0; padding: 0; color: #333; line-height: 1.3; font-size: 11px;
     }
-    .report-container { max-width: 8.5in; margin: 0 auto; background: white; min-height: 11in; }
+    .report-container { 
+      max-width: 8.5in; 
+      margin: 0 auto; 
+      background: white; 
+      padding: 10px;
+    }
 
-    /* Letterhead Section */
+    /* Compact Letterhead */
     .letterhead {
-      border-bottom: 3px solid #2c3e50; margin-bottom: 20px; padding-bottom: 15px;
-      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 2px solid #2c3e50; 
+      margin-bottom: 12px; 
+      padding-bottom: 8px;
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between;
     }
     .logo-section {
-      flex: 0 0 120px; height: 80px; background: #f8f9fa; border: none;
-      display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; text-align: center;
-    }
-    .company-info { flex: 1; text-align: center; margin: 0 20px; }
-    .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 5px; }
-    .company-tagline { font-size: 14px; color: #666; font-style: italic; margin-bottom: 8px; }
-    .contact-info { font-size: 11px; color: #555; }
-    .report-date { flex: 0 0 140px; text-align: right; font-size: 11px; color: #444; line-height: 1.6; }
-
-    /* Project Header */
-    .project-header { background: #f8f9fa; padding: 15px; border: 1px solid #dee2e6; border-radius: 4px; margin-bottom: 20px; }
-    .project-title { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-align: center; }
-    .project-basic-info { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 15px; }
-    .info-item { display: flex; flex-direction: column; }
-    .info-label { font-weight: bold; font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 3px; }
-    .info-value { font-size: 13px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 2px; min-height: 16px; }
-
-    /* Two Column Layout */
-    .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 20px; }
-    .left-column, .right-column { min-height: 400px; }
-
-    /* Section Styling */
-    .section { margin-bottom: 20px; break-inside: avoid; }
-    .section-title { font-size: 14px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 3px; margin-bottom: 10px; }
-    
-    /* Remove fixed heights and let content flow naturally */
-    .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 15px; align-items: start; }
-
-    /* Measurements Table */
-    .measurements-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px; }
-    .measurements-table th { background: #f8f9fa; padding: 6px 4px; text-align: left; border: 1px solid #dee2e6; font-weight: bold; font-size: 9px; }
-    .measurements-table td { padding: 6px 4px; border: 1px solid #dee2e6; text-align: center; }
-    .measurements-table .measurement-name { text-align: left; font-weight: 500; }
-
-    /* Actions Checklist */
-    .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; }
-    .action-item { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
-    .checkbox { width: 12px; height: 12px; border: 1px solid #666; display: inline-block; position: relative; }
-    .checkbox.checked::after { content: '✓'; position: absolute; left: 1px; top: -2px; font-size: 10px; font-weight: bold; }
-
-    /* Notes Section */
-    .notes-box {
-  border: 1px solid #dee2e6;
-  min-height: 80px;
-  padding: 10px;
-  background: #fafafa;
-  font-size: 11px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-
-  display: flex;          /* enable flexbox */
-  align-items: flex-start; /* anchor text at the top */
-  justify-content: flex-start; /* align text left */
-}
-
-    /* Signature Section */
-    .signature-section { margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-    .signature-box { text-align: center; }
-    .signature-line { border-bottom: 1px solid #333; width: 220px; margin: 0 auto 5px; height: 42px; }
-    .signature-label { font-size: 11px; color: #666; }
-
-    /* Billing Section - Simple horizontal layout */
-    .billing-section { 
+      flex: 0 0 80px; 
+      height: 60px; 
       background: #f8f9fa; 
-      border: 1px solid #dee2e6; 
-      border-radius: 4px; 
-      padding: 15px; 
-      margin-top: 15px;
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 9px; 
+      color: #666;
     }
-    .billing-title { 
-      font-size: 14px; 
+    .company-info { flex: 1; text-align: center; margin: 0 15px; }
+    .company-name { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 3px; }
+    .company-tagline { font-size: 11px; color: #666; font-style: italic; margin-bottom: 4px; }
+    .contact-info { font-size: 9px; color: #555; }
+    .report-date { flex: 0 0 100px; text-align: right; font-size: 9px; color: #444; line-height: 1.4; }
+
+    /* Compact Project Header */
+    .project-header { 
+      background: #f8f9fa; 
+      padding: 8px 12px; 
+      border: 1px solid #dee2e6; 
+      border-radius: 3px; 
+      margin-bottom: 12px; 
+    }
+    .project-title { font-size: 14px; font-weight: bold; color: #2c3e50; margin-bottom: 6px; text-align: center; }
+    .project-basic-info { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .info-item { display: flex; flex-direction: column; }
+    .info-label { font-weight: bold; font-size: 8px; color: #666; text-transform: uppercase; margin-bottom: 2px; }
+    .info-value { font-size: 10px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 1px; min-height: 14px; }
+
+    /* Two Column Layout - Tighter */
+    .main-content { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 20px; 
+      margin-bottom: 12px; 
+    }
+
+    /* Section Styling - Compact */
+    .section { margin-bottom: 12px; break-inside: avoid; }
+    .section-title { 
+      font-size: 11px; 
       font-weight: bold; 
       color: #2c3e50; 
+      border-bottom: 1.5px solid #2c3e50; 
+      padding-bottom: 2px; 
+      margin-bottom: 6px; 
       text-transform: uppercase;
-      margin: 0;
-      border-bottom: 2px solid #2c3e50; 
-      padding-bottom: 3px; 
-      margin-bottom: 10px;
     }
-    .billing-content {
+
+    /* Measurements Table - Compact */
+    .measurements-table { width: 100%; border-collapse: collapse; font-size: 8px; margin-bottom: 8px; }
+    .measurements-table th { 
+      background: #f8f9fa; 
+      padding: 3px 2px; 
+      text-align: left; 
+      border: 1px solid #dee2e6; 
+      font-weight: bold; 
+      font-size: 7px; 
+    }
+    .measurements-table td { padding: 3px 2px; border: 1px solid #dee2e6; text-align: center; font-size: 8px; }
+    .measurements-table .measurement-name { text-align: left; font-weight: 500; }
+
+    /* Specs Grid - More Compact */
+    .specs-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 4px 8px; 
+      font-size: 9px; 
+      margin-bottom: 8px;
+    }
+    .spec-item { display: flex; gap: 4px; }
+    .spec-label { font-weight: bold; color: #666; min-width: 60px; }
+    .spec-value { color: #333; }
+
+    /* Actions Checklist - Compact */
+    .actions-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 3px; 
+      font-size: 9px; 
+    }
+    .action-item { display: flex; align-items: center; gap: 5px; padding: 1px 0; }
+    .checkbox { 
+      width: 10px; 
+      height: 10px; 
+      border: 1px solid #666; 
+      display: inline-block; 
+      position: relative; 
+      flex-shrink: 0;
+    }
+    .checkbox.checked::after { 
+      content: '✓'; 
+      position: absolute; 
+      left: 1px; 
+      top: -2px; 
+      font-size: 8px; 
+      font-weight: bold; 
+    }
+
+    /* Notes Section - Compact */
+    .notes-box {
+      border: 1px solid #dee2e6;
+      min-height: 50px;
+      max-height: 80px;
+      padding: 6px;
+      background: #fafafa;
+      font-size: 9px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      overflow: hidden;
+    }
+
+    /* Billing Section - Prominent but Compact */
+    .billing-section { 
+      background: #f8f9fa; 
+      border: 2px solid #2c3e50; 
+      border-radius: 3px; 
+      padding: 8px 12px; 
+      margin-top: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+    .billing-label { 
+      font-size: 12px; 
+      font-weight: bold; 
+      color: #2c3e50; 
+      text-transform: uppercase;
     }
     .billing-amount { 
       font-size: 16px; 
       font-weight: bold; 
       color: #2c3e50; 
-      margin: 0;
     }
 
+    /* Signature Section - Compact */
+    .signature-section { 
+      margin-top: 15px; 
+      padding-top: 10px; 
+      border-top: 1px solid #dee2e6;
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 20px; 
+    }
+    .signature-box { text-align: center; }
+    .signature-line { 
+      border-bottom: 1px solid #333; 
+      width: 180px; 
+      margin: 0 auto 3px; 
+      height: 30px; 
+    }
+    .signature-label { font-size: 9px; color: #666; }
+
     /* Print Button */
-    .print-button { position: fixed; top: 10px; right: 10px; background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .print-button { 
+      position: fixed; 
+      top: 10px; 
+      right: 10px; 
+      background: #007bff; 
+      color: white; 
+      border: none; 
+      padding: 8px 16px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 12px;
+      z-index: 1000;
+    }
     .print-button:hover { background: #0056b3; }
-    @media print { .print-button { display: none; } .section { break-inside: avoid; } }
+    
+    @media print { 
+      .print-button { display: none; } 
+      .report-container { padding: 0; }
+      .section { break-inside: avoid; }
+      body { font-size: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -123,24 +212,26 @@
     <!-- Letterhead -->
     <header class="letterhead">
       <div class="logo-section">
-  <img src="data:image/png;base64,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" alt="Roadman Guitars Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-</div>
+        LOGO<br>AREA
+      </div>
       <div class="company-info">
-        <div class="company-name">Roadman Guitars</div>
-        <div class="company-tagline">Professional Guitar Setup & Repair</div>
-        <div class="contact-info">San Antonio, Texas • (210) 764-3738 • roadmanguitars@gmail.com</div>
+        <div class="company-name">ROADMAN GUITARS</div>
+        <div class="company-tagline">Expert Luthier Services</div>
+        <div class="contact-info">
+          123 Music Lane | Austin, TX 78701 | (512) 555-ROCK | info@roadmanguitars.com
+        </div>
       </div>
       <div class="report-date">
-        <strong>Service Date:</strong><br>
-        <span id="svcDate"></span><br><br>
-        <strong>Project ID:</strong><br>
+        <strong>SERVICE DATE</strong><br>
+        <span id="svcDate"></span><br>
+        <strong>PROJECT</strong><br>
         <span id="projId"></span>
       </div>
     </header>
 
     <!-- Project Header -->
     <div class="project-header">
-      <div class="project-title">WORK ORDER COMPLETION REPORT</div>
+      <div class="project-title">WORK ORDER</div>
       <div class="project-basic-info">
         <div class="info-item">
           <div class="info-label">Customer</div>
@@ -151,39 +242,29 @@
           <div class="info-value" id="instrumentName"></div>
         </div>
         <div class="info-item">
-          <div class="info-label">Status</div>
-          <div class="info-value" id="statusText"></div>
-        </div>
-      </div>
-      <div class="project-basic-info">
-        <div class="info-item">
-          <div class="info-label">Store</div>
-          <div class="info-value" id="storeName"></div>
-        </div>
-        <div class="info-item">
           <div class="info-label">Serial Number</div>
           <div class="info-value" id="serialNumberText"></div>
         </div>
         <div class="info-item">
-          <div class="info-label">Finish</div>
-          <div class="info-value" id="finishText"></div>
+          <div class="info-label">Status</div>
+          <div class="info-value" id="statusText"></div>
         </div>
       </div>
     </div>
 
-    <!-- Main Content Grid -->
+    <!-- Two Column Content -->
     <div class="main-content">
       <!-- Left Column -->
       <div class="left-column">
         <!-- Measurements -->
         <div class="section">
-          <div class="section-title">SETUP MEASUREMENTS</div>
+          <div class="section-title">Measurements</div>
           <table class="measurements-table">
             <thead>
               <tr>
-                <th>Measurement</th>
-                <th>Before</th>
-                <th>After</th>
+                <th style="width: 50%">Measurement</th>
+                <th style="width: 25%">Before</th>
+                <th style="width: 25%">After</th>
               </tr>
             </thead>
             <tbody>
@@ -216,71 +297,104 @@
           </table>
         </div>
 
-        <!-- Instrument Details -->
+        <!-- Specifications -->
         <div class="section">
-          <div class="section-title">INSTRUMENT SPECIFICATIONS</div>
-          <div style="display: grid; grid-template-columns: 120px 1fr 120px 1fr; gap: 10px; font-size: 11px; align-items: baseline;">
-            <strong>Type:</strong> <span id="spec_type"></span>
-            
-            <strong>Strings:</strong> <span id="spec_strings"></span>
-            
-            <strong>Tuning:</strong> <span id="spec_tuning"></span>
-            
-            
-            <span></span><span></span>
+          <div class="section-title">Specifications</div>
+          <div class="specs-grid">
+            <div class="spec-item">
+              <span class="spec-label">Type:</span>
+              <span class="spec-value" id="spec_type"></span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Finish:</span>
+              <span class="spec-value" id="spec_finish"></span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Strings:</span>
+              <span class="spec-value" id="spec_strings"></span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Tuning:</span>
+              <span class="spec-value" id="spec_tuning"></span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Radius:</span>
+              <span class="spec-value" id="spec_radius"></span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Fretwire:</span>
+              <span class="spec-value" id="spec_fretwire"></span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Tremolo:</span>
+              <span class="spec-value" id="spec_tremolo"></span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Due Date:</span>
+              <span class="spec-value" id="spec_due"></span>
+            </div>
           </div>
         </div>
 
-        <!-- Customer Notes -->
+        <!-- Customer Request -->
         <div class="section">
-          <div class="section-title">CUSTOMER REQUEST</div>
+          <div class="section-title">Customer Request</div>
           <div class="notes-box" id="customerNotesBox"></div>
         </div>
       </div>
 
       <!-- Right Column -->
       <div class="right-column">
-        <!-- Services Performed -->
+        <!-- Standard Actions -->
         <div class="section">
-          <div class="section-title">SERVICES PERFORMED</div>
+          <div class="section-title">Standard Actions</div>
           <div class="actions-grid">
-            <div class="action-item"><span class="checkbox" id="act_heightRadius"></span><span>Adjusted Height and Radius</span></div>
-            <div class="action-item"><span class="checkbox" id="act_intonation"></span><span>Adjusted Intonation</span></div>
-            <div class="action-item"><span class="checkbox" id="act_pickupHeight"></span><span>Adjusted Pickup Height</span></div>
-            <div class="action-item"><span class="checkbox" id="act_trussRod"></span><span>Adjusted Truss Rod</span></div>
-            <div class="action-item"><span class="checkbox" id="act_stringSlots"></span><span>Adjusted String Slots</span></div>
-            <div class="action-item"><span class="checkbox" id="act_cleanPolish"></span><span>Cleaned and Polished</span></div>
-            <div class="action-item"><span class="checkbox" id="act_strings"></span><span>Installed and Stretched Strings</span></div>
-            <div class="action-item"><span class="checkbox" id="act_lubeSlots"></span><span>Lubricated String Slots</span></div>
-            <div class="action-item"><span class="checkbox" id="act_oilBoard"></span><span>Oiled Fretboard</span></div>
-            <div class="action-item"><span class="checkbox" id="act_polishFrets"></span><span>Polished Frets</span></div>
-            <div class="action-item"><span class="checkbox" id="act_testElectronics"></span><span>Tested Electronics</span></div>
-            <div class="action-item"><span class="checkbox" id="act_tightenHardware"></span><span>Tightened Hardware</span></div>
-            <div class="action-item"><span class="checkbox" id="act_tremoloTension"></span><span>Adjusted Tremolo Tension</span></div>
-            <div class="action-item"><span class="checkbox" id="act_neckAngle"></span><span>Adjusted Neck Angle</span></div>
+            <div class="action-item"><span class="checkbox" id="act_heightRadius"></span> Height/Radius</div>
+            <div class="action-item"><span class="checkbox" id="act_intonation"></span> Intonation</div>
+            <div class="action-item"><span class="checkbox" id="act_pickupHeight"></span> Pickup Height</div>
+            <div class="action-item"><span class="checkbox" id="act_trussRod"></span> Truss Rod</div>
+            <div class="action-item"><span class="checkbox" id="act_stringSlots"></span> String Slots</div>
+            <div class="action-item"><span class="checkbox" id="act_cleanPolish"></span> Clean/Polish</div>
+            <div class="action-item"><span class="checkbox" id="act_strings"></span> New Strings</div>
+            <div class="action-item"><span class="checkbox" id="act_lubeSlots"></span> Lube Slots</div>
+            <div class="action-item"><span class="checkbox" id="act_oilBoard"></span> Oil Fretboard</div>
+            <div class="action-item"><span class="checkbox" id="act_polishFrets"></span> Polish Frets</div>
+            <div class="action-item"><span class="checkbox" id="act_testElectronics"></span> Test Electronics</div>
+            <div class="action-item"><span class="checkbox" id="act_tightenHardware"></span> Tighten Hardware</div>
+            <div class="action-item"><span class="checkbox" id="act_tremoloTension"></span> Tremolo Tension</div>
+            <div class="action-item"><span class="checkbox" id="act_neckAngle"></span> Neck Angle</div>
           </div>
         </div>
 
         <!-- Additional Work -->
         <div class="section">
-          <div class="section-title">ADDITIONAL WORK PERFORMED</div>
+          <div class="section-title">Additional Work</div>
           <div class="notes-box" id="additionalWorkBox"></div>
         </div>
 
-        <!-- Notes Section -->
+        <!-- Notes -->
         <div class="section">
-          <div class="section-title">NOTES</div>
+          <div class="section-title">Tech Notes</div>
           <div class="notes-box" id="techNotesBox"></div>
         </div>
       </div>
     </div>
 
-    <!-- Billing Section at Bottom -->
-    <div class="billing-section" id="billingSection" style="display:none;">
-      <div class="billing-title">Billing</div>
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span>Total Amount:</span>
-        <span class="billing-amount" id="billingTotal">$0.00</span>
+    <!-- Billing Section -->
+    <div class="billing-section">
+      <span class="billing-label">Total Amount</span>
+      <span class="billing-amount" id="billingTotal">$0.00</span>
+    </div>
+
+    <!-- Signature Section -->
+    <div class="signature-section">
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <div class="signature-label">Customer Signature / Date</div>
+      </div>
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <div class="signature-label">Technician Signature / Date</div>
       </div>
     </div>
   </div>
@@ -295,15 +409,17 @@
 
     // Helpers
     const setText = (id, v) => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const s = (v ?? '');
-  // drop leading newlines that push text down inside .notes-box
-  el.textContent = typeof s === 'string' ? s.trim() : s;
-};
+      const el = document.getElementById(id);
+      if (!el) return;
+      const s = (v ?? '');
+      el.textContent = typeof s === 'string' ? s.trim() : s;
+    };
 
-
-    const setCheck = (id, on) => { const el = document.getElementById(id); if (el) el.classList.toggle('checked', !!on); };
+    const setCheck = (id, on) => { 
+      const el = document.getElementById(id); 
+      if (el) el.classList.toggle('checked', !!on); 
+    };
+    
     const inch = (x) => (x === '' || x == null || isNaN(parseFloat(x))) ? '' : (parseFloat(x).toFixed(3) + '"');
 
     // Letterhead
@@ -316,9 +432,7 @@
     setText('customerName', p.name || '');
     setText('instrumentName', instrumentName || p.instrumentType || '');
     setText('statusText', p.status || '');
-    setText('storeName', p.store || '');
     setText('serialNumberText', p.serialNumber || '');
-    setText('finishText', p.instrumentFinish || '');
 
     // Measurements
     setText('m_relief_before', inch(p.neckReliefBefore));
@@ -334,6 +448,7 @@
 
     // Specs
     setText('spec_type', p.instrumentType || '');
+    setText('spec_finish', p.instrumentFinish || '');
     setText('spec_strings', [p.stringBrand, p.stringGauge].filter(Boolean).join(' ') || '');
     setText('spec_tuning', p.tuning || '');
     setText('spec_radius', (p.fretboardRadius != null && p.fretboardRadius !== '') ? (p.fretboardRadius + '"') : '');
@@ -346,16 +461,12 @@
       setText('spec_due', '');
     }
 
-    // Notes - Customer Request (intake notes)
+    // Notes
     setText('customerNotesBox', p.intakeNotes || '');
-
-    // Additional Work - Connected to additionalActions field
     setText('additionalWorkBox', p.additionalActions || '');
-
-    // Technician Notes - Future connection to new notes field
     setText('techNotesBox', p.notes || '');
 
-    // Actions (Standard Actions)
+    // Actions
     const a = p.actions || {};
     setCheck('act_heightRadius', !!a.adjustedHeightRadius);
     setCheck('act_intonation', !!a.adjustedIntonation);
@@ -372,14 +483,57 @@
     setCheck('act_tremoloTension', !!a.adjustedTremoloTension);
     setCheck('act_neckAngle', !!a.adjustedNeckAngle);
 
-    // Billing - Show only if there's a total amount
-    const total = (p.total != null) ? parseFloat(p.total) : null;
-    if (total != null && !isNaN(total) && total > 0) {
-      const billingSection = document.getElementById('billingSection');
-      if (billingSection) {
-        billingSection.style.display = 'block';
-        setText('billingTotal', '$' + total.toFixed(2));
-      }
+    // ====== BILLING - AUTO-POPULATE FROM ESTIMATE ======
+    // This pulls the total from the estimate page calculation
+    // The estimate page calculates: workflows + parts - discount = total
+    
+    // Option 1: Pull from stored project total if it exists
+    let billingTotal = (p.total != null) ? parseFloat(p.total) : null;
+    
+    // Option 2: Recalculate from estimate data for accuracy
+    if (!billingTotal || isNaN(billingTotal)) {
+      const HOURLY_RATE = 65;
+      let subtotal = 0;
+      
+      // Calculate workflow costs
+      const workflowGroups = {};
+      ms.forEach(milestone => {
+        if (milestone.workflowGroupId) {
+          if (!workflowGroups[milestone.workflowGroupId]) {
+            workflowGroups[milestone.workflowGroupId] = {
+              name: milestone.workflowGroupName,
+              totalHours: 0
+            };
+          }
+          workflowGroups[milestone.workflowGroupId].totalHours += parseFloat(milestone.estimatedHours) || 0;
+        } else {
+          // Standalone milestone
+          subtotal += (parseFloat(milestone.estimatedHours) || 0) * HOURLY_RATE;
+        }
+      });
+      
+      // Add workflow group costs
+      Object.values(workflowGroups).forEach(group => {
+        subtotal += group.totalHours * HOURLY_RATE;
+      });
+      
+      // Add parts costs
+      const parts = Array.isArray(data.parts) ? data.parts : [];
+      parts.forEach(part => {
+        const quantity = parseFloat(part.quantity) || 0;
+        const pricePerItem = parseFloat(part.pricePerItem) || 0;
+        subtotal += quantity * pricePerItem;
+      });
+      
+      // Apply discount
+      const discountPercent = (p.discount != null && p.discount !== '') ? parseFloat(p.discount) : 0;
+      const discountAmount = (subtotal * discountPercent) / 100;
+      billingTotal = subtotal - discountAmount;
+    }
+    
+    // Display the total
+    if (billingTotal != null && !isNaN(billingTotal) && billingTotal > 0) {
+      setText('billingTotal', '$' + billingTotal.toFixed(2));
     }
   })();
   </script>
