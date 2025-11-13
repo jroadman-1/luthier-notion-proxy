@@ -263,31 +263,99 @@
     const itemsContainer = document.getElementById('estimateItems');
     let subtotal = 0;
 
-    // Filter and sort milestones - only include those marked for estimate
-    const sortedMilestones = ms
-      .filter(m => m && m.name && m.includeInEstimate !== false) // Only include milestones with names AND includeInEstimate is true (or undefined)
-      .sort((a, b) => (a.order || 0) - (b.order || 0)); // Sort by order
+    // Filter only billable milestones
+    const billableMilestones = ms.filter(m => m && m.name && m.includeInEstimate !== false);
 
-    if (sortedMilestones.length > 0) {
-      sortedMilestones.forEach(milestone => {
-        const estimatedHours = parseFloat(milestone.estimatedHours) || 0;
-        const cost = estimatedHours * HOURLY_RATE;
-        subtotal += cost;
+    if (billableMilestones.length > 0) {
+      // Group milestones by workflowGroupId
+      const workflowGroups = {};
+      const standaloneMilestones = [];
+      
+      billableMilestones.forEach(milestone => {
+        if (milestone.workflowGroupId) {
+          // Part of a workflow group
+          if (!workflowGroups[milestone.workflowGroupId]) {
+            workflowGroups[milestone.workflowGroupId] = {
+              name: milestone.workflowName || 'Workflow',
+              totalHours: 0,
+              milestones: [],
+              order: milestone.order || 999
+            };
+          }
+          workflowGroups[milestone.workflowGroupId].totalHours += parseFloat(milestone.estimatedHours) || 0;
+          workflowGroups[milestone.workflowGroupId].milestones.push(milestone);
+          // Use the lowest order from the group for sorting
+          workflowGroups[milestone.workflowGroupId].order = Math.min(
+            workflowGroups[milestone.workflowGroupId].order, 
+            milestone.order || 999
+          );
+        } else {
+          // Standalone milestone
+          standaloneMilestones.push(milestone);
+        }
+      });
 
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'estimate-item';
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'item-name';
-        nameDiv.textContent = milestone.name;
-        
-        const amountDiv = document.createElement('div');
-        amountDiv.className = 'item-amount';
-        amountDiv.textContent = '$' + cost.toFixed(2);
-        
-        itemDiv.appendChild(nameDiv);
-        itemDiv.appendChild(amountDiv);
-        itemsContainer.appendChild(itemDiv);
+      // Combine and sort: workflow groups and standalone milestones by order
+      const allItems = [
+        ...Object.keys(workflowGroups).map(groupId => ({
+          type: 'workflow',
+          groupId: groupId,
+          data: workflowGroups[groupId]
+        })),
+        ...standaloneMilestones.map(m => ({
+          type: 'milestone',
+          data: m
+        }))
+      ].sort((a, b) => {
+        const orderA = a.type === 'workflow' ? a.data.order : (a.data.order || 999);
+        const orderB = b.type === 'workflow' ? b.data.order : (b.data.order || 999);
+        return orderA - orderB;
+      });
+
+      // Render all items
+      allItems.forEach(item => {
+        if (item.type === 'workflow') {
+          // Render workflow group as single line item
+          const group = item.data;
+          const cost = group.totalHours * HOURLY_RATE;
+          subtotal += cost;
+
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'estimate-item';
+          
+          const nameDiv = document.createElement('div');
+          nameDiv.className = 'item-name';
+          nameDiv.textContent = group.name;
+          
+          const amountDiv = document.createElement('div');
+          amountDiv.className = 'item-amount';
+          amountDiv.textContent = '$' + cost.toFixed(2);
+          
+          itemDiv.appendChild(nameDiv);
+          itemDiv.appendChild(amountDiv);
+          itemsContainer.appendChild(itemDiv);
+        } else {
+          // Render standalone milestone
+          const milestone = item.data;
+          const estimatedHours = parseFloat(milestone.estimatedHours) || 0;
+          const cost = estimatedHours * HOURLY_RATE;
+          subtotal += cost;
+
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'estimate-item';
+          
+          const nameDiv = document.createElement('div');
+          nameDiv.className = 'item-name';
+          nameDiv.textContent = milestone.name;
+          
+          const amountDiv = document.createElement('div');
+          amountDiv.className = 'item-amount';
+          amountDiv.textContent = '$' + cost.toFixed(2);
+          
+          itemDiv.appendChild(nameDiv);
+          itemDiv.appendChild(amountDiv);
+          itemsContainer.appendChild(itemDiv);
+        }
       });
     } else {
       const emptyDiv = document.createElement('div');
