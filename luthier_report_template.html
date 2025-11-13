@@ -219,23 +219,10 @@
       color: #2c3e50; 
     }
 
-    /* Signature Section - Compact */
+    /* Signature Section - Hidden */
     .signature-section { 
-      margin-top: 15px; 
-      padding-top: 10px; 
-      border-top: 1px solid #dee2e6;
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 20px; 
+      display: none;
     }
-    .signature-box { text-align: center; }
-    .signature-line { 
-      border-bottom: 1px solid #333; 
-      width: 180px; 
-      margin: 0 auto 3px; 
-      height: 30px; 
-    }
-    .signature-label { font-size: 10px; color: #666; }
 
     /* Print Button */
     .print-button { 
@@ -548,19 +535,23 @@
     setCheck('act_neckAngle', !!a.adjustedNeckAngle);
 
     // ====== BILLING - AUTO-POPULATE FROM ESTIMATE WITH BREAKDOWN ======
-    const HOURLY_RATE = 65;
+    // Pull hourly rate from project data (stored in Notion), default to 100
+    const HOURLY_RATE = (p.hourlyRate != null && p.hourlyRate !== '') ? parseFloat(p.hourlyRate) : 100;
     let subtotal = 0;
     const billingBreakdownEl = document.getElementById('billingBreakdown');
+    
+    // Filter only billable milestones (matching estimate logic)
+    const billableMilestones = ms.filter(m => m && m.name && m.includeInEstimate !== false);
     
     // Group milestones by workflow
     const workflowGroups = {};
     const standaloneMilestones = [];
     
-    ms.forEach(milestone => {
+    billableMilestones.forEach(milestone => {
       if (milestone.workflowGroupId) {
         if (!workflowGroups[milestone.workflowGroupId]) {
           workflowGroups[milestone.workflowGroupId] = {
-            name: milestone.workflowGroupName,
+            name: milestone.workflowName || 'Workflow',
             totalHours: 0,
             order: milestone.order || 999
           };
