@@ -9,7 +9,7 @@
     * { box-sizing: border-box; }
     body {
       font-family: 'Times New Roman', serif;
-      margin: 0; padding: 0; color: #333; line-height: 1.3; font-size: 11px;
+      margin: 0; padding: 0; color: #333; line-height: 1.3; font-size: 12px;
     }
     .report-container { 
       max-width: 8.5in; 
@@ -38,10 +38,10 @@
       color: #666;
     }
     .company-info { flex: 1; text-align: center; margin: 0 15px; }
-    .company-name { font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 3px; }
-    .company-tagline { font-size: 11px; color: #666; font-style: italic; margin-bottom: 4px; }
-    .contact-info { font-size: 9px; color: #555; }
-    .report-date { flex: 0 0 100px; text-align: right; font-size: 9px; color: #444; line-height: 1.4; }
+    .company-name { font-size: 20px; font-weight: bold; color: #2c3e50; margin-bottom: 3px; }
+    .company-tagline { font-size: 12px; color: #666; font-style: italic; margin-bottom: 4px; }
+    .contact-info { font-size: 10px; color: #555; }
+    .report-date { flex: 0 0 100px; text-align: right; font-size: 10px; color: #444; line-height: 1.4; }
 
     /* Compact Project Header */
     .project-header { 
@@ -51,11 +51,11 @@
       border-radius: 3px; 
       margin-bottom: 12px; 
     }
-    .project-title { font-size: 14px; font-weight: bold; color: #2c3e50; margin-bottom: 6px; text-align: center; }
+    .project-title { font-size: 16px; font-weight: bold; color: #2c3e50; margin-bottom: 6px; text-align: center; }
     .project-basic-info { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
     .info-item { display: flex; flex-direction: column; }
-    .info-label { font-weight: bold; font-size: 8px; color: #666; text-transform: uppercase; margin-bottom: 2px; }
-    .info-value { font-size: 10px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 1px; min-height: 14px; }
+    .info-label { font-weight: bold; font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 2px; }
+    .info-value { font-size: 11px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 1px; min-height: 14px; }
 
     /* Two Column Layout - Tighter */
     .main-content { 
@@ -68,7 +68,7 @@
     /* Section Styling - Compact */
     .section { margin-bottom: 12px; break-inside: avoid; }
     .section-title { 
-      font-size: 11px; 
+      font-size: 12px; 
       font-weight: bold; 
       color: #2c3e50; 
       border-bottom: 1.5px solid #2c3e50; 
@@ -78,16 +78,16 @@
     }
 
     /* Measurements Table - Compact */
-    .measurements-table { width: 100%; border-collapse: collapse; font-size: 8px; margin-bottom: 8px; }
+    .measurements-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 8px; }
     .measurements-table th { 
       background: #f8f9fa; 
       padding: 3px 2px; 
       text-align: left; 
       border: 1px solid #dee2e6; 
       font-weight: bold; 
-      font-size: 7px; 
+      font-size: 9px; 
     }
-    .measurements-table td { padding: 3px 2px; border: 1px solid #dee2e6; text-align: center; font-size: 8px; }
+    .measurements-table td { padding: 3px 2px; border: 1px solid #dee2e6; text-align: center; font-size: 10px; }
     .measurements-table .measurement-name { text-align: left; font-weight: 500; }
 
     /* Specs Grid - More Compact */
@@ -95,7 +95,7 @@
       display: grid; 
       grid-template-columns: 1fr 1fr; 
       gap: 4px 8px; 
-      font-size: 9px; 
+      font-size: 10px; 
       margin-bottom: 8px;
     }
     .spec-item { display: flex; gap: 4px; }
@@ -107,7 +107,7 @@
       display: grid; 
       grid-template-columns: 1fr 1fr; 
       gap: 3px; 
-      font-size: 9px; 
+      font-size: 10px; 
     }
     .action-item { display: flex; align-items: center; gap: 5px; padding: 1px 0; }
     .checkbox { 
@@ -134,7 +134,7 @@
       max-height: 80px;
       padding: 6px;
       background: #fafafa;
-      font-size: 9px;
+      font-size: 10px;
       line-height: 1.4;
       white-space: pre-wrap;
       overflow: hidden;
@@ -145,20 +145,76 @@
       background: #f8f9fa; 
       border: 2px solid #2c3e50; 
       border-radius: 3px; 
-      padding: 8px 12px; 
+      padding: 10px 12px; 
       margin-top: 12px;
+    }
+    .billing-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .billing-title { 
+      font-size: 13px; 
+      font-weight: bold; 
+      color: #2c3e50; 
+      text-transform: uppercase;
+    }
+    .billing-breakdown {
+      margin-bottom: 8px;
+    }
+    .billing-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      font-size: 10px;
+      color: #555;
+    }
+    .billing-item-name {
+      flex: 1;
+    }
+    .billing-item-amount {
+      font-weight: 500;
+      color: #333;
+      min-width: 80px;
+      text-align: right;
+    }
+    .billing-subtotal {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      margin-top: 5px;
+      border-top: 1px solid #dee2e6;
+      font-size: 11px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .billing-discount {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      font-size: 10px;
+      color: #d9534f;
+      font-weight: 500;
+    }
+    .billing-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 0 0;
+      margin-top: 6px;
+      border-top: 2px solid #2c3e50;
     }
     .billing-label { 
-      font-size: 12px; 
+      font-size: 13px; 
       font-weight: bold; 
       color: #2c3e50; 
       text-transform: uppercase;
     }
     .billing-amount { 
-      font-size: 16px; 
+      font-size: 18px; 
       font-weight: bold; 
       color: #2c3e50; 
     }
@@ -179,7 +235,7 @@
       margin: 0 auto 3px; 
       height: 30px; 
     }
-    .signature-label { font-size: 9px; color: #666; }
+    .signature-label { font-size: 10px; color: #666; }
 
     /* Print Button */
     .print-button { 
@@ -382,8 +438,16 @@
 
     <!-- Billing Section -->
     <div class="billing-section">
-      <span class="billing-label">Total Amount</span>
-      <span class="billing-amount" id="billingTotal">$0.00</span>
+      <div class="billing-header">
+        <span class="billing-title">Billing Breakdown</span>
+      </div>
+      <div class="billing-breakdown" id="billingBreakdown">
+        <!-- Workflow and milestone items will be inserted here -->
+      </div>
+      <div class="billing-total">
+        <span class="billing-label">Total Amount</span>
+        <span class="billing-amount" id="billingTotal">$0.00</span>
+      </div>
     </div>
 
     <!-- Signature Section -->
@@ -483,52 +547,125 @@
     setCheck('act_tremoloTension', !!a.adjustedTremoloTension);
     setCheck('act_neckAngle', !!a.adjustedNeckAngle);
 
-    // ====== BILLING - AUTO-POPULATE FROM ESTIMATE ======
-    // This pulls the total from the estimate page calculation
-    // The estimate page calculates: workflows + parts - discount = total
+    // ====== BILLING - AUTO-POPULATE FROM ESTIMATE WITH BREAKDOWN ======
+    const HOURLY_RATE = 65;
+    let subtotal = 0;
+    const billingBreakdownEl = document.getElementById('billingBreakdown');
     
-    // Option 1: Pull from stored project total if it exists
-    let billingTotal = (p.total != null) ? parseFloat(p.total) : null;
+    // Group milestones by workflow
+    const workflowGroups = {};
+    const standaloneMilestones = [];
     
-    // Option 2: Recalculate from estimate data for accuracy
-    if (!billingTotal || isNaN(billingTotal)) {
-      const HOURLY_RATE = 65;
-      let subtotal = 0;
-      
-      // Calculate workflow costs
-      const workflowGroups = {};
-      ms.forEach(milestone => {
-        if (milestone.workflowGroupId) {
-          if (!workflowGroups[milestone.workflowGroupId]) {
-            workflowGroups[milestone.workflowGroupId] = {
-              name: milestone.workflowGroupName,
-              totalHours: 0
-            };
-          }
-          workflowGroups[milestone.workflowGroupId].totalHours += parseFloat(milestone.estimatedHours) || 0;
-        } else {
-          // Standalone milestone
-          subtotal += (parseFloat(milestone.estimatedHours) || 0) * HOURLY_RATE;
+    ms.forEach(milestone => {
+      if (milestone.workflowGroupId) {
+        if (!workflowGroups[milestone.workflowGroupId]) {
+          workflowGroups[milestone.workflowGroupId] = {
+            name: milestone.workflowGroupName,
+            totalHours: 0,
+            order: milestone.order || 999
+          };
         }
-      });
+        workflowGroups[milestone.workflowGroupId].totalHours += parseFloat(milestone.estimatedHours) || 0;
+        workflowGroups[milestone.workflowGroupId].order = Math.min(
+          workflowGroups[milestone.workflowGroupId].order, 
+          milestone.order || 999
+        );
+      } else {
+        standaloneMilestones.push(milestone);
+      }
+    });
+    
+    // Combine and sort items
+    const allItems = [
+      ...Object.keys(workflowGroups).map(groupId => ({
+        type: 'workflow',
+        data: workflowGroups[groupId],
+        order: workflowGroups[groupId].order
+      })),
+      ...standaloneMilestones.map(m => ({
+        type: 'milestone',
+        data: m,
+        order: m.order || 999
+      }))
+    ].sort((a, b) => a.order - b.order);
+    
+    // Render workflow and milestone items
+    allItems.forEach(item => {
+      if (item.type === 'workflow') {
+        const cost = item.data.totalHours * HOURLY_RATE;
+        subtotal += cost;
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'billing-item';
+        itemDiv.innerHTML = `
+          <span class="billing-item-name">${item.data.name}</span>
+          <span class="billing-item-amount">$${cost.toFixed(2)}</span>
+        `;
+        billingBreakdownEl.appendChild(itemDiv);
+      } else {
+        const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
+        const cost = estimatedHours * HOURLY_RATE;
+        subtotal += cost;
+        
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'billing-item';
+        itemDiv.innerHTML = `
+          <span class="billing-item-name">${item.data.name}</span>
+          <span class="billing-item-amount">$${cost.toFixed(2)}</span>
+        `;
+        billingBreakdownEl.appendChild(itemDiv);
+      }
+    });
+    
+    // Add parts
+    const parts = Array.isArray(data.parts) ? data.parts : [];
+    parts.forEach(part => {
+      const quantity = parseFloat(part.quantity) || 0;
+      const pricePerItem = parseFloat(part.pricePerItem) || 0;
+      const partTotal = quantity * pricePerItem;
+      subtotal += partTotal;
       
-      // Add workflow group costs
-      Object.values(workflowGroups).forEach(group => {
-        subtotal += group.totalHours * HOURLY_RATE;
-      });
-      
-      // Add parts costs
-      const parts = Array.isArray(data.parts) ? data.parts : [];
-      parts.forEach(part => {
-        const quantity = parseFloat(part.quantity) || 0;
-        const pricePerItem = parseFloat(part.pricePerItem) || 0;
-        subtotal += quantity * pricePerItem;
-      });
-      
-      // Apply discount
-      const discountPercent = (p.discount != null && p.discount !== '') ? parseFloat(p.discount) : 0;
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'billing-item';
+      const partName = part.name + (quantity > 1 ? ' (x' + quantity + ')' : '');
+      itemDiv.innerHTML = `
+        <span class="billing-item-name">${partName}</span>
+        <span class="billing-item-amount">$${partTotal.toFixed(2)}</span>
+      `;
+      billingBreakdownEl.appendChild(itemDiv);
+    });
+    
+    // Show subtotal if there are items
+    if (allItems.length > 0 || parts.length > 0) {
+      const subtotalDiv = document.createElement('div');
+      subtotalDiv.className = 'billing-subtotal';
+      subtotalDiv.innerHTML = `
+        <span>Subtotal</span>
+        <span>$${subtotal.toFixed(2)}</span>
+      `;
+      billingBreakdownEl.appendChild(subtotalDiv);
+    }
+    
+    // Apply discount
+    const discountPercent = (p.discount != null && p.discount !== '') ? parseFloat(p.discount) : 0;
+    let billingTotal = subtotal;
+    
+    if (discountPercent > 0) {
       const discountAmount = (subtotal * discountPercent) / 100;
       billingTotal = subtotal - discountAmount;
+      
+      const discountDiv = document.createElement('div');
+      discountDiv.className = 'billing-discount';
+      discountDiv.innerHTML = `
+        <span>Discount (${discountPercent}%)</span>
+        <span>-$${discountAmount.toFixed(2)}</span>
+      `;
+      billingBreakdownEl.appendChild(discountDiv);
+    }
+    
+    // Use stored total as fallback
+    if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
+      billingTotal = parseFloat(p.total);
     }
     
     // Display the total
