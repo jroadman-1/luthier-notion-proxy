@@ -372,7 +372,7 @@
     </div>
 
     <script>
-        const API_URL = '/api/notion-proxy';
+        const API_URL = 'https://luthier-notion-proxy.vercel.app/api/notion-proxy';
         
         let allWorkflows = [];
         let currentWorkflow = null;
@@ -393,18 +393,28 @@
 
         async function fetchHourlyRate() {
             try {
-                // Fetch from Parts database to get Hourly Rate
-                const response = await fetch(`${API_URL}?action=get-hourly-rate`);
-                if (response.ok) {
-                    const data = await response.json();
-                    hourlyRate = parseFloat(data.hourlyRate) || 0;
-                    console.log('Hourly rate loaded:', hourlyRate);
+                // Fetch all data including parts (same as mobile version)
+                const response = await fetch(`${API_URL}`);
+                if (!response.ok) throw new Error('Failed to load data');
+                
+                const data = await response.json();
+                const parts = data.parts || [];
+                
+                // Look for a part named "Hourly Rate" or "Labor Rate"
+                const hourlyRatePart = parts.find(p => 
+                    p.name?.toLowerCase() === 'hourly rate' || 
+                    p.name?.toLowerCase() === 'labor rate'
+                );
+                
+                if (hourlyRatePart && hourlyRatePart.pricePerItem) {
+                    hourlyRate = hourlyRatePart.pricePerItem;
+                    console.log(`Loaded hourly rate from Notion: $${hourlyRate}`);
                 } else {
-                    console.warn('Could not fetch hourly rate, using default 0');
+                    console.log('No hourly rate found in Parts database, using default: $0');
                     hourlyRate = 0;
                 }
             } catch (error) {
-                console.error('Error fetching hourly rate:', error);
+                console.warn('Could not load hourly rate from Notion, using default:', error);
                 hourlyRate = 0;
             }
         }
