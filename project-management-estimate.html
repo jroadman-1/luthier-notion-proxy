@@ -356,7 +356,15 @@
     function loadProjectMilestones(projectId) {
       currentMilestones = allMilestones
         .filter(m => m.projectId === projectId)
-        .sort((a, b) => a.order - b.order);
+        .sort((a, b) => a.order - b.order)
+        .map(m => ({
+          ...m,
+          // Ensure defaults for older milestones without these fields
+          urgent: m.urgent === true,  // default false
+          includeInEstimate: m.includeInEstimate !== false,  // default true (billable)
+          workflowGroupId: m.workflowGroupId || null,  // null = standalone
+          workflowName: m.workflowName || null
+        }));
     }
 
     function calculateTotalActualHours() {
@@ -888,7 +896,55 @@
         return '<div class="empty-state">No milestones yet. Add some below.</div>';
       }
 
-      return currentMilestones.map((milestone, index) => `
+      // Group milestones by workflowGroupId
+      const grouped = {};
+      const standalone = [];
+      
+      currentMilestones.forEach((milestone, index) => {
+        milestone._originalIndex = index; // Store original index for updates
+        
+        if (milestone.workflowGroupId) {
+          if (!grouped[milestone.workflowGroupId]) {
+            grouped[milestone.workflowGroupId] = {
+              name: milestone.workflowName || 'Workflow',
+              milestones: []
+            };
+          }
+          grouped[milestone.workflowGroupId].milestones.push(milestone);
+        } else {
+          standalone.push(milestone);
+        }
+      });
+
+      let html = '';
+      
+      // Render workflow groups
+      Object.keys(grouped).forEach(groupId => {
+        const group = grouped[groupId];
+        const totalHours = group.milestones.reduce((sum, m) => sum + (m.estimatedHours || 0), 0);
+        
+        html += `
+          <div class="workflow-group" style="margin-bottom: 20px; border: 2px solid #e3f2fd; border-radius: 8px; padding: 10px; background: #f8fbff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: #e3f2fd; border-radius: 4px;">
+              <strong style="color: #1976d2; font-size: 14px;">📋 ${escapeHtml(group.name)}</strong>
+              <span style="color: #666; font-size: 12px;">${group.milestones.length} milestones • ${totalHours}h total</span>
+            </div>
+            ${group.milestones.map(milestone => renderMilestoneRow(milestone)).join('')}
+          </div>
+        `;
+      });
+      
+      // Render standalone milestones
+      if (standalone.length > 0) {
+        html += standalone.map(milestone => renderMilestoneRow(milestone)).join('');
+      }
+      
+      return html;
+    }
+    
+    function renderMilestoneRow(milestone) {
+      const index = milestone._originalIndex;
+      return `
         <div class="milestone-row ${(milestone.status || 'Not Started').toLowerCase().replace(' ', '-')} ${milestone.urgent ? 'urgent' : ''}"
              draggable="true"
              data-milestone-index="${index}">
@@ -951,7 +1007,7 @@
             <button class="remove-milestone" onclick="removeMilestone(${index})" title="Remove milestone">×</button>
           </div>
         </div>
-      `).join('');
+      `;
     }
 
     function toggleMilestoneCompletion(index) {
@@ -1067,8 +1123,9 @@
         actualHours: 0,
         order: currentMilestones.length + 1,
         status: 'Not Started',
-        includeInEstimate: true,
-        urgent: false
+        includeInEstimate: true,  // billable checkbox
+        urgent: false,
+        workflowGroupId: null  // null = standalone milestone
       };
       currentMilestones.push(newMilestone);
       refreshMilestoneList();
@@ -1085,8 +1142,9 @@
           actualHours: 0,
           order: start + i + 1,
           status: 'Not Started',
-          includeInEstimate: true,
-          urgent: false
+          includeInEstimate: true,  // billable checkbox
+          urgent: false,
+          workflowGroupId: null  // null = standalone milestone
         });
       }
       refreshMilestoneList();
@@ -1244,17 +1302,32 @@
 
       try {
         const template = JSON.parse(workflow.data);
-        currentMilestones = template.map((ms, i) => ({
+        
+        // Generate unique workflow group ID
+        const workflowGroupId = `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const workflowName = workflow.name;
+        
+        // Create milestones with workflow group tracking
+        const newMilestones = template.map((ms, i) => ({
           id: null,
           name: ms.name,
           estimatedHours: ms.hours || ms.estimatedHours || 1,
           actualHours: 0,
-          order: i + 1,
-          status: i === 0 ? 'Ready' : 'Not Started'
+          order: currentMilestones.length + i + 1,
+          status: i === 0 ? 'Ready' : 'Not Started',
+          includeInEstimate: true,  // billable by default
+          urgent: false,  // not urgent by default
+          workflowGroupId: workflowGroupId,  // unique group ID
+          workflowName: workflowName  // store workflow name for display
         }));
+        
+        // Add to existing milestones instead of replacing
+        currentMilestones.push(...newMilestones);
+        
         refreshMilestoneList();
         switchMilestoneTab('individual');
         markChanged();
+        showMessage(`Added workflow: ${workflowName}`, 'success');
       } catch {
         showMessage('Invalid workflow data', 'error');
       }
@@ -1292,18 +1365,30 @@
       if (totalHours === 0) return;
 
       const hoursPerSession = totalHours / sessions;
-      currentMilestones = [];
+      
+      // Generate unique workflow group ID for auto-split sessions
+      const workflowGroupId = `autosplit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const newMilestones = [];
       for (let i = 1; i <= sessions; i++) {
         const hours = Math.round(hoursPerSession * 4) / 4;
-        currentMilestones.push({
+        newMilestones.push({
           id: null,
           name: `${baseName} ${i}`,
           estimatedHours: hours,
           actualHours: 0,
-          order: i,
-          status: i === 1 ? 'Ready' : 'Not Started'
+          order: currentMilestones.length + i,
+          status: i === 1 ? 'Ready' : 'Not Started',
+          includeInEstimate: true,  // billable by default
+          urgent: false,  // not urgent by default
+          workflowGroupId: workflowGroupId,  // unique group ID
+          workflowName: baseName  // store base name as workflow name
         });
       }
+      
+      // Add to existing milestones instead of replacing
+      currentMilestones.push(...newMilestones);
+      
       refreshMilestoneList();
       switchMilestoneTab('individual');
       markChanged();
