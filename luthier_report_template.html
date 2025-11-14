@@ -199,6 +199,14 @@
       color: #d9534f;
       font-weight: 500;
     }
+    .billing-tax {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      font-size: 10px;
+      color: #2c7a2c;
+      font-weight: 500;
+    }
     .billing-total {
       display: flex;
       justify-content: space-between;
@@ -652,6 +660,26 @@
         <span>-$${discountAmount.toFixed(2)}</span>
       `;
       billingBreakdownEl.appendChild(discountDiv);
+    }
+    
+    // Apply tax if Store is "In Person"
+    const store = p.store || '';
+    if (store === 'In Person') {
+      // Find tax rate from parts data
+      const taxRateEntry = parts.find(part => part.name === 'Tax Rate');
+      if (taxRateEntry && taxRateEntry.pricePerItem) {
+        const taxRate = parseFloat(taxRateEntry.pricePerItem) || 0;
+        const taxAmount = billingTotal * taxRate;
+        billingTotal += taxAmount;
+        
+        const taxDiv = document.createElement('div');
+        taxDiv.className = 'billing-tax';
+        taxDiv.innerHTML = `
+          <span>Tax (${(taxRate * 100).toFixed(3)}%)</span>
+          <span>$${taxAmount.toFixed(2)}</span>
+        `;
+        billingBreakdownEl.appendChild(taxDiv);
+      }
     }
     
     // Use stored total as fallback
