@@ -1876,6 +1876,11 @@ currentProject.additionalActions = document.getElementById('additionalActions')?
     }
     // Pull any on-screen edits into the object:
     syncEditorIntoCurrentProject();
+    
+    // Ensure taxAmount is synced (it may be stored as calculatedTaxAmount)
+    if (currentProject.calculatedTaxAmount && !currentProject.taxAmount) {
+      currentProject.taxAmount = currentProject.calculatedTaxAmount;
+    }
 
     // Attach milestones currently loaded for this project:
     const payload = {
