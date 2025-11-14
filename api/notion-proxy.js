@@ -220,7 +220,7 @@ async function createProject(res, notion, projectsDbId, data) {
     // Actions
     actions, additionalActions,
     // Billing fields
-    total, commission, discount, notes
+    total, commission, discount, taxAmount, notes
   } = data;
   
   console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
@@ -300,6 +300,11 @@ async function createProject(res, notion, projectsDbId, data) {
     // Add discount field (percentage as integer)
     if (discount !== undefined && discount !== null && discount !== '') {
       properties['Discount'] = { number: parseInt(discount) };
+    }
+    
+    // Add taxAmount field
+    if (taxAmount !== undefined && taxAmount !== null && taxAmount !== '') {
+      properties['taxAmount'] = { number: parseFloat(taxAmount) };
     }
 
     // Add measurement fields
@@ -560,6 +565,17 @@ async function updateProject(res, notion, projectsDbId, data) {
         console.log('Setting Discount:', updates.discount);
       }
     }
+    
+    // Add taxAmount field handling
+    if (updates.taxAmount !== undefined) {
+      if (updates.taxAmount === null || updates.taxAmount === '') {
+        properties['taxAmount'] = { number: null };
+        console.log('Clearing taxAmount');
+      } else {
+        properties['taxAmount'] = { number: parseFloat(updates.taxAmount) };
+        console.log('Setting taxAmount:', updates.taxAmount);
+      }
+    }
 
     // Measurement fields
     if (updates.neckReliefBefore !== undefined) {
@@ -780,6 +796,7 @@ function mapProject(page) {
     total: props['Total']?.number ?? null,
     commission: props['Commission']?.number ?? null,
     discount: props['Discount']?.number ?? null,
+    taxAmount: props['taxAmount']?.number ?? null,
     minusCommission: props['Minus Commission']?.formula?.number ?? null,
 
     // Dates for "days since worked"
