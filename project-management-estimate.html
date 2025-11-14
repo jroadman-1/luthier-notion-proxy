@@ -1772,6 +1772,7 @@ currentProject.additionalActions = document.getElementById('additionalActions')?
     const payload = {
       project: currentProject,
       milestones: currentMilestones || []
+      parts: currentParts || []  // ← ADD THIS LINE
     };
 
     // Save to localStorage and pop new window with the printable report:
