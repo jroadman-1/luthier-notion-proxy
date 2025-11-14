@@ -662,24 +662,22 @@
       billingBreakdownEl.appendChild(discountDiv);
     }
     
-    // Apply tax if Store is "In Person"
-    const store = p.store || '';
-    if (store === 'In Person') {
-      // Find tax rate from parts data
-      const taxRateEntry = parts.find(part => part.name === 'Tax Rate');
-      if (taxRateEntry && taxRateEntry.pricePerItem) {
-        const taxRate = parseFloat(taxRateEntry.pricePerItem) || 0;
-        const taxAmount = billingTotal * taxRate;
-        billingTotal += taxAmount;
-        
-        const taxDiv = document.createElement('div');
-        taxDiv.className = 'billing-tax';
-        taxDiv.innerHTML = `
-          <span>Tax (${(taxRate * 100).toFixed(3)}%)</span>
-          <span>$${taxAmount.toFixed(2)}</span>
-        `;
-        billingBreakdownEl.appendChild(taxDiv);
-      }
+    // Display tax if it exists (already calculated in project management)
+    const taxAmount = (p.taxAmount != null && p.taxAmount !== '') ? parseFloat(p.taxAmount) : 0;
+    if (taxAmount > 0) {
+      billingTotal += taxAmount;
+      
+      // Calculate tax rate for display purposes
+      const afterDiscount = subtotal - ((subtotal * discountPercent) / 100);
+      const taxRate = afterDiscount > 0 ? (taxAmount / afterDiscount) * 100 : 0;
+      
+      const taxDiv = document.createElement('div');
+      taxDiv.className = 'billing-tax';
+      taxDiv.innerHTML = `
+        <span>Tax (${taxRate.toFixed(3)}%)</span>
+        <span>$${taxAmount.toFixed(2)}</span>
+      `;
+      billingBreakdownEl.appendChild(taxDiv);
     }
     
     // Use stored total as fallback
