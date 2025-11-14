@@ -452,8 +452,9 @@
       document.getElementById('commissionAmountDisplay').textContent = '$' + commissionAmount.toFixed(2);
       document.getElementById('netAfterCommissionDisplay').textContent = '$' + netAfterCommission.toFixed(2);
       
-      // Store the calculated total in a hidden way for saving to Notion
+      // Store the calculated values for saving to Notion
       currentProject.calculatedTotal = total;
+      currentProject.calculatedTaxAmount = taxAmount;
       
       return {
         subtotal,
@@ -1617,8 +1618,9 @@
           intakeNotes: document.getElementById('intakeNotes').value,
           notes: document.getElementById('notes').value,
           
-          // Billing data - save calculated total and commission percentage
+          // Billing data - save calculated total, tax amount, and commission percentage
           total: currentProject.calculatedTotal || null,
+          taxAmount: currentProject.calculatedTaxAmount || null,
           commission: parseFloat(document.getElementById('commission').value) || null,  // This is now a percentage
           discount: parseInt(document.getElementById('discount').value) || null,
           
