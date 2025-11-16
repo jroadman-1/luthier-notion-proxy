@@ -420,9 +420,18 @@
       return 0;
     }
 
+    function getHourlyRate() {
+      // Find the "Hourly Rate" entry in allParts
+      const hourlyRateEntry = allParts.find(p => p.name === 'Hourly Rate');
+      if (hourlyRateEntry && hourlyRateEntry.pricePerItem) {
+        return parseFloat(hourlyRateEntry.pricePerItem) || 0;
+      }
+      return 100; // Default to $100/hour if not found
+    }
+
     function calculateBillingTotals() {
-      // Get hourly rate
-      const hourlyRate = currentProject.hourlyRate || 100;
+      // Get hourly rate from Parts database
+      const hourlyRate = getHourlyRate();
       
       // Calculate labor cost from billable milestones
       const billableMilestones = currentMilestones.filter(m => m.includeInEstimate !== false);
