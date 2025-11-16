@@ -310,8 +310,10 @@ async function createProject(res, notion, projectsDbId, data) {
     }
 
     // Add measurement fields
-    if (neckReliefBefore !== undefined && neckReliefBefore !== null) {
-      properties['Neck Relief Before'] = { number: neckReliefBefore };
+    if (neckReliefBefore !== undefined && neckReliefBefore !== null && neckReliefBefore !== '') {
+      properties['Neck Relief Before'] = { 
+        rich_text: [{ text: { content: String(neckReliefBefore) } }] 
+      };
     }
     if (before1stString1stFret !== undefined && before1stString1stFret !== null) {
       properties['Before 1st string at 1st fret'] = { number: before1stString1stFret };
@@ -325,8 +327,10 @@ async function createProject(res, notion, projectsDbId, data) {
     if (before6thString12thFret !== undefined && before6thString12thFret !== null) {
       properties['Before 6th string at 12th fret'] = { number: before6thString12thFret };
     }
-    if (neckReliefAfter !== undefined && neckReliefAfter !== null) {
-      properties['Neck Relief After'] = { number: neckReliefAfter };
+    if (neckReliefAfter !== undefined && neckReliefAfter !== null && neckReliefAfter !== '') {
+      properties['Neck Relief After'] = { 
+        rich_text: [{ text: { content: String(neckReliefAfter) } }] 
+      };
     }
     if (after1stString1stFret !== undefined && after1stString1stFret !== null) {
       properties['After 1st string at 1st fret'] = { number: after1stString1stFret };
@@ -585,7 +589,13 @@ async function updateProject(res, notion, projectsDbId, data) {
 
     // Measurement fields
     if (updates.neckReliefBefore !== undefined) {
-      properties['Neck Relief Before'] = updates.neckReliefBefore !== null ? { number: updates.neckReliefBefore } : { number: null };
+      if (updates.neckReliefBefore === null || updates.neckReliefBefore === '') {
+        properties['Neck Relief Before'] = { rich_text: [] };
+      } else {
+        properties['Neck Relief Before'] = { 
+          rich_text: [{ text: { content: String(updates.neckReliefBefore) } }] 
+        };
+      }
     }
     if (updates.before1stString1stFret !== undefined) {
       properties['Before 1st string at 1st fret'] = updates.before1stString1stFret !== null ? { number: updates.before1stString1stFret } : { number: null };
@@ -600,7 +610,13 @@ async function updateProject(res, notion, projectsDbId, data) {
       properties['Before 6th string at 12th fret'] = updates.before6thString12thFret !== null ? { number: updates.before6thString12thFret } : { number: null };
     }
     if (updates.neckReliefAfter !== undefined) {
-      properties['Neck Relief After'] = updates.neckReliefAfter !== null ? { number: updates.neckReliefAfter } : { number: null };
+      if (updates.neckReliefAfter === null || updates.neckReliefAfter === '') {
+        properties['Neck Relief After'] = { rich_text: [] };
+      } else {
+        properties['Neck Relief After'] = { 
+          rich_text: [{ text: { content: String(updates.neckReliefAfter) } }] 
+        };
+      }
     }
     if (updates.after1stString1stFret !== undefined) {
       properties['After 1st string at 1st fret'] = updates.after1stString1stFret !== null ? { number: updates.after1stString1stFret } : { number: null };
@@ -811,12 +827,12 @@ function mapProject(page) {
     createdTime: page.created_time,
 
     // Measurement fields
-    neckReliefBefore: props['Neck Relief Before']?.number ?? null,
+    neckReliefBefore: props['Neck Relief Before']?.rich_text?.[0]?.plain_text ?? null,
     before1stString1stFret: props['Before 1st string at 1st fret']?.number ?? null,
     before1stString12thFret: props['Before 1st string at 12th fret']?.number ?? null,
     before6thString1stFret: props['Before 6th string at 1st fret']?.number ?? null,
     before6thString12thFret: props['Before 6th string at 12th fret']?.number ?? null,
-    neckReliefAfter: props['Neck Relief After']?.number ?? null,
+    neckReliefAfter: props['Neck Relief After']?.rich_text?.[0]?.plain_text ?? null,
     after1stString1stFret: props['After 1st string at 1st fret']?.number ?? null,
     after1stString12thFret: props['After 1st string at 12th fret']?.number ?? null,
     after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
