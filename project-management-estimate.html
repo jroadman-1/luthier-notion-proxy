@@ -129,9 +129,8 @@
         Projects
         <div class="header-buttons">
           <select id="statusFilter" class="status-filter" onchange="filterProjectsByStatus()">
-            <option value="all">All Projects</option>
-            <option value="On the Bench">On the Bench</option>
-            <option value="Waiting">Waiting</option>
+            <option value="On The Bench">On the Bench</option>
+            <option value="On Deck">Waiting</option>
             <option value="Done">Done</option>
           </select>
           <button class="btn small success" onclick="createNewProject()">New</button>
@@ -319,19 +318,17 @@
         `;
       }
 
-      if (allProjects.length === 0 && !isNewProject) {
-        container.innerHTML = '<div class="empty-state">No projects found</div>';
-        return;
-      }
-
-      // Get selected filter
+      // Get selected filter - always filter, no "all" option
       const filterSelect = document.getElementById('statusFilter');
-      const filterValue = filterSelect ? filterSelect.value : 'all';
+      const filterValue = filterSelect ? filterSelect.value : 'On The Bench';
       
       // Filter projects based on status
-      const filteredProjects = filterValue === 'all' 
-        ? allProjects 
-        : allProjects.filter(project => project.status === filterValue);
+      const filteredProjects = allProjects.filter(project => project.status === filterValue);
+
+      if (filteredProjects.length === 0 && !isNewProject) {
+        container.innerHTML = '<div class="empty-state">No projects found with this status</div>';
+        return;
+      }
 
       filteredProjects.forEach(project => {
         const isActive = !isNewProject && currentProject && currentProject.id === project.id;
