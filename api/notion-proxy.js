@@ -109,11 +109,7 @@ async function handleDelete(req, res, notion) {
 // Get all projects and milestones for scheduling
 async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsDbId) {
   try {
-    // Get the status parameter from query string, default to "On The Bench"
-    const { status } = req.query || {};
-    const filterStatus = status || 'On The Bench';
-    
-    console.log(`getAllData called with status filter: "${filterStatus}"`);
+    console.log('getAllData called - fetching projects with active statuses');
     
     let allProjects = [];
     let hasMore = true;
@@ -123,24 +119,30 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsD
       const queryOptions = {
         database_id: projectsDbId,
         filter: {
-          property: 'Status',
-          select: {
-            equals: filterStatus
-          }
+          or: [
+            {
+              property: 'Status',
+              select: {
+                equals: 'On The Bench'
+              }
+            },
+            {
+              property: 'Status',
+              select: {
+                equals: 'On Deck'
+              }
+            },
+            {
+              property: 'Status',
+              select: {
+                equals: 'Done'
+              }
+            }
+          ]
         },
         page_size: 100,
         start_cursor: nextCursor
       };
-      
-      // Sort "On Deck" projects by creation date (oldest first)
-      if (filterStatus === 'On Deck') {
-        queryOptions.sorts = [
-          {
-            property: 'Date Created',
-            direction: 'ascending'
-          }
-        ];
-      }
       
       const projectsResponse = await notion.databases.query(queryOptions);
       
@@ -192,7 +194,7 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsD
     const milestones = allMilestones.map(mapMilestone);
     const parts = allParts.map(mapPart);
     
-    console.log(`API returning ${projects.length} projects with status "${filterStatus}", ${milestones.length} milestones, and ${parts.length} parts`);
+    console.log(`API returning ${projects.length} projects (On The Bench, On Deck, Done), ${milestones.length} milestones, and ${parts.length} parts`);
     
     return res.json({ projects, milestones, parts });
   } catch (error) {
