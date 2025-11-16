@@ -676,9 +676,9 @@
               </div>
               <div class="form-group full-width">
                 <label>Neck Relief Before</label>
-                <input type="number" step="0.001" id="neckReliefBefore" 
+                <input type="text" id="neckReliefBefore" 
                        value="${currentProject.neckReliefBefore || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
+                       onchange="markChanged()" placeholder="0.000 or Backbowed">
               </div>
               <div class="form-group">
                 <label>1st String at 1st Fret</label>
@@ -710,9 +710,9 @@
               </div>
               <div class="form-group full-width">
                 <label>Neck Relief After</label>
-                <input type="number" step="0.001" id="neckReliefAfter" 
+                <input type="text" id="neckReliefAfter" 
                        value="${currentProject.neckReliefAfter || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
+                       onchange="markChanged()" placeholder="0.000 or Backbowed">
               </div>
               <div class="form-group">
                 <label>1st String at 1st Fret</label>
@@ -1670,12 +1670,12 @@
           discount: parseInt(document.getElementById('discount').value) || null,
           
           // Measurement data
-          neckReliefBefore: parseFloat(document.getElementById('neckReliefBefore').value) || null,
+          neckReliefBefore: document.getElementById('neckReliefBefore').value || null,
           before1stString1stFret: parseFloat(document.getElementById('before1stString1stFret').value) || null,
           before1stString12thFret: parseFloat(document.getElementById('before1stString12thFret').value) || null,
           before6thString1stFret: parseFloat(document.getElementById('before6thString1stFret').value) || null,
           before6thString12thFret: parseFloat(document.getElementById('before6thString12thFret').value) || null,
-          neckReliefAfter: parseFloat(document.getElementById('neckReliefAfter').value) || null,
+          neckReliefAfter: document.getElementById('neckReliefAfter').value || null,
           after1stString1stFret: parseFloat(document.getElementById('after1stString1stFret').value) || null,
           after1stString12thFret: parseFloat(document.getElementById('after1stString12thFret').value) || null,
           after6thString1stFret: parseFloat(document.getElementById('after6thString1stFret').value) || null,
@@ -1865,13 +1865,13 @@
       return (v === '' || v == null) ? null : parseFloat(v);
     };
 
-    currentProject.neckReliefBefore = num('neckReliefBefore');
+    currentProject.neckReliefBefore = val('neckReliefBefore');
     currentProject.before1stString1stFret = num('before1stString1stFret');
     currentProject.before1stString12thFret = num('before1stString12thFret');
     currentProject.before6thString1stFret = num('before6thString1stFret');
     currentProject.before6thString12thFret = num('before6thString12thFret');
 
-    currentProject.neckReliefAfter = num('neckReliefAfter');
+    currentProject.neckReliefAfter = val('neckReliefAfter');
     currentProject.after1stString1stFret = num('after1stString1stFret');
     currentProject.after1stString12thFret = num('after1stString12thFret');
     currentProject.after6thString1stFret = num('after6thString1stFret');
