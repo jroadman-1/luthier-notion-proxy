@@ -1,1949 +1,1378 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Project Management - Luthier</title>
-  <style>
-    body{
-      font-family: Arial, sans-serif;max-width:1400px;margin:0 auto;padding:20px;background:#f5f5f5
+// /api/notion-proxy.js - Complete system API with billing fields including Discount
+const { Client } = require('@notionhq/client');
+
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  
+  try {
+    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+    
+    if (!NOTION_TOKEN || !NOTION_DATABASE_ID || !NOTION_MILESTONES_DATABASE_ID) {
+      return res.status(500).json({ error: 'Missing required environment variables' });
     }
-    .header{background:#2c3e50;color:#fff;padding:20px;border-radius:8px;text-align:center;margin-bottom:20px}
-    .main-container{display:grid;grid-template-columns:300px 1fr;gap:20px;height:calc(100vh - 140px)}
-    .projects-list{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);overflow-y:auto}
-    .projects-header{padding:15px;border-bottom:1px solid #eee;font-weight:bold;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px}
-    .header-buttons{display:flex;gap:5px}
-    .status-filter{padding:5px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff;cursor:pointer;min-width:130px}
-    .project-item{padding:12px 15px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:.2s}
-    .project-item:hover{background:#f8f9fa}
-    .project-item.active{background:#e3f2fd;border-left:4px solid #2196f3}
-    .project-item.new-project{background:#f0f8ff;border-left:4px solid #4caf50;font-style:italic}
-    .project-name{font-weight:bold;color:#2c3e50;margin-bottom:4px}
-    .project-details{font-size:12px;color:#666}
-    .project-editor{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);display:flex;flex-direction:column}
-    .editor-header{padding:20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-    .project-id-input{width:200px;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box}
-    .editor-content{flex:1;padding:20px;overflow-y:auto}
-    .form-section{margin-bottom:30px}
-    .form-section h3{margin:0 0 15px;color:#2c3e50}
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px}
-    .form-group{margin-bottom:15px}
-    .form-group.full-width{grid-column:1 / -1}
-    .form-group label{display:block;font-weight:bold;margin-bottom:5px;color:#333}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box}
-    .form-group textarea{height:80px;resize:vertical}
-    .tabs{display:flex;border-bottom:2px solid #e9ecef;margin-bottom:20px}
-    .tab{padding:12px 24px;cursor:pointer;border:none;background:none;font-size:14px;font-weight:bold;color:#666;border-bottom:2px solid transparent}
-    .tab.active{color:#2196f3;border-bottom-color:#2196f3}
-    .tab-content{display:none}
-    .tab-content.active{display:block}
-    .milestone-list{max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:10px;background:#fafafa}
-    .milestone-row{display:flex;align-items:center;gap:10px;padding:8px;margin-bottom:5px;background:#fff;border-radius:4px;border-left:3px solid #ddd;position:relative}
-    .milestone-include{width:60px;text-align:center;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
-    .milestone-include input[type="checkbox"]{margin:0;cursor:pointer}
-    .milestone-include label{font-size:10px;color:#666;text-align:center;line-height:1.1}
-    .milestone-urgent{width:60px;text-align:center;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
-    .milestone-urgent input[type="checkbox"]{margin:0;cursor:pointer}
-    .milestone-urgent label{font-size:10px;color:#d32f2f;text-align:center;line-height:1.1;font-weight:bold}
-    .milestone-row.urgent{border-left-color:#ff5252;background:#fff5f5}
-    .milestone-row.dragging{opacity:.5;z-index:1000}
-    .milestone-row.over{outline:2px dashed #2196f3}
-    .milestone-row.ready{border-left-color:#4caf50}
-    .milestone-row.completed{border-left-color:#2196f3;opacity:.7;background:#f0f8ff}
-    .milestone-row.not-started{border-left-color:#bbb}
-    .drag-handle{cursor:grab;color:#999;font-size:16px;width:20px;text-align:center;user-select:none;padding:4px}
-    .drag-handle:hover{color:#666;background:#f0f0f0;border-radius:3px}
-    .drag-handle:active{cursor:grabbing}
-    .milestone-order{width:30px;text-align:center;font-weight:bold;color:#666;font-size:12px}
-    .milestone-checkbox{width:18px;height:18px;cursor:pointer;margin-right:5px}
-    .milestone-name{flex:1}
-    .milestone-name input{width:100%;border:none;background:transparent;padding:4px;font-size:14px}
-    .milestone-hours{width:80px}
-    .milestone-hours input{width:100%;border:none;background:transparent;padding:4px;text-align:center;font-size:14px}
-    .milestone-actual-hours{width:80px}
-    .milestone-actual-hours input{width:100%;border:none;background:transparent;padding:4px;text-align:center;font-size:12px;color:#666}
-    .milestone-status{width:100px}
-    .milestone-status select{width:100%;border:none;background:transparent;padding:2px;font-size:12px}
-    .milestone-actions{display:flex;gap:5px;width:80px;align-items:center}
-    .remove-milestone{background:#ff5252;color:#fff;border:none;border-radius:3px;padding:4px 8px;cursor:pointer;font-size:11px}
-    .save-milestone-btn{background:#4caf50;color:#fff;border:none;border-radius:3px;padding:4px 8px;cursor:pointer;font-size:11px}
-    .milestone-completion-controls{display:flex;align-items:center;gap:5px}
-    .actual-hours-input{width:60px;padding:2px 4px;border:1px solid #ddd;border-radius:3px;font-size:12px}
-    .save-milestone-btn{background:#4caf50;color:#fff;border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px}
-    .btn{background:#2196f3;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;font-size:14px;margin-right:10px;margin-bottom:10px}
-    .btn:hover{background:#1976d2}
-    .btn.success{background:#4caf50}
-    .btn.secondary{background:#6c757d}
-    .btn.danger{background:#ff5252}
-    .btn.small{padding:5px 10px;font-size:12px}
-    .workflow-selector{margin-bottom:15px}
-    .workflow-preview{background:#f8f9fa;padding:15px;border-radius:4px;margin-top:10px}
-    .auto-split-controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:15px}
-    .loading,.empty-state{text-align:center;padding:40px;color:#666}
-    .save-indicator{color:#4caf50;font-size:12px;margin-left:10px}
-    .error{background:#f8d7da;color:#721c24;padding:10px;border-radius:4px;margin:10px 0}
-    .success{background:#d4edda;color:#155724;padding:10px;border-radius:4px;margin:10px 0}
-    .new-project-indicator{background:#e8f5e8;color:#2e7d32;padding:10px;border-radius:4px;margin-bottom:15px;border-left:4px solid #4caf50}
-    .collapsible-section{cursor:pointer}
-    .collapsible-section h3{cursor:pointer;display:flex;align-items:center;gap:10px}
-    .collapsible-toggle{transition:transform 0.2s}
-    .collapsible-content{margin-top:15px}
-    .time-summary{background:#e8f5e8;padding:15px;border-radius:6px;margin-bottom:20px;border-left:4px solid #4caf50}
-    .time-summary h4{margin:0 0 10px;color:#2e7d32}
-    .time-summary .time-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-    .time-stat{text-align:center;padding:8px;background:rgba(255,255,255,0.7);border-radius:4px}
-    .time-stat .value{font-size:18px;font-weight:bold;color:#2e7d32}
-    .time-stat .label{font-size:12px;color:#666;margin-top:2px}
-    .checkbox-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:15px}
-    .checkbox-item{display:flex;align-items:center;gap:6px;font-size:14px}
-    .checkbox-item input[type="checkbox"]{margin:0}
-    .billing-summary{background:#e8f2ff;padding:15px;border-radius:6px;margin-bottom:20px;border-left:4px solid #2196f3}
-    .billing-summary h4{margin:0 0 10px;color:#1976d2}
-    .readonly-display{background:#f8f9fa;padding:10px;border-radius:4px;border:1px solid #ddd;font-weight:bold;color:#2c3e50;font-size:16px}
-    .billing-line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e9ecef}
-    .billing-line.total{border-top:2px solid #2c3e50;margin-top:10px;padding-top:10px;font-size:18px;font-weight:bold;color:#2c3e50}
-    .billing-line.subtotal{font-weight:600;color:#666}
-    .billing-line.internal{background:#fff9e6;padding:8px 10px;border-radius:4px;margin-top:10px;border:1px dashed #ffc107}
-    .billing-label{font-weight:600}
-    .billing-value{font-weight:bold}
-    .billing-stat .label{font-size:12px;color:#666;margin-top:2px}
-    .readonly-display{background:#f8f9fa;color:#666;font-weight:bold;text-align:center;padding:8px 12px;border:1px solid #e9ecef;border-radius:4px;margin-top:5px}
-    .parts-list{max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:10px;background:#fafafa;margin-bottom:15px}
-    .part-row{display:grid;grid-template-columns:2fr 100px 120px 120px 60px;gap:10px;align-items:center;padding:8px;margin-bottom:5px;background:#fff;border-radius:4px;border-left:3px solid #4caf50}
-    .part-row input{width:100%;border:1px solid #ddd;padding:6px 8px;border-radius:3px;font-size:14px}
-    .part-row input[readonly]{background:#f5f5f5;color:#666}
-    .part-row .remove-part{background:#ff5252;color:#fff;border:none;border-radius:3px;padding:6px 10px;cursor:pointer;font-size:11px}
-    .parts-total{background:#e8f5e8;padding:12px 15px;border-radius:4px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid #4caf50;font-weight:bold}
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>🎸 Project Management</h1>
-    <p>Manage projects and milestones</p>
-  </div>
+    
+    const notion = new Client({ auth: NOTION_TOKEN });
+    
+    switch (req.method) {
+      case 'GET':
+        return await handleGet(req, res, notion);
+      case 'POST':
+        return await handlePost(req, res, notion);
+      case 'PUT':
+        return await handlePut(req, res, notion);
+      case 'DELETE':
+        return await handleDelete(req, res, notion);
+      default:
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    
+  } catch (err) {
+    console.error('Notion proxy error:', err);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      detail: err?.message || String(err)
+    });
+  }
+};
 
-  <div class="main-container">
-    <!-- Projects List -->
-    <div class="projects-list">
-      <div class="projects-header">
-        Projects
-        <div class="header-buttons">
-          <select id="statusFilter" class="status-filter" onchange="filterProjectsByStatus()">
-            <option value="On The Bench">On the Bench</option>
-            <option value="On Deck">Waiting</option>
-            <option value="Done">Done</option>
-          </select>
-          <button class="btn small success" onclick="createNewProject()">New</button>
-          <button class="btn small" onclick="refreshProjects()">Refresh</button>
-        </div>
-      </div>
-      <div id="projectsList">
-        <div class="loading">Loading projects...</div>
-      </div>
-    </div>
+async function handleGet(req, res, notion) {
+  const { action } = req.query;
+  const { NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'workflows':
+      return await getWorkflows(res, notion, NOTION_WORKFLOWS_DATABASE_ID);
+    case 'debug-project-schema':
+      return await debugProjectSchema(res, notion, NOTION_DATABASE_ID);
+    default:
+      return await getAllData(req, res, notion, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID);
+  }
+}
 
-    <!-- Project Editor -->
-    <div class="project-editor">
-      <div class="editor-header">
-        <div>
-          <h2 id="editorTitle">Select a project</h2>
-          <input type="text" id="projectIdInput" class="project-id-input" placeholder="Project ID" style="display:none;" onchange="markChanged()">
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-  <button class="btn success" onclick="saveProject()" id="saveBtn" disabled>Save Changes</button>
-  <button class="btn" onclick="openReportForCurrent()">Open Report</button>
-  <button class="btn" onclick="generateEstimate()" style="background:#f39c12;">Generate Estimate</button>
-  <button class="btn secondary" onclick="cancelChanges()">Cancel</button>
-</div>
-      </div>
+async function handlePost(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'create-project':
+      return await createProject(res, notion, NOTION_DATABASE_ID, data);
+    case 'create-milestones':
+      return await createMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'save-progress':
+      return await saveProgress(res, notion, NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, data);
+    case 'save-milestones':
+      return await saveMilestones(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'save-parts':
+      return await saveParts(res, notion, NOTION_PARTS_DATABASE_ID, data);
+    case 'create-workflow':
+      return await createWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
 
-      <div class="editor-content" id="editorContent">
-        <div class="empty-state">
-          <h3>Select a project to edit</h3>
-          <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
-        </div>
-      </div>
-    </div>
-  </div>
+async function handlePut(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'update-milestone':
+      return await updateMilestone(res, notion, NOTION_MILESTONES_DATABASE_ID, data);
+    case 'update-project':
+      return await updateProject(res, notion, NOTION_DATABASE_ID, data);
+    case 'update-workflow':
+      return await updateWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
 
-  <script>
-    // Configuration - Update this to match your Vercel deployment
-    const API_URL = '/api/notion-proxy';
+async function handleDelete(req, res, notion) {
+  const { action } = req.query;
+  const data = req.body;
+  const { NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  
+  switch (action) {
+    case 'delete-workflow':
+      return await deleteWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
 
+// Get all projects and milestones for scheduling
+async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsDbId) {
+  try {
+    console.log('getAllData called - fetching projects with active statuses');
+    
     let allProjects = [];
-    let allMilestones = [];
-    let allWorkflows = [];
-    let allParts = [];
-    let currentProject = null;
-    let currentMilestones = [];
-    let currentParts = [];
-    let hasUnsavedChanges = false;
-    let isNewProject = false;
-
-    // Initialize
-    window.onload = function () {
-      refreshProjects();
-    };
-
-    async function refreshProjects() {
-      try {
-        showMessage('Loading projects...', 'info');
-
-        const [dataResponse, workflowsResponse] = await Promise.all([
-          fetch(API_URL),
-          fetch(`${API_URL}?action=workflows`)
-        ]);
-
-        if (!dataResponse.ok) {
-          const errorText = await dataResponse.text();
-          throw new Error(`Data API failed with ${dataResponse.status}: ${errorText}`);
-        }
-
-        const data = await dataResponse.json();
-
-        let workflows = { workflows: [] };
-        if (workflowsResponse.ok) {
-          workflows = await workflowsResponse.json();
-        } else {
-          const errorText = await workflowsResponse.text();
-          console.warn('Workflows API failed:', workflowsResponse.status, errorText);
-          showMessage('Workflows could not be loaded, continuing without them', 'info');
-        }
-
-        allProjects = data.projects || [];
-        allMilestones = data.milestones || [];
-        allParts = data.parts || [];
-        allWorkflows = workflows.workflows || [];
-
-        displayProjectsList();
-        showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allParts.length} parts, ${allWorkflows.length} workflows`, 'success');
-      } catch (error) {
-        console.error('Failed to refresh projects:', error);
-        const errorMsg = `Failed to load projects: ${error.message}`;
-        document.getElementById('projectsList').innerHTML =
-          `<div class="error">${errorMsg}<br><br>Check the browser console for details.</div>`;
-        showMessage(errorMsg, 'error');
-      }
-    }
-
-    function createNewProject() {
-      if (hasUnsavedChanges && !confirm('You have unsaved changes. Continue anyway?')) return;
-
-      currentProject = {
-        id: null,
-        name: 'New Project',
-        projectId: '',
-        instrumentMake: '',
-        instrumentModel: '',
-        status: 'On The Bench',
-        complexity: 3,
-        profitability: 3,
-        dueDate: null,
-        intakeNotes: '',
-        store: '',
-        totalEstimatedHour: 0,
-        totalMilestones: 0,
-        completedMilestones: 0,
-        progress: 0,
-        // Initialize billing fields
-        total: null,
-        commission: null,
-        discount: null,
-        minusCommission: null,
-        // Initialize measurement fields
-        neckReliefBefore: null,
-        before1stString1stFret: null,
-        before1stString12thFret: null,
-        before6thString1stFret: null,
-        before6thString12thFret: null,
-        neckReliefAfter: null,
-        after1stString1stFret: null,
-        after1stString12thFret: null,
-        after6thString1stFret: null,
-        after6thString12thFret: null,
-        // Initialize instrument details
-        instrumentFinish: '',
-        serialNumber: '',
-        instrumentType: '',
-        stringBrand: '',
-        stringGauge: '',
-        tuning: '',
-        tremolo: '',
-        fretboardRadius: null,
-        fretwire: '',
-        // Initialize actions
-        actions: {},
-        additionalActions: '',
-        notes: ''
-      };
-
-      currentMilestones = [];
-      currentParts = [];
-      isNewProject = true;
-      hasUnsavedChanges = true;
-
-      displayProjectEditor();
-      displayProjectsList();
-      updateSaveButton();
-    }
-
-    function showMessage(message, type = 'info') {
-      let msgEl = document.getElementById('globalMessage');
-      if (!msgEl) {
-        msgEl = document.createElement('div');
-        msgEl.id = 'globalMessage';
-        msgEl.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 10px; border-radius: 4px; z-index: 1000; max-width: 300px;';
-        document.body.appendChild(msgEl);
-      }
-      msgEl.textContent = message;
-      msgEl.className = type;
-
-      if (type === 'success') {
-        setTimeout(() => {
-          if (msgEl.parentNode) msgEl.parentNode.removeChild(msgEl);
-        }, 3000);
-      }
-    }
-
-    function displayProjectsList() {
-      const container = document.getElementById('projectsList');
-      let html = '';
-
-      if (isNewProject && currentProject) {
-        html += `
-          <div class="project-item new-project active">
-            <div class="project-name">${escapeHtml(currentProject.name)} (New)</div>
-            <div class="project-details">Unsaved new project</div>
-          </div>
-        `;
-      }
-
-      // Get selected filter - always filter, no "all" option
-      const filterSelect = document.getElementById('statusFilter');
-      const filterValue = filterSelect ? filterSelect.value : 'On The Bench';
-      
-      // Debug: Log all unique statuses to help identify the issue
-      const uniqueStatuses = [...new Set(allProjects.map(p => p.status))];
-      console.log('Available statuses in projects:', uniqueStatuses);
-      console.log('Currently filtering for:', filterValue);
-      console.log('Total projects loaded:', allProjects.length);
-      
-      // Filter projects based on status
-      const filteredProjects = allProjects.filter(project => project.status === filterValue);
-      console.log('Filtered projects count:', filteredProjects.length);
-
-      if (filteredProjects.length === 0 && !isNewProject) {
-        container.innerHTML = '<div class="empty-state">No projects found with this status</div>';
-        return;
-      }
-
-      filteredProjects.forEach(project => {
-        const isActive = !isNewProject && currentProject && currentProject.id === project.id;
-        html += `
-          <div class="project-item ${isActive ? 'active' : ''}" onclick="selectProject('${project.id}')">
-            <div class="project-name">${escapeHtml(project.name)}</div>
-            <div class="project-details">
-              ${escapeHtml(project.instrumentMake)} ${escapeHtml(project.instrumentModel)} • 
-              ${project.totalMilestones || 0} milestones
-            </div>
-          </div>
-        `;
-      });
-
-      container.innerHTML = html;
-    }
-
-    function filterProjectsByStatus() {
-      displayProjectsList();
-    }
-
-    function escapeHtml(text) {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    async function selectProject(projectId) {
-      if (hasUnsavedChanges && !confirm('You have unsaved changes. Continue anyway?')) return;
-
-      currentProject = allProjects.find(p => p.id === projectId);
-      if (!currentProject) {
-        showMessage('Project not found', 'error');
-        return;
-      }
-
-      isNewProject = false;
-      loadProjectMilestones(projectId);
-      loadProjectParts(projectId);
-
-      displayProjectEditor();
-      displayProjectsList();
-
-      hasUnsavedChanges = false;
-      updateSaveButton();
-      
-      // Calculate billing totals after everything is loaded
-      setTimeout(() => calculateBillingTotals(), 100);
-    }
-
-    function loadProjectMilestones(projectId) {
-      currentMilestones = allMilestones
-        .filter(m => m.projectId === projectId)
-        .sort((a, b) => a.order - b.order)
-        .map(m => ({
-          ...m,
-          // Ensure defaults for older milestones without these fields
-          urgent: m.urgent === true,  // default false
-          includeInEstimate: m.includeInEstimate !== false,  // default true (billable)
-          workflowGroupId: m.workflowGroupId || null,  // null = standalone
-          workflowName: m.workflowName || null
-        }));
-    }
-
-    function calculateTotalActualHours() {
-      return currentMilestones
-        .filter(m => m.status === 'Completed' && m.actualHours)
-        .reduce((total, m) => total + (m.actualHours || 0), 0);
-    }
-
-    function calculateEstimatedHours() {
-      return currentMilestones.reduce((total, m) => total + (m.estimatedHours || 0), 0);
-    }
-
-    function getTaxRate() {
-      // Find the "Tax Rate" entry in allParts
-      const taxRateEntry = allParts.find(p => p.name === 'Tax Rate');
-      if (taxRateEntry && taxRateEntry.pricePerItem) {
-        return parseFloat(taxRateEntry.pricePerItem) || 0;
-      }
-      return 0;
-    }
-
-    function calculateBillingTotals() {
-      // Get hourly rate
-      const hourlyRate = currentProject.hourlyRate || 100;
-      
-      // Calculate labor cost from billable milestones
-      const billableMilestones = currentMilestones.filter(m => m.includeInEstimate !== false);
-      const laborCost = billableMilestones.reduce((sum, m) => {
-        return sum + (parseFloat(m.estimatedHours) || 0) * hourlyRate;
-      }, 0);
-      
-      // Calculate parts cost
-      const partsCost = currentParts.reduce((sum, part) => {
-        return sum + ((parseFloat(part.quantity) || 0) * (parseFloat(part.pricePerItem) || 0));
-      }, 0);
-      
-      // Subtotal
-      const subtotal = laborCost + partsCost;
-      
-      // Discount
-      const discountPercent = parseFloat(document.getElementById('discount')?.value) || 0;
-      const discountAmount = (subtotal * discountPercent) / 100;
-      
-      // Tax (only if Store is "In Person")
-      const store = document.getElementById('store')?.value || '';
-      const taxLine = document.getElementById('taxLine');
-      let taxAmount = 0;
-      
-      if (store === 'In Person') {
-        const taxRate = getTaxRate();
-        taxAmount = (subtotal - discountAmount) * taxRate;
-        if (taxLine) {
-          taxLine.style.display = 'flex';
-          document.getElementById('taxRateDisplay').textContent = (taxRate * 100).toFixed(3);
-          document.getElementById('billingTax').textContent = '$' + taxAmount.toFixed(2);
-        }
-      } else {
-        if (taxLine) taxLine.style.display = 'none';
-      }
-      
-      // Total
-      const total = subtotal - discountAmount + taxAmount;
-      
-      // Commission (internal only)
-      const commissionPercent = parseFloat(document.getElementById('commission')?.value) || 0;
-      const commissionAmount = (total * commissionPercent) / 100;
-      const netAfterCommission = total - commissionAmount;
-      
-      // Update display
-      document.getElementById('billingSubtotal').textContent = '$' + subtotal.toFixed(2);
-      document.getElementById('discountPercentDisplay').textContent = discountPercent;
-      document.getElementById('billingDiscount').textContent = '-$' + discountAmount.toFixed(2);
-      document.getElementById('billingTotalDisplay').textContent = '$' + total.toFixed(2);
-      document.getElementById('commissionPercentDisplay').textContent = commissionPercent;
-      document.getElementById('commissionAmountDisplay').textContent = '$' + commissionAmount.toFixed(2);
-      document.getElementById('netAfterCommissionDisplay').textContent = '$' + netAfterCommission.toFixed(2);
-      
-      // Store the calculated values for saving to Notion
-      currentProject.calculatedTotal = total;
-      currentProject.calculatedTaxAmount = taxAmount;
-      
-      return {
-        subtotal,
-        discountAmount,
-        taxAmount,
-        total,
-        commissionAmount,
-        netAfterCommission
-      };
-    }
-
-    function updateBillingCalculation() {
-      // Legacy function - now calls the new comprehensive calculation
-      calculateBillingTotals();
-    }
-
-    function calculateMinusCommission() {
-      // Legacy function - kept for compatibility
-      const calcs = calculateBillingTotals();
-      return calcs.netAfterCommission;
-    }
-
-    function displayProjectEditor() {
-      if (!currentProject) return;
-
-      document.getElementById('editorTitle').textContent = isNewProject ? 'New Project' : currentProject.name;
-      
-      // Show/hide project ID input
-      const projectIdInput = document.getElementById('projectIdInput');
-      if (isNewProject || currentProject) {
-        projectIdInput.style.display = 'block';
-        projectIdInput.value = currentProject.projectId || '';
-      } else {
-        projectIdInput.style.display = 'none';
-      }
-
-      let content = '';
-      if (isNewProject) {
-        content += `
-          <div class="new-project-indicator">
-            <strong>Creating New Project</strong><br>
-            Fill in the details below and click "Save Changes" to create this project in Notion.
-          </div>
-        `;
-      }
-
-      // Time summary for existing projects
-      if (!isNewProject && currentMilestones.length > 0) {
-        const totalActual = calculateTotalActualHours();
-        const totalEstimated = calculateEstimatedHours();
-        const completedCount = currentMilestones.filter(m => m.status === 'Completed').length;
-        const totalCount = currentMilestones.length;
-        
-        content += `
-          <div class="time-summary">
-            <h4>Project Time Summary</h4>
-            <div class="time-stats">
-              <div class="time-stat">
-                <div class="value">${totalActual.toFixed(1)}h</div>
-                <div class="label">Total Actual Time</div>
-              </div>
-              <div class="time-stat">
-                <div class="value">${totalEstimated.toFixed(1)}h</div>
-                <div class="label">Total Estimated</div>
-              </div>
-              <div class="time-stat">
-                <div class="value">${completedCount}/${totalCount}</div>
-                <div class="label">Completed Milestones</div>
-              </div>
-              <div class="time-stat">
-                <div class="value">${totalCount > 0 ? Math.round((completedCount/totalCount)*100) : 0}%</div>
-                <div class="label">Progress</div>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      // Billing summary for existing projects with billing data
-      if (!isNewProject && (currentProject.total || currentProject.commission)) {
-        const total = currentProject.total || 0;
-        const commission = currentProject.commission || 0;
-        const minusCommission = currentProject.minusCommission || (total - commission);
-        
-        content += `
-          <div class="billing-summary">
-            <h4>Project Billing Summary</h4>
-            <div class="billing-stats">
-              <div class="billing-stat">
-                <div class="value">${total.toFixed(2)}</div>
-                <div class="label">Total Amount</div>
-              </div>
-              <div class="billing-stat">
-                <div class="value">${commission.toFixed(2)}</div>
-                <div class="label">Commission</div>
-              </div>
-              <div class="billing-stat">
-                <div class="value">${minusCommission.toFixed(2)}</div>
-                <div class="label">Minus Commission</div>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      content += `
-        <div class="form-section">
-          <h3>Project Details</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Project Name</label>
-              <input type="text" id="projectName" value="${escapeHtml(currentProject.name || '')}" onchange="markChanged()">
-            </div>
-            <div class="form-group">
-              <label>Status</label>
-              <select id="projectStatus" onchange="markChanged()">
-                <option value="On The Bench" ${currentProject.status === 'On The Bench' ? 'selected' : ''}>On The Bench</option>
-                <option value="Waiting" ${currentProject.status === 'Waiting' ? 'selected' : ''}>Waiting</option>
-                <option value="Done" ${currentProject.status === 'Done' ? 'selected' : ''}>Done</option>
-                <option value="Paid" ${currentProject.status === 'Paid' ? 'selected' : ''}>Paid</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Instrument Make</label>
-              <input type="text" id="instrumentMake" value="${escapeHtml(currentProject.instrumentMake || '')}" onchange="markChanged()">
-            </div>
-            <div class="form-group">
-              <label>Instrument Model</label>
-              <input type="text" id="instrumentModel" value="${escapeHtml(currentProject.instrumentModel || '')}" onchange="markChanged()">
-            </div>
-            <div class="form-group">
-              <label>Complexity (1-5)</label>
-              <select id="complexity" onchange="markChanged()">
-                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.complexity || 3) === n ? 'selected' : ''}>${n} - ${['Simple','Easy','Moderate','Complex','Very Complex'][n-1]}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Profitability (1-5)</label>
-              <select id="profitability" onchange="markChanged()">
-                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.profitability || 3) === n ? 'selected' : ''}>${n} - ${['Low','Below Average','Standard','Good','Excellent'][n-1]}</option>`).join('')}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Due Date</label>
-              <input type="date" id="dueDate" value="${currentProject.dueDate || ''}" onchange="markChanged()">
-            </div>
-            <div class="form-group">
-              <label>Store</label>
-              <select id="store" onchange="markChanged(); calculateBillingTotals()">
-                <option value="">Select Store</option>
-                <option value="In Person"        ${currentProject.store === 'In Person' ? 'selected' : ''}>In Person</option>
-                <option value="Spacetone"        ${currentProject.store === 'Spacetone' ? 'selected' : ''}>Spacetone</option>
-                <option value="Lark Guitars"     ${currentProject.store === 'Lark Guitars' ? 'selected' : ''}>Lark Guitars</option>
-                <option value="Robot Monster"    ${currentProject.store === 'Robot Monster' ? 'selected' : ''}>Robot Monster</option>
-                <option value="Internet Order"    ${currentProject.store === 'Internet Order' ? 'selected' : ''}>Internet Order</option>
-              </select>
-            </div>
-            <div class="form-group full-width">
-              <label>Intake Notes</label>
-              <textarea id="intakeNotes" onchange="markChanged()" placeholder="Enter any initial notes, requirements, or special instructions for this project...">${escapeHtml(currentProject.intakeNotes || '')}</textarea>
-            </div>
-          </div>
-        </div>
-
-        
-
-        <div class="form-section collapsible-section">
-          <h3 onclick="toggleCollapsible('measurements')">
-            <span id="measurementsToggle" class="collapsible-toggle">▶</span>
-            Measurements (Before/After)
-          </h3>
-          <div id="measurementsContent" class="collapsible-content" style="display: none;">
-            <div class="form-grid">
-              <div class="form-group full-width">
-                <h4 style="margin: 0 0 15px 0; color: #666; font-size: 14px;">Before Measurements</h4>
-              </div>
-              <div class="form-group full-width">
-                <label>Neck Relief Before</label>
-                <input type="number" step="0.001" id="neckReliefBefore" 
-                       value="${currentProject.neckReliefBefore || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>1st String at 1st Fret</label>
-                <input type="number" step="0.001" id="before1stString1stFret" 
-                       value="${currentProject.before1stString1stFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>1st String at 12th Fret</label>
-                <input type="number" step="0.001" id="before1stString12thFret" 
-                       value="${currentProject.before1stString12thFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>6th String at 1st Fret</label>
-                <input type="number" step="0.001" id="before6thString1stFret" 
-                       value="${currentProject.before6thString1stFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>6th String at 12th Fret</label>
-                <input type="number" step="0.001" id="before6thString12thFret" 
-                       value="${currentProject.before6thString12thFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              
-              <div class="form-group full-width">
-                <h4 style="margin: 20px 0 15px 0; color: #666; font-size: 14px;">After Measurements</h4>
-              </div>
-              <div class="form-group full-width">
-                <label>Neck Relief After</label>
-                <input type="number" step="0.001" id="neckReliefAfter" 
-                       value="${currentProject.neckReliefAfter || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>1st String at 1st Fret</label>
-                <input type="number" step="0.001" id="after1stString1stFret" 
-                       value="${currentProject.after1stString1stFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>1st String at 12th Fret</label>
-                <input type="number" step="0.001" id="after1stString12thFret" 
-                       value="${currentProject.after1stString12thFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>6th String at 1st Fret</label>
-                <input type="number" step="0.001" id="after6thString1stFret" 
-                       value="${currentProject.after6thString1stFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-              <div class="form-group">
-                <label>6th String at 12th Fret</label>
-                <input type="number" step="0.001" id="after6thString12thFret" 
-                       value="${currentProject.after6thString12thFret || ''}" 
-                       onchange="markChanged()" placeholder="0.000">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section collapsible-section">
-          <h3 onclick="toggleCollapsible('instrumentDetails')">
-            <span id="instrumentDetailsToggle" class="collapsible-toggle">▶</span>
-            Instrument Details
-          </h3>
-          <div id="instrumentDetailsContent" class="collapsible-content" style="display: none;">
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Instrument Finish/Color</label>
-                <input type="text" id="instrumentFinish" value="${escapeHtml(currentProject.instrumentFinish || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>Serial Number</label>
-                <input type="text" id="serialNumber" value="${escapeHtml(currentProject.serialNumber || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>Instrument Type</label>
-                <select id="instrumentType" onchange="markChanged()">
-                  <option value="">Select Type</option>
-                  <option value="Guitar" ${currentProject.instrumentType === 'Guitar' ? 'selected' : ''}>Guitar</option>
-                  <option value="Banjo" ${currentProject.instrumentType === 'Banjo' ? 'selected' : ''}>Banjo</option>
-                  <option value="Bass" ${currentProject.instrumentType === 'Bass' ? 'selected' : ''}>Bass</option>
-                  <option value="Mandolin" ${currentProject.instrumentType === 'Mandolin' ? 'selected' : ''}>Mandolin</option>
-                  <option value="12 string guitar" ${currentProject.instrumentType === '12 string guitar' ? 'selected' : ''}>12 string guitar</option>
-                  <option value="Pickup" ${currentProject.instrumentType === 'Pickup' ? 'selected' : ''}>Pickup</option>
-                  <option value="Classical Guitar" ${currentProject.instrumentType === 'Classical Guitar' ? 'selected' : ''}>Classical Guitar</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>String Brand</label>
-                <input type="text" id="stringBrand" value="${escapeHtml(currentProject.stringBrand || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>String Gauge</label>
-                <input type="text" id="stringGauge" value="${escapeHtml(currentProject.stringGauge || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>Tuning</label>
-                <select id="tuning" onchange="markChanged()">
-                  <option value="">Select Tuning</option>
-                  <option value="Standard" ${currentProject.tuning === 'Standard' ? 'selected' : ''}>Standard</option>
-                  <option value="Eb Standard" ${currentProject.tuning === 'Eb Standard' ? 'selected' : ''}>Eb Standard</option>
-                  <option value="Drop D" ${currentProject.tuning === 'Drop D' ? 'selected' : ''}>Drop D</option>
-                  <option value="Drop C" ${currentProject.tuning === 'Drop C' ? 'selected' : ''}>Drop C</option>
-                  <option value="Whole Step Down" ${currentProject.tuning === 'Whole Step Down' ? 'selected' : ''}>Whole Step Down</option>
-                  <option value="Open G" ${currentProject.tuning === 'Open G' ? 'selected' : ''}>Open G</option>
-                  <option value="Open D" ${currentProject.tuning === 'Open D' ? 'selected' : ''}>Open D</option>
-                  <option value="DADGAD" ${currentProject.tuning === 'DADGAD' ? 'selected' : ''}>DADGAD</option>
-                  <option value="Custom" ${currentProject.tuning === 'Custom' ? 'selected' : ''}>Custom</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Tremolo</label>
-                <input type="text" id="tremolo" value="${escapeHtml(currentProject.tremolo || '')}" onchange="markChanged()">
-              </div>
-              <div class="form-group">
-                <label>Fretboard Radius</label>
-                <input type="number" step="0.1" id="fretboardRadius" value="${currentProject.fretboardRadius || ''}" onchange="markChanged()">
-              </div>
-              <div class="form-group full-width">
-                <label>Fretwire</label>
-                <input type="text" id="fretwire" value="${escapeHtml(currentProject.fretwire || '')}" onchange="markChanged()">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section collapsible-section">
-          <h3 onclick="toggleCollapsible('actions')">
-            <span id="actionsToggle" class="collapsible-toggle">▶</span>
-            Actions
-          </h3>
-          <div id="actionsContent" class="collapsible-content" style="display: none;">
-            <div class="checkbox-grid">
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedHeightRadius" onchange="markChanged()" ${currentProject.actions?.adjustedHeightRadius ? 'checked' : ''}>
-                <label for="adjustedHeightRadius">Adjusted Height and Radius</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedIntonation" onchange="markChanged()" ${currentProject.actions?.adjustedIntonation ? 'checked' : ''}>
-                <label for="adjustedIntonation">Adjusted Intonation</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedPickupHeight" onchange="markChanged()" ${currentProject.actions?.adjustedPickupHeight ? 'checked' : ''}>
-                <label for="adjustedPickupHeight">Adjusted Pickup Height</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedTrussRod" onchange="markChanged()" ${currentProject.actions?.adjustedTrussRod ? 'checked' : ''}>
-                <label for="adjustedTrussRod">Adjusted Truss Rod</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedStringSlots" onchange="markChanged()" ${currentProject.actions?.adjustedStringSlots ? 'checked' : ''}>
-                <label for="adjustedStringSlots">Adjusted String Slots</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="cleanedPolished" onchange="markChanged()" ${currentProject.actions?.cleanedPolished ? 'checked' : ''}>
-                <label for="cleanedPolished">Cleaned and Polished</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="installedStretchedStrings" onchange="markChanged()" ${currentProject.actions?.installedStretchedStrings ? 'checked' : ''}>
-                <label for="installedStretchedStrings">Installed and Stretched Strings</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="lubricatedStringSlots" onchange="markChanged()" ${currentProject.actions?.lubricatedStringSlots ? 'checked' : ''}>
-                <label for="lubricatedStringSlots">Lubricated String Slots</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="oiledFretboard" onchange="markChanged()" ${currentProject.actions?.oiledFretboard ? 'checked' : ''}>
-                <label for="oiledFretboard">Oiled Fretboard</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="polishedFrets" onchange="markChanged()" ${currentProject.actions?.polishedFrets ? 'checked' : ''}>
-                <label for="polishedFrets">Polished Frets</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="testedElectronics" onchange="markChanged()" ${currentProject.actions?.testedElectronics ? 'checked' : ''}>
-                <label for="testedElectronics">Tested Electronics</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="tightenedHardware" onchange="markChanged()" ${currentProject.actions?.tightenedHardware ? 'checked' : ''}>
-                <label for="tightenedHardware">Tightened Hardware</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedTremoloTension" onchange="markChanged()" ${currentProject.actions?.adjustedTremoloTension ? 'checked' : ''}>
-                <label for="adjustedTremoloTension">Adjusted Tremolo Tension</label>
-              </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="adjustedNeckAngle" onchange="markChanged()" ${currentProject.actions?.adjustedNeckAngle ? 'checked' : ''}>
-                <label for="adjustedNeckAngle">Adjusted Neck Angle</label>
-              </div>
-            </div>
-            
-            <div class="form-group" style="margin-top:15px;">
-              <label>Additional Actions</label>
-              <textarea id="additionalActions" onchange="markChanged()" placeholder="Enter any additional actions performed...">${escapeHtml(currentProject.additionalActions || '')}</textarea>
-            </div>
-            
-          <div class="form-group" style="margin-top:15px;">
-          <label>Notes</label>
-            <textarea id="notes" onchange="markChanged()" placeholder="General project notes, updates, or reminders...">${escapeHtml(currentProject.notes || '')}</textarea>
-</div>
-
-</div>
-       
-        </div>
-
-        <div class="form-section collapsible-section">
-          <h3 onclick="toggleCollapsible('parts')">
-            <span id="partsToggle" class="collapsible-toggle">▶</span>
-            Parts
-          </h3>
-          <div id="partsContent" class="collapsible-content" style="display: none;">
-            <div class="parts-list" id="partsList">
-              ${renderPartsList()}
-            </div>
-            <button class="btn small success" onclick="addPart()">+ Add Part</button>
-            <div class="parts-total" id="partsTotal" style="margin-top:15px;">
-              <span>Parts Total:</span>
-              <span id="partsTotalAmount">$0.00</span>
-            </div>
-          </div>
-        </div>
-
-        
-
-        <div class="form-section collapsible-section">
-          <h3 onclick="toggleCollapsible('billing')">
-            <span id="billingToggle" class="collapsible-toggle">▶</span>
-            Billing
-          </h3>
-          <div id="billingContent" class="collapsible-content" style="display: none;">
-            <!-- Billing Summary (Auto-calculated) -->
-            <div class="billing-summary" id="billingSummaryDisplay">
-              <div class="billing-line subtotal">
-                <span class="billing-label">Subtotal (Labor + Parts)</span>
-                <span class="billing-value" id="billingSubtotal">$0.00</span>
-              </div>
-              <div class="billing-line">
-                <span class="billing-label">Discount (<span id="discountPercentDisplay">0</span>%)</span>
-                <span class="billing-value" id="billingDiscount">-$0.00</span>
-              </div>
-              <div class="billing-line" id="taxLine" style="display:none;">
-                <span class="billing-label">Tax (<span id="taxRateDisplay">0</span>%)</span>
-                <span class="billing-value" id="billingTax">$0.00</span>
-              </div>
-              <div class="billing-line total">
-                <span class="billing-label">TOTAL AMOUNT</span>
-                <span class="billing-value" id="billingTotalDisplay">$0.00</span>
-              </div>
-              
-              <!-- Internal Commission Calculation -->
-              <div class="billing-line internal">
-                <span class="billing-label">Commission (<span id="commissionPercentDisplay">0</span>%) - Internal Only</span>
-                <span class="billing-value" id="commissionAmountDisplay">$0.00</span>
-              </div>
-              <div class="billing-line internal">
-                <span class="billing-label">Net After Commission</span>
-                <span class="billing-value" id="netAfterCommissionDisplay">$0.00</span>
-              </div>
-            </div>
-            
-            <!-- Editable Fields -->
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Discount (%)</label>
-                <input type="number" step="1" min="0" max="100" id="discount" 
-                       value="${currentProject.discount || ''}" 
-                       onchange="markChanged(); calculateBillingTotals()" 
-                       placeholder="0">
-              </div>
-              <div class="form-group">
-                <label>Commission (%) - Internal Only</label>
-                <input type="number" step="0.1" min="0" max="100" id="commission" 
-                       value="${currentProject.commission || ''}" 
-                       onchange="markChanged(); calculateBillingTotals()" 
-                       placeholder="0">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Milestones</h3>
-          <div class="tabs">
-            <button class="tab active" onclick="switchMilestoneTab('individual')">Individual Entry</button>
-            <button class="tab" onclick="switchMilestoneTab('workflow')">Workflow Templates</button>
-            <button class="tab" onclick="switchMilestoneTab('autosplit')">Auto-Split Time</button>
-          </div>
-
-          <div class="tab-content active" id="individual-tab">
-            <div class="milestone-list" id="milestoneList">
-              ${renderMilestoneList()}
-            </div>
-            <button class="btn" onclick="addMilestone()">Add Milestone</button>
-            <button class="btn secondary" onclick="addMultipleMilestones()">Add 5 More</button>
-            ${!isNewProject && currentMilestones.some(m => m.status === 'Completed' && !m.actualHours) ? 
-              '<button class="btn success" onclick="saveAllCompletedMilestones()" style="margin-top:10px;">Save All Completed Milestones</button>' : 
-              ''}
-          </div>
-
-          <div class="tab-content" id="workflow-tab">
-            <div class="workflow-selector">
-              <label>Select Workflow Template:</label>
-              <select id="workflowSelect" onchange="previewWorkflow()">
-                <option value="">Choose a workflow...</option>
-                ${allWorkflows.map(w => `<option value="${w.id}">${escapeHtml(w.name)}</option>`).join('')}
-              </select>
-            </div>
-            <div id="workflowPreview"></div>
-            <button class="btn" onclick="applyWorkflow()">Apply Workflow</button>
-          </div>
-
-          <div class="tab-content" id="autosplit-tab">
-            <div class="auto-split-controls">
-              <div class="form-group">
-                <label>Total Hours</label>
-                <input type="number" id="splitTotalHours" step="0.25" min="0.25" value="4" onchange="previewAutoSplit()">
-              </div>
-              <div class="form-group">
-                <label>Number of Sessions</label>
-                <input type="number" id="splitSessions" min="2" max="10" value="4" onchange="previewAutoSplit()">
-              </div>
-              <div class="form-group">
-                <label>Base Name</label>
-                <input type="text" id="splitBaseName" value="Work Session" onchange="previewAutoSplit()">
-              </div>
-            </div>
-            <div id="autoSplitPreview"></div>
-            <button class="btn" onclick="applyAutoSplit()">Apply Auto-Split</button>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('editorContent').innerHTML = content;
-
-      // Make sure DnD is active on FIRST render
-      setupDragAndDrop();
-
-      // Initialize auto-split preview
-      previewAutoSplit();
-      
-      // Initialize billing calculation
-      updateBillingCalculation();
-    }
-
-    function toggleCollapsible(section) {
-      const content = document.getElementById(`${section}Content`);
-      const toggle = document.getElementById(`${section}Toggle`);
-      
-      if (content.style.display === 'none') {
-        content.style.display = 'block';
-        toggle.textContent = '▼';
-      } else {
-        content.style.display = 'none';
-        toggle.textContent = '▶';
-      }
-    }
-
-    function renderMilestoneList() {
-      if (currentMilestones.length === 0) {
-        return '<div class="empty-state">No milestones yet. Add some below.</div>';
-      }
-
-      // Group milestones by workflowGroupId
-      const grouped = {};
-      const standalone = [];
-      
-      currentMilestones.forEach((milestone, index) => {
-        milestone._originalIndex = index; // Store original index for updates
-        
-        if (milestone.workflowGroupId) {
-          if (!grouped[milestone.workflowGroupId]) {
-            grouped[milestone.workflowGroupId] = {
-              name: milestone.workflowName || 'Workflow',
-              milestones: []
-            };
-          }
-          grouped[milestone.workflowGroupId].milestones.push(milestone);
-        } else {
-          standalone.push(milestone);
-        }
-      });
-
-      let html = '';
-      
-      // Render workflow groups
-      Object.keys(grouped).forEach(groupId => {
-        const group = grouped[groupId];
-        const totalHours = group.milestones.reduce((sum, m) => sum + (m.estimatedHours || 0), 0);
-        
-        html += `
-          <div class="workflow-group" style="margin-bottom: 20px; border: 2px solid #e3f2fd; border-radius: 8px; padding: 10px; background: #f8fbff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: #e3f2fd; border-radius: 4px;">
-              <strong style="color: #1976d2; font-size: 14px;">📋 ${escapeHtml(group.name)}</strong>
-              <span style="color: #666; font-size: 12px;">${group.milestones.length} milestones • ${totalHours}h total</span>
-            </div>
-            ${group.milestones.map(milestone => renderMilestoneRow(milestone)).join('')}
-          </div>
-        `;
-      });
-      
-      // Render standalone milestones
-      if (standalone.length > 0) {
-        html += standalone.map(milestone => renderMilestoneRow(milestone)).join('');
-      }
-      
-      return html;
-    }
+    let hasMore = true;
+    let nextCursor = undefined;
     
-    function renderMilestoneRow(milestone) {
-      const index = milestone._originalIndex;
-      return `
-        <div class="milestone-row ${(milestone.status || 'Not Started').toLowerCase().replace(' ', '-')} ${milestone.urgent ? 'urgent' : ''}"
-             draggable="true"
-             data-milestone-index="${index}">
-          <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
-          <div class="milestone-order">${index + 1}</div>
-          <input type="checkbox" class="milestone-checkbox" 
-                 ${milestone.status === 'Completed' ? 'checked' : ''}
-                 onchange="toggleMilestoneCompletion(${index})"
-                 id="milestone-checkbox-${index}">
-          <div class="milestone-name">
-            <input type="text" value="${escapeHtml(milestone.name || '')}"
-                   onchange="updateMilestone(${index}, 'name', this.value)"
-                   placeholder="Milestone name">
-          </div>
-          <div class="milestone-hours">
-            <input type="number" step="0.25" min="0.25"
-                   value="${milestone.estimatedHours || 1}"
-                   onchange="updateMilestone(${index}, 'estimatedHours', this.value)"
-                   title="Estimated Hours"
-                   placeholder="Est">
-          </div>
-          <div class="milestone-actual-hours">
-            <input type="number" step="0.25" min="0.25"
-                   value="${milestone.status === 'Completed' ? (milestone.actualHours || '') : ''}"
-                   onchange="updateMilestone(${index}, 'actualHours', this.value)"
-                   placeholder="Actual"
-                   title="Actual Hours"
-                   ${milestone.status !== 'Completed' ? 'disabled' : ''}
-                   id="actual-hours-${index}"
-                   style="${milestone.status !== 'Completed' ? 'background:#f5f5f5;color:#ccc;' : ''}">
-          </div>
-          <div class="milestone-status">
-            <select onchange="updateMilestone(${index}, 'status', this.value)">
-              <option value="Not Started" ${milestone.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
-              <option value="Ready" ${milestone.status === 'Ready' ? 'selected' : ''}>Ready</option>
-              <option value="Completed" ${milestone.status === 'Completed' ? 'selected' : ''}>Completed</option>
-            </select>
-          </div>
-          <div class="milestone-urgent">
-            <input type="checkbox" 
-                   ${milestone.urgent ? 'checked' : ''}
-                   onchange="updateMilestone(${index}, 'urgent', this.checked)"
-                   id="urgent-${index}"
-                   title="Mark as urgent - appears first in scheduler">
-            <label for="urgent-${index}">Urgent</label>
-          </div>
-          <div class="milestone-include">
-            <input type="checkbox" 
-                   ${(milestone.includeInEstimate !== false) ? 'checked' : ''}
-                   onchange="updateMilestone(${index}, 'includeInEstimate', this.checked)"
-                   id="include-estimate-${index}"
-                   title="Include in customer estimate">
-            <label for="include-estimate-${index}">Bill</label>
-          </div>
-          <div class="milestone-actions">
-            ${milestone.status === 'Completed' && milestone.actualHours && milestone.id ? 
-              `<button class="save-milestone-btn" onclick="saveSingleMilestone(${index})" title="Save to Notion">Save</button>` : 
-              ''
+    while (hasMore) {
+      const queryOptions = {
+        database_id: projectsDbId,
+        filter: {
+          or: [
+            {
+              property: 'Status',
+              select: {
+                equals: 'On The Bench'
+              }
+            },
+            {
+              property: 'Status',
+              select: {
+                equals: 'On Deck'
+              }
+            },
+            {
+              property: 'Status',
+              select: {
+                equals: 'Done'
+              }
             }
-            <button class="remove-milestone" onclick="removeMilestone(${index})" title="Remove milestone">×</button>
-          </div>
-        </div>
-      `;
-    }
-
-    function toggleMilestoneCompletion(index) {
-      const checkbox = document.getElementById(`milestone-checkbox-${index}`);
-      const milestone = currentMilestones[index];
-      
-      if (checkbox.checked) {
-        milestone.status = 'Completed';
-        // Pre-fill actual hours with estimated hours if not already set
-        if (!milestone.actualHours) {
-          milestone.actualHours = milestone.estimatedHours || 1;
-        }
-      } else {
-        milestone.status = 'Not Started';
-        // Clear actual hours when unchecking
-        milestone.actualHours = null;
-      }
-      
-      refreshMilestoneList();
-      markChanged();
-      
-      // Focus on actual hours input if just completed
-      if (checkbox.checked) {
-        setTimeout(() => {
-          const actualInput = document.getElementById(`actual-hours-${index}`);
-          if (actualInput) {
-            actualInput.focus();
-            actualInput.select();
-          }
-        }, 100);
-      }
-    }
-
-    async function saveSingleMilestone(index) {
-      const milestone = currentMilestones[index];
-      if (!milestone.actualHours || milestone.actualHours <= 0) {
-        alert('Please enter actual hours before saving.');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_URL}?action=save-progress`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            completedMilestones: [{
-              milestoneId: milestone.id,
-              projectId: currentProject.id,
-              actualHours: milestone.actualHours
-            }]
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to save milestone progress: ${response.statusText}`);
-        }
-
-        showMessage('Milestone progress saved successfully', 'success');
-        refreshMilestoneList();
-      } catch (error) {
-        console.error('Failed to save milestone:', error);
-        showMessage('Failed to save milestone progress: ' + error.message, 'error');
-      }
-    }
-
-    async function saveAllCompletedMilestones() {
-      const completedWithHours = currentMilestones.filter(m => 
-        m.status === 'Completed' && m.actualHours && m.actualHours > 0 && m.id
-      );
-
-      if (completedWithHours.length === 0) {
-        alert('No completed milestones with actual hours found to save.');
-        return;
-      }
-
-      try {
-        const completedMilestones = completedWithHours.map(m => ({
-          milestoneId: m.id,
-          projectId: currentProject.id,
-          actualHours: m.actualHours
-        }));
-
-        const response = await fetch(`${API_URL}?action=save-progress`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ completedMilestones })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to save progress: ${response.statusText}`);
-        }
-
-        showMessage(`Saved progress for ${completedMilestones.length} milestones`, 'success');
-        refreshMilestoneList();
-      } catch (error) {
-        console.error('Failed to save all milestones:', error);
-        showMessage('Failed to save milestone progress: ' + error.message, 'error');
-      }
-    }
-
-    function switchMilestoneTab(tabName) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      document.querySelector(`[onclick="switchMilestoneTab('${tabName}')"]`).classList.add('active');
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.getElementById(`${tabName}-tab`).classList.add('active');
-    }
-
-    function addMilestone() {
-      const newMilestone = {
-        id: null,
-        name: `New Milestone ${currentMilestones.length + 1}`,
-        estimatedHours: 1,
-        actualHours: 0,
-        order: currentMilestones.length + 1,
-        status: 'Not Started',
-        includeInEstimate: true,  // billable checkbox
-        urgent: false,
-        workflowGroupId: null  // null = standalone milestone
+          ]
+        },
+        page_size: 100,
+        start_cursor: nextCursor
       };
-      currentMilestones.push(newMilestone);
-      refreshMilestoneList();
-      markChanged();
-    }
-
-    function addMultipleMilestones() {
-      const start = currentMilestones.length;
-      for (let i = 0; i < 5; i++) {
-        currentMilestones.push({
-          id: null,
-          name: `New Milestone ${start + i + 1}`,
-          estimatedHours: 1,
-          actualHours: 0,
-          order: start + i + 1,
-          status: 'Not Started',
-          includeInEstimate: true,  // billable checkbox
-          urgent: false,
-          workflowGroupId: null  // null = standalone milestone
-        });
-      }
-      refreshMilestoneList();
-      markChanged();
-    }
-
-    function removeMilestone(index) {
-      currentMilestones.splice(index, 1);
-      currentMilestones.forEach((m, i) => m.order = i + 1);
-      refreshMilestoneList();
-      markChanged();
-    }
-
-    function updateMilestone(index, field, value) {
-      if (field === 'estimatedHours' || field === 'actualHours') {
-        value = parseFloat(value) || (field === 'estimatedHours' ? 1 : 0);
-      }
-      currentMilestones[index][field] = value;
       
-      // If status changed to completed and no actual hours, set to estimated
-      if (field === 'status' && value === 'Completed' && !currentMilestones[index].actualHours) {
-        currentMilestones[index].actualHours = currentMilestones[index].estimatedHours || 1;
-      }
+      const projectsResponse = await notion.databases.query(queryOptions);
       
-      refreshMilestoneList();
-      markChanged();
+      allProjects = allProjects.concat(projectsResponse.results);
+      hasMore = projectsResponse.has_more;
+      nextCursor = projectsResponse.next_cursor;
     }
-
-    function refreshMilestoneList() {
-      const container = document.getElementById('milestoneList');
-      if (container) {
-        container.innerHTML = renderMilestoneList();
-        setupDragAndDrop();
-        
-        // Update time summary if it exists
-        const timeSummary = document.querySelector('.time-summary');
-        if (timeSummary && !isNewProject) {
-          const totalActual = calculateTotalActualHours();
-          const totalEstimated = calculateEstimatedHours();
-          const completedCount = currentMilestones.filter(m => m.status === 'Completed').length;
-          const totalCount = currentMilestones.length;
-          
-          timeSummary.querySelector('.time-stats').innerHTML = `
-            <div class="time-stat">
-              <div class="value">${totalActual.toFixed(1)}h</div>
-              <div class="label">Total Actual Time</div>
-            </div>
-            <div class="time-stat">
-              <div class="value">${totalEstimated.toFixed(1)}h</div>
-              <div class="label">Total Estimated</div>
-            </div>
-            <div class="time-stat">
-              <div class="value">${completedCount}/${totalCount}</div>
-              <div class="label">Completed Milestones</div>
-            </div>
-            <div class="time-stat">
-              <div class="value">${totalCount > 0 ? Math.round((completedCount/totalCount)*100) : 0}%</div>
-              <div class="label">Progress</div>
-            </div>
-          `;
-        }
-        
-        // Recalculate billing when milestones change
-        calculateBillingTotals();
-      }
-    }
-
-    // ========= Drag & Drop Handlers =========
-    let dragSrcIndex = null;
-
-    function handleDragStart(e) {
-      dragSrcIndex = parseInt(this.dataset.milestoneIndex, 10);
-      this.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(dragSrcIndex));
-    }
-
-    function handleDragOver(e) {
-      e.preventDefault(); // allow drop
-      e.dataTransfer.dropEffect = 'move';
-    }
-
-    function handleDragEnter() {
-      this.classList.add('over');
-    }
-
-    function handleDragLeave() {
-      this.classList.remove('over');
-    }
-
-    function handleDrop(e) {
-      e.preventDefault();
-      this.classList.remove('over');
-
-      const from = dragSrcIndex ?? parseInt(e.dataTransfer.getData('text/plain'), 10);
-      const to = parseInt(this.dataset.milestoneIndex, 10);
-
-      if (Number.isNaN(from) || Number.isNaN(to) || from === to) return;
-
-      const [moved] = currentMilestones.splice(from, 1);
-      currentMilestones.splice(to, 0, moved);
-      currentMilestones.forEach((m, i) => (m.order = i + 1));
-
-      refreshMilestoneList();
-      markChanged();
-    }
-
-    function handleDragEnd() {
-      this.classList.remove('dragging');
-      dragSrcIndex = null;
-      document.querySelectorAll('.milestone-row').forEach(el => el.classList.remove('over'));
-    }
-
-    function setupDragAndDrop() {
-      const rows = document.querySelectorAll('.milestone-row[draggable="true"]');
-      rows.forEach(row => {
-        row.addEventListener('dragstart', handleDragStart);
-        row.addEventListener('dragover', handleDragOver);
-        row.addEventListener('drop', handleDrop);
-        row.addEventListener('dragend', handleDragEnd);
-        row.addEventListener('dragenter', handleDragEnter);
-        row.addEventListener('dragleave', handleDragLeave);
-      });
-    }
-
-    function previewWorkflow() {
-      const workflowId = document.getElementById('workflowSelect').value;
-      const preview = document.getElementById('workflowPreview');
-      if (!workflowId) { preview.innerHTML = ''; return; }
-
-      const workflow = allWorkflows.find(w => w.id === workflowId);
-      if (!workflow) return;
-
-      try {
-        const milestones = JSON.parse(workflow.data);
-        let html = '<div class="workflow-preview"><h4>Preview:</h4>';
-        milestones.forEach((ms, i) => {
-          html += `
-            <div class="milestone-row">
-              <div class="milestone-order">${i + 1}</div>
-              <div class="milestone-name">${escapeHtml(ms.name)}</div>
-              <div class="milestone-hours">${ms.hours || ms.estimatedHours}h</div>
-            </div>
-          `;
-        });
-        html += '</div>';
-        preview.innerHTML = html;
-      } catch {
-        preview.innerHTML = '<div class="error">Invalid workflow data</div>';
-      }
-    }
-
-    function applyWorkflow() {
-      const workflowId = document.getElementById('workflowSelect').value;
-      if (!workflowId) return;
-      const workflow = allWorkflows.find(w => w.id === workflowId);
-      if (!workflow) return;
-
-      try {
-        const template = JSON.parse(workflow.data);
-        
-        // Generate unique workflow group ID
-        const workflowGroupId = `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const workflowName = workflow.name;
-        
-        // Create milestones with workflow group tracking
-        const newMilestones = template.map((ms, i) => ({
-          id: null,
-          name: ms.name,
-          estimatedHours: ms.hours || ms.estimatedHours || 1,
-          actualHours: 0,
-          order: currentMilestones.length + i + 1,
-          status: i === 0 ? 'Ready' : 'Not Started',
-          includeInEstimate: true,  // billable by default
-          urgent: false,  // not urgent by default
-          workflowGroupId: workflowGroupId,  // unique group ID
-          workflowName: workflowName  // store workflow name for display
-        }));
-        
-        // Add to existing milestones instead of replacing
-        currentMilestones.push(...newMilestones);
-        
-        refreshMilestoneList();
-        switchMilestoneTab('individual');
-        markChanged();
-        showMessage(`Added workflow: ${workflowName}`, 'success');
-      } catch {
-        showMessage('Invalid workflow data', 'error');
-      }
-    }
-
-    function previewAutoSplit() {
-      const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
-      const sessions   = parseInt(document.getElementById('splitSessions').value) || 1;
-      const baseName   = document.getElementById('splitBaseName').value || 'Work Session';
-      const preview    = document.getElementById('autoSplitPreview');
-
-      if (totalHours === 0) { preview.innerHTML = ''; return; }
-
-      const hoursPerSession = totalHours / sessions;
-      let html = '<div class="workflow-preview"><h4>Preview:</h4>';
-
-      for (let i = 1; i <= sessions; i++) {
-        const hours = Math.round(hoursPerSession * 4) / 4;
-        html += `
-          <div class="milestone-row">
-            <div class="milestone-order">${i}</div>
-            <div class="milestone-name">${escapeHtml(baseName)} ${i}</div>
-            <div class="milestone-hours">${hours}h</div>
-          </div>
-        `;
-      }
-      html += '</div>';
-      preview.innerHTML = html;
-    }
-
-    function applyAutoSplit() {
-      const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
-      const sessions   = parseInt(document.getElementById('splitSessions').value) || 1;
-      const baseName   = document.getElementById('splitBaseName').value || 'Work Session';
-      if (totalHours === 0) return;
-
-      const hoursPerSession = totalHours / sessions;
-      
-      // Generate unique workflow group ID for auto-split sessions
-      const workflowGroupId = `autosplit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      const newMilestones = [];
-      for (let i = 1; i <= sessions; i++) {
-        const hours = Math.round(hoursPerSession * 4) / 4;
-        newMilestones.push({
-          id: null,
-          name: `${baseName} ${i}`,
-          estimatedHours: hours,
-          actualHours: 0,
-          order: currentMilestones.length + i,
-          status: i === 1 ? 'Ready' : 'Not Started',
-          includeInEstimate: true,  // billable by default
-          urgent: false,  // not urgent by default
-          workflowGroupId: workflowGroupId,  // unique group ID
-          workflowName: baseName  // store base name as workflow name
-        });
-      }
-      
-      // Add to existing milestones instead of replacing
-      currentMilestones.push(...newMilestones);
-      
-      refreshMilestoneList();
-      switchMilestoneTab('individual');
-      markChanged();
-    }
-
-    // Parts Management Functions
-    function renderPartsList() {
-      if (currentParts.length === 0) {
-        return '<div class="empty-state">No parts added yet. Click "Add Part" below.</div>';
-      }
-
-      return currentParts.map((part, index) => `
-        <div class="part-row">
-          <input type="text" value="${escapeHtml(part.name || '')}"
-                 onchange="updatePart(${index}, 'name', this.value)"
-                 placeholder="Part name">
-          <input type="number" step="1" min="1"
-                 value="${part.quantity || 1}"
-                 onchange="updatePart(${index}, 'quantity', this.value)"
-                 placeholder="Qty">
-          <input type="number" step="0.01" min="0"
-                 value="${part.pricePerItem || 0}"
-                 onchange="updatePart(${index}, 'pricePerItem', this.value)"
-                 placeholder="Price">
-          <input type="text" readonly value="$${((part.quantity || 0) * (part.pricePerItem || 0)).toFixed(2)}">
-          <button class="remove-part" onclick="removePart(${index})" title="Remove part">×</button>
-        </div>
-      `).join('');
-    }
-
-    function addPart() {
-      currentParts.push({
-        id: null,
-        name: '',
-        quantity: 1,
-        pricePerItem: 0,
-        order: currentParts.length + 1
-      });
-      refreshPartsList();
-      markChanged();
-    }
-
-    function removePart(index) {
-      currentParts.splice(index, 1);
-      currentParts.forEach((p, i) => p.order = i + 1);
-      refreshPartsList();
-      markChanged();
-    }
-
-    function updatePart(index, field, value) {
-      if (field === 'quantity') {
-        value = parseInt(value) || 1;
-      } else if (field === 'pricePerItem') {
-        value = parseFloat(value) || 0;
-      }
-      currentParts[index][field] = value;
-      refreshPartsList();
-      markChanged();
-    }
-
-    function refreshPartsList() {
-      const container = document.getElementById('partsList');
-      if (container) {
-        container.innerHTML = renderPartsList();
-        updatePartsTotal();
-        calculateBillingTotals(); // Recalculate billing when parts change
-      }
-    }
-
-    function updatePartsTotal() {
-      const total = currentParts.reduce((sum, part) => {
-        return sum + ((part.quantity || 0) * (part.pricePerItem || 0));
-      }, 0);
-      const totalElement = document.getElementById('partsTotalAmount');
-      if (totalElement) {
-        totalElement.textContent = '$' + total.toFixed(2);
-      }
-    }
-
-    function loadProjectParts(projectId) {
-      currentParts = allParts
-        .filter(p => p.projectId === projectId)
-        .sort((a, b) => a.order - b.order);
-    }
-
-    function markChanged() {
-      hasUnsavedChanges = true;
-      updateSaveButton();
-      
-      // Update project ID from input
-      const projectIdInput = document.getElementById('projectIdInput');
-      if (projectIdInput && currentProject) {
-        currentProject.projectId = projectIdInput.value;
-      }
-    }
-
-    function updateSaveButton() {
-      const saveBtn = document.getElementById('saveBtn');
-      if (!saveBtn) return;
-      saveBtn.disabled = !hasUnsavedChanges;
-      saveBtn.textContent = hasUnsavedChanges ? 'Save Changes *' : 'Saved';
-    }
-
-    async function saveProject() {
-      if (!currentProject) return;
-
-      try {
-        document.getElementById('saveBtn').textContent = 'Saving...';
-
-        const projectData = {
-          name: document.getElementById('projectName').value,
-          projectId: document.getElementById('projectIdInput').value,
-          status: document.getElementById('projectStatus').value,
-          instrumentMake: document.getElementById('instrumentMake').value,
-          instrumentModel: document.getElementById('instrumentModel').value,
-          complexity: parseInt(document.getElementById('complexity').value),
-          profitability: parseInt(document.getElementById('profitability').value),
-          dueDate: document.getElementById('dueDate').value || null,
-          store: document.getElementById('store').value,
-          intakeNotes: document.getElementById('intakeNotes').value,
-          notes: document.getElementById('notes').value,
-          
-          // Billing data - save calculated total, tax amount, and commission percentage
-          total: currentProject.calculatedTotal || null,
-          taxAmount: currentProject.calculatedTaxAmount || null,
-          commission: parseFloat(document.getElementById('commission').value) || null,  // This is now a percentage
-          discount: parseInt(document.getElementById('discount').value) || null,
-          
-          // Measurement data
-          neckReliefBefore: parseFloat(document.getElementById('neckReliefBefore').value) || null,
-          before1stString1stFret: parseFloat(document.getElementById('before1stString1stFret').value) || null,
-          before1stString12thFret: parseFloat(document.getElementById('before1stString12thFret').value) || null,
-          before6thString1stFret: parseFloat(document.getElementById('before6thString1stFret').value) || null,
-          before6thString12thFret: parseFloat(document.getElementById('before6thString12thFret').value) || null,
-          neckReliefAfter: parseFloat(document.getElementById('neckReliefAfter').value) || null,
-          after1stString1stFret: parseFloat(document.getElementById('after1stString1stFret').value) || null,
-          after1stString12thFret: parseFloat(document.getElementById('after1stString12thFret').value) || null,
-          after6thString1stFret: parseFloat(document.getElementById('after6thString1stFret').value) || null,
-          after6thString12thFret: parseFloat(document.getElementById('after6thString12thFret').value) || null,
-          
-          // Instrument details
-          instrumentFinish: document.getElementById('instrumentFinish').value,
-          serialNumber: document.getElementById('serialNumber').value,
-          instrumentType: document.getElementById('instrumentType').value,
-          stringBrand: document.getElementById('stringBrand').value,
-          stringGauge: document.getElementById('stringGauge').value,
-          tuning: document.getElementById('tuning').value,
-          tremolo: document.getElementById('tremolo').value,
-          fretboardRadius: parseFloat(document.getElementById('fretboardRadius').value) || null,
-          fretwire: document.getElementById('fretwire').value,
-         
-          
-          
-          
-          // Actions
-          actions: {
-            adjustedHeightRadius: document.getElementById('adjustedHeightRadius').checked,
-            adjustedIntonation: document.getElementById('adjustedIntonation').checked,
-            adjustedPickupHeight: document.getElementById('adjustedPickupHeight').checked,
-            adjustedTrussRod: document.getElementById('adjustedTrussRod').checked,
-            adjustedStringSlots: document.getElementById('adjustedStringSlots').checked,
-            cleanedPolished: document.getElementById('cleanedPolished').checked,
-            installedStretchedStrings: document.getElementById('installedStretchedStrings').checked,
-            lubricatedStringSlots: document.getElementById('lubricatedStringSlots').checked,
-            oiledFretboard: document.getElementById('oiledFretboard').checked,
-            polishedFrets: document.getElementById('polishedFrets').checked,
-            testedElectronics: document.getElementById('testedElectronics').checked,
-            tightenedHardware: document.getElementById('tightenedHardware').checked,
-            adjustedTremoloTension: document.getElementById('adjustedTremoloTension').checked,
-            adjustedNeckAngle: document.getElementById('adjustedNeckAngle').checked
-          },
-          additionalActions: document.getElementById('additionalActions').value
-        };
-
-        let projectResult;
-
-        if (isNewProject) {
-          const createResponse = await fetch(`${API_URL}?action=create-project`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(projectData)
-          });
-          if (!createResponse.ok) {
-            const errorText = await createResponse.text();
-            throw new Error(`Failed to create project: ${errorText}`);
-          }
-          projectResult = await createResponse.json();
-          if (projectResult.success && projectResult.project) {
-            currentProject.id = projectResult.project.id;
-            isNewProject = false;
-            allProjects.push(projectResult.project);
-            showMessage('Project created successfully', 'success');
-          } else {
-            throw new Error('Failed to create project: Invalid response');
-          }
-        } else {
-          // For updates, we need to specify which Notion page to update using the id field
-          projectData.id = currentProject.id;
-          const updateResponse = await fetch(`${API_URL}?action=update-project`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(projectData)
-          });
-          if (!updateResponse.ok) {
-            const errorText = await updateResponse.text();
-            throw new Error(`Failed to update project: ${errorText}`);
-          }
-          projectResult = await updateResponse.json();
-          showMessage('Project updated successfully', 'success');
-        }
-
-        if (currentMilestones.length > 0) {
-          const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId: currentProject.id,
-              milestones: currentMilestones
-            })
-          });
-          if (!milestoneResponse.ok) {
-            const errorText = await milestoneResponse.text();
-            throw new Error(`Failed to save milestones: ${errorText}`);
-          }
-          await milestoneResponse.json();
-        }
-
-        // Save parts (including deletions) - always call API to sync with Notion
-        try {
-          const partsResponse = await fetch(`${API_URL}?action=save-parts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId: currentProject.id,
-              parts: currentParts
-            })
-          });
-          
-          const partsResult = await partsResponse.json();
-          
-          if (partsResponse.ok && partsResult.success) {
-            console.log('Parts saved successfully:', partsResult.message);
-          } else {
-            console.warn('Parts not saved:', partsResult);
-            const errorMsg = partsResult.detail || partsResult.error || 'Unknown error';
-            const hint = partsResult.hint || '';
-            showMessage(`Project saved, but parts not saved: ${errorMsg}. ${hint}`, 'info');
-          }
-        } catch (partsError) {
-          console.error('Parts feature error:', partsError);
-          showMessage('Project saved, but parts feature encountered an error. Check console for details.', 'info');
-        }
-
-        hasUnsavedChanges = false;
-        updateSaveButton();
-
-        document.getElementById('saveBtn').innerHTML = 'Saved ✓ <span class="save-indicator">Changes saved</span>';
-        setTimeout(() => updateSaveButton(), 2000);
-
-        document.getElementById('editorTitle').textContent = projectData.name;
-        await refreshProjects();
-
-      } catch (error) {
-        console.error('Save failed:', error);
-        showMessage('Failed to save changes: ' + error.message, 'error');
-        document.getElementById('saveBtn').textContent = 'Save Changes *';
-      }
-    }
-
-    function cancelChanges() {
-      if (hasUnsavedChanges && !confirm('Discard unsaved changes?')) return;
-
-      if (isNewProject) {
-        currentProject = null;
-        currentMilestones = [];
-        isNewProject = false;
-
-        document.getElementById('editorContent').innerHTML = `
-          <div class="empty-state">
-            <h3>Select a project to edit</h3>
-            <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
-          </div>
-        `;
-        document.getElementById('editorTitle').textContent = 'Select a project';
-        document.getElementById('projectIdInput').style.display = 'none';
-        displayProjectsList();
-      } else if (currentProject) {
-        selectProject(currentProject.id);
-      }
-
-      hasUnsavedChanges = false;
-      updateSaveButton();
-    }
-
     
-  function syncEditorIntoCurrentProject() {
-    if (!currentProject) return;
-    // Core fields visible in the “Project Details” section
-    const val = id => document.getElementById(id)?.value ?? '';
+    let allMilestones = [];
+    hasMore = true;
+    nextCursor = undefined;
+    
+    while (hasMore) {
+      const milestonesResponse = await notion.databases.query({
+        database_id: milestonesDbId,
+        page_size: 100,
+        start_cursor: nextCursor
+      });
+      
+      allMilestones = allMilestones.concat(milestonesResponse.results);
+      hasMore = milestonesResponse.has_more;
+      nextCursor = milestonesResponse.next_cursor;
+    }
+    
+    let allParts = [];
+    if (partsDbId) {
+      try {
+        hasMore = true;
+        nextCursor = undefined;
+        
+        while (hasMore) {
+          const partsResponse = await notion.databases.query({
+            database_id: partsDbId,
+            page_size: 100,
+            start_cursor: nextCursor
+          });
+          
+          allParts = allParts.concat(partsResponse.results);
+          hasMore = partsResponse.has_more;
+          nextCursor = partsResponse.next_cursor;
+        }
+      } catch (partsError) {
+        console.warn('Parts database not accessible:', partsError.message);
+        // Continue without parts - it's optional
+      }
+    }
+    
+    const projects = allProjects.map(mapProject);
+    const milestones = allMilestones.map(mapMilestone);
+    const parts = allParts.map(mapPart);
+    
+    console.log(`API returning ${projects.length} projects (On The Bench, On Deck, Done), ${milestones.length} milestones, and ${parts.length} parts`);
+    
+    return res.json({ projects, milestones, parts });
+  } catch (error) {
+    console.error('Failed to fetch data:', error);
+    return res.status(500).json({ 
+      error: 'Failed to fetch data', 
+      detail: error.message 
+    });
+  }
+}
 
-    currentProject.name = val('projectName');
-    currentProject.status = val('projectStatus');
-    currentProject.instrumentMake = val('instrumentMake');
-    currentProject.instrumentModel = val('instrumentModel');
-    currentProject.complexity = parseInt(val('complexity') || currentProject.complexity || 3, 10);
-    currentProject.profitability = parseInt(val('profitability') || currentProject.profitability || 3, 10);
-    currentProject.dueDate = val('dueDate') || null;
-    currentProject.store = val('store') || '';
-    currentProject.intakeNotes = val('intakeNotes') || '';
-
-    // Billing (if shown)
-    const totalEl = document.getElementById('total');
-    const commissionEl = document.getElementById('commission');
-    const discountEl = document.getElementById('discount');
-    if (totalEl) currentProject.total = totalEl.value ? parseFloat(totalEl.value) : null;
-    if (commissionEl) currentProject.commission = commissionEl.value ? parseFloat(commissionEl.value) : null;
-    if (discountEl) currentProject.discount = discountEl.value ? parseInt(discountEl.value) : null;
-
-    // Measurements (only if section expanded—safe to read anyway)
-    const num = id => {
-      const v = document.getElementById(id)?.value;
-      return (v === '' || v == null) ? null : parseFloat(v);
-    };
-
-    currentProject.neckReliefBefore = num('neckReliefBefore');
-    currentProject.before1stString1stFret = num('before1stString1stFret');
-    currentProject.before1stString12thFret = num('before1stString12thFret');
-    currentProject.before6thString1stFret = num('before6thString1stFret');
-    currentProject.before6thString12thFret = num('before6thString12thFret');
-
-    currentProject.neckReliefAfter = num('neckReliefAfter');
-    currentProject.after1stString1stFret = num('after1stString1stFret');
-    currentProject.after1stString12thFret = num('after1stString12thFret');
-    currentProject.after6thString1stFret = num('after6thString1stFret');
-    currentProject.after6thString12thFret = num('after6thString12thFret');
-
+// Create new project
+async function createProject(res, notion, projectsDbId, data) {
+  const { 
+    name, projectId, status, instrumentMake, instrumentModel, complexity, profitability, 
+    dueDate, store, intakeNotes,
+    // Measurement fields
+    neckReliefBefore, before1stString1stFret, before1stString12thFret, 
+    before6thString1stFret, before6thString12thFret,
+    neckReliefAfter, after1stString1stFret, after1stString12thFret, 
+    after6thString1stFret, after6thString12thFret,
     // Instrument details
-    currentProject.instrumentFinish = val('instrumentFinish');
-    currentProject.serialNumber = val('serialNumber');
-    currentProject.instrumentType = val('instrumentType');
-    currentProject.stringBrand = val('stringBrand');
-    currentProject.stringGauge = val('stringGauge');
-    currentProject.tuning = val('tuning');
-    currentProject.tremolo = val('tremolo');
-    currentProject.fretboardRadius = (() => {
-      const r = val('fretboardRadius');
-      return r ? parseFloat(r) : null;
-    })();
-    currentProject.fretwire = val('fretwire');
-
-    // Actions (add this to syncEditorIntoCurrentProject function)
-if (!currentProject.actions) currentProject.actions = {};
-
-currentProject.actions.adjustedHeightRadius = document.getElementById('adjustedHeightRadius')?.checked || false;
-currentProject.actions.adjustedIntonation = document.getElementById('adjustedIntonation')?.checked || false;
-currentProject.actions.adjustedPickupHeight = document.getElementById('adjustedPickupHeight')?.checked || false;
-currentProject.actions.adjustedTrussRod = document.getElementById('adjustedTrussRod')?.checked || false;
-currentProject.actions.adjustedStringSlots = document.getElementById('adjustedStringSlots')?.checked || false;
-currentProject.actions.cleanedPolished = document.getElementById('cleanedPolished')?.checked || false;
-currentProject.actions.installedStretchedStrings = document.getElementById('installedStretchedStrings')?.checked || false;
-currentProject.actions.lubricatedStringSlots = document.getElementById('lubricatedStringSlots')?.checked || false;
-currentProject.actions.oiledFretboard = document.getElementById('oiledFretboard')?.checked || false;
-currentProject.actions.polishedFrets = document.getElementById('polishedFrets')?.checked || false;
-currentProject.actions.testedElectronics = document.getElementById('testedElectronics')?.checked || false;
-currentProject.actions.tightenedHardware = document.getElementById('tightenedHardware')?.checked || false;
-currentProject.actions.adjustedTremoloTension = document.getElementById('adjustedTremoloTension')?.checked || false;
-currentProject.actions.adjustedNeckAngle = document.getElementById('adjustedNeckAngle')?.checked || false;
-
-currentProject.additionalActions = document.getElementById('additionalActions')?.value || '';
-
-    // Actions (“Standard Actions”) are already mapped in your API to currentProject.actions
-    // If you later add action checkboxes in the editor UI, read them here and update currentProject.actions accordingly.
-  }
-
-  function openReportForCurrent() {
-    if (!currentProject) {
-      showMessage('Select a project first', 'error');
-      return;
+    instrumentFinish, serialNumber, instrumentType, stringBrand, stringGauge,
+    tuning, tremolo, fretboardRadius, fretwire,
+    // Actions
+    actions, additionalActions,
+    // Billing fields
+    total, commission, discount, taxAmount, notes
+  } = data;
+  
+  console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
+  
+  try {
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Project name is required' });
     }
-    // Pull any on-screen edits into the object:
-    syncEditorIntoCurrentProject();
     
-    // Ensure taxAmount is synced from the latest calculation
-    // This ensures the report uses the current tax calculation based on the store selection
-    currentProject.taxAmount = currentProject.calculatedTaxAmount || 0;
+    // Build the properties object for the new project
+    const properties = {
+      'Name': {
+        title: [{ text: { content: name.trim() } }]
+      },
+      'Status': {
+        select: { name: status || 'On The Bench' }
+      }
+    };
+    
+    // Add Project ID field (corrected to number type)
+    if (projectId !== undefined && projectId !== '') {
+      const idNumber = parseInt(projectId, 10);
+      if (!isNaN(idNumber)) {
+        properties['ID'] = { number: idNumber };
+      }
+    }
+    
+    // Add basic project fields
+    if (instrumentMake !== undefined) {
+      properties['Instrument Make'] = { 
+        rich_text: [{ text: { content: instrumentMake || '' } }] 
+      };
+    }
+    
+    if (instrumentModel !== undefined) {
+      properties['Instrument Model'] = { 
+        rich_text: [{ text: { content: instrumentModel || '' } }] 
+      };
+    }
+    
+    if (complexity !== undefined) {
+      properties['Complexity'] = { number: complexity };
+    }
+    
+    if (profitability !== undefined) {
+      properties['Profitability'] = { number: profitability };
+    }
 
-    // Attach milestones currently loaded for this project:
-    const payload = {
-      project: currentProject,
-      milestones: currentMilestones || [],
-      parts: currentParts || []
+    if (store !== undefined && store !== '') {
+      properties['Store'] = { 
+        select: { name: store }
+      };
+    }
+
+    if (dueDate !== undefined && dueDate !== null && dueDate !== '') {
+      properties['Due Date'] = { 
+        date: { start: dueDate }
+      };
+    }
+
+    if (intakeNotes !== undefined) {
+      properties['Intake Notes'] = { 
+        rich_text: [{ text: { content: intakeNotes || '' } }] 
+      };
+    }
+    
+    // Add billing fields
+    if (total !== undefined && total !== null && total !== '') {
+      properties['Total'] = { number: parseFloat(total) };
+    }
+    
+    if (commission !== undefined && commission !== null && commission !== '') {
+      properties['Commission'] = { number: parseFloat(commission) };
+    }
+    
+    // Add discount field (percentage as integer)
+    if (discount !== undefined && discount !== null && discount !== '') {
+      properties['Discount'] = { number: parseInt(discount) };
+    }
+    
+    // Add taxAmount field
+    if (taxAmount !== undefined && taxAmount !== null && taxAmount !== '') {
+      properties['taxAmount'] = { number: parseFloat(taxAmount) };
+    }
+
+    // Add measurement fields
+    if (neckReliefBefore !== undefined && neckReliefBefore !== null) {
+      properties['Neck Relief Before'] = { number: neckReliefBefore };
+    }
+    if (before1stString1stFret !== undefined && before1stString1stFret !== null) {
+      properties['Before 1st string at 1st fret'] = { number: before1stString1stFret };
+    }
+    if (before1stString12thFret !== undefined && before1stString12thFret !== null) {
+      properties['Before 1st string at 12th fret'] = { number: before1stString12thFret };
+    }
+    if (before6thString1stFret !== undefined && before6thString1stFret !== null) {
+      properties['Before 6th string at 1st fret'] = { number: before6thString1stFret };
+    }
+    if (before6thString12thFret !== undefined && before6thString12thFret !== null) {
+      properties['Before 6th string at 12th fret'] = { number: before6thString12thFret };
+    }
+    if (neckReliefAfter !== undefined && neckReliefAfter !== null) {
+      properties['Neck Relief After'] = { number: neckReliefAfter };
+    }
+    if (after1stString1stFret !== undefined && after1stString1stFret !== null) {
+      properties['After 1st string at 1st fret'] = { number: after1stString1stFret };
+    }
+    if (after1stString12thFret !== undefined && after1stString12thFret !== null) {
+      properties['After 1st string at 12th fret'] = { number: after1stString12thFret };
+    }
+    if (after6thString1stFret !== undefined && after6thString1stFret !== null) {
+      properties['After 6th string at 1st fret'] = { number: after6thString1stFret };
+    }
+    if (after6thString12thFret !== undefined && after6thString12thFret !== null) {
+      properties['After 6th string at 12th fret'] = { number: after6thString12thFret };
+    }
+
+    // Add instrument detail fields
+    if (instrumentFinish !== undefined) {
+      properties['Instrument Finish'] = { 
+        rich_text: [{ text: { content: instrumentFinish || '' } }] 
+      };
+    }
+    if (serialNumber !== undefined) {
+      properties['Serial Number'] = { 
+        rich_text: [{ text: { content: serialNumber || '' } }] 
+      };
+    }
+    if (instrumentType !== undefined && instrumentType !== '') {
+      properties['Instrument Type'] = { 
+        select: { name: instrumentType }
+      };
+    }
+    if (stringBrand !== undefined) {
+      properties['String Brand'] = { 
+        rich_text: [{ text: { content: stringBrand || '' } }] 
+      };
+    }
+    if (stringGauge !== undefined) {
+      properties['String Gauge'] = { 
+        rich_text: [{ text: { content: stringGauge || '' } }] 
+      };
+    }
+    if (tuning !== undefined && tuning !== '') {
+      properties['Tuning'] = { 
+        select: { name: tuning }
+      };
+    }
+    if (tremolo !== undefined) {
+      properties['Tremolo'] = { 
+        rich_text: [{ text: { content: tremolo || '' } }] 
+      };
+    }
+    if (fretboardRadius !== undefined && fretboardRadius !== null) {
+      properties['Fretboard Radius'] = { number: fretboardRadius };
+    }
+    if (fretwire !== undefined) {
+      properties['Fretwire'] = { 
+        rich_text: [{ text: { content: fretwire || '' } }] 
+      };
+    }
+
+    // Add actions (corrected field name to "Standard Actions")
+    if (actions && typeof actions === 'object') {
+      const actionMap = {
+        adjustedHeightRadius: 'Adjusted Height and Radius',
+        adjustedIntonation: 'Adjusted Intonation',
+        adjustedPickupHeight: 'Adjusted Pickup Height',
+        adjustedTrussRod: 'Adjusted Truss Rod',
+        adjustedStringSlots: 'Adjusted String Slots',
+        cleanedPolished: 'Cleaned and Polished',
+        installedStretchedStrings: 'Installed and Stretched Strings',
+        lubricatedStringSlots: 'Lubricated String Slots',
+        oiledFretboard: 'Oiled Fretboard',
+        polishedFrets: 'Polished Frets',
+        testedElectronics: 'Tested Electronics',
+        tightenedHardware: 'Tightened Hardware',
+        adjustedTremoloTension: 'Adjusted Tremolo Tension',
+        adjustedNeckAngle: 'Adjusted Neck Angle'
+      };
+
+      const selectedActions = [];
+      for (const [key, value] of Object.entries(actions)) {
+        if (value && actionMap[key]) {
+          selectedActions.push({ name: actionMap[key] });
+        }
+      }
+
+      if (selectedActions.length > 0) {
+        properties['Standard Actions'] = { multi_select: selectedActions };
+      }
+    }
+
+    if (additionalActions !== undefined) {
+      properties['Additional Actions'] = { 
+        rich_text: [{ text: { content: additionalActions || '' } }] 
+      };
+    }
+
+    if (notes !== undefined) {
+      properties['Notes'] = { 
+        rich_text: [{ text: { content: notes || '' } }] 
+      };
+    }
+    
+    const response = await notion.pages.create({
+      parent: { database_id: projectsDbId },
+      properties
+    });
+    
+    console.log('Project created successfully:', response.id);
+    
+    // Map the response to our project format
+    const createdProject = mapProject(response);
+    
+    return res.json({ 
+      success: true, 
+      message: 'Project created successfully',
+      project: createdProject
+    });
+    
+  } catch (error) {
+    console.error('Project creation error:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      body: error.body
+    });
+    
+    return res.status(500).json({ 
+      error: 'Failed to create project', 
+      detail: error.message,
+      code: error.code,
+      notionError: error.body 
+    });
+  }
+}
+
+// Update project information - ENHANCED VERSION with billing fields including Discount
+async function updateProject(res, notion, projectsDbId, data) {
+  const { id, ...updates } = data;
+  
+  console.log('updateProject called with:', { id, updates });
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Project ID (Notion page ID) is required for update' });
+  }
+  
+  try {
+    const properties = {};
+    
+    // Basic fields
+    if (updates.name) {
+      properties.Name = { title: [{ text: { content: updates.name } }] };
+      console.log('Setting Name:', updates.name);
+    }
+    if (updates.projectId !== undefined) {
+      if (updates.projectId === null || updates.projectId === '') {
+        properties['ID'] = { number: null };
+      } else {
+        const idNumber = parseInt(updates.projectId, 10);
+        if (!isNaN(idNumber)) {
+          properties['ID'] = { number: idNumber };
+        }
+      }
+      console.log('Setting Project ID:', updates.projectId);
+    }
+    if (updates.status) {
+      properties.Status = { select: { name: updates.status } };
+      console.log('Setting Status:', updates.status);
+    }
+    if (updates.instrumentMake !== undefined) {
+      properties['Instrument Make'] = { 
+        rich_text: [{ text: { content: updates.instrumentMake || '' } }] 
+      };
+      console.log('Setting Instrument Make:', updates.instrumentMake);
+    }
+    if (updates.instrumentModel !== undefined) {
+      properties['Instrument Model'] = { 
+        rich_text: [{ text: { content: updates.instrumentModel || '' } }] 
+      };
+      console.log('Setting Instrument Model:', updates.instrumentModel);
+    }
+    if (updates.complexity !== undefined) {
+      properties['Complexity'] = { number: updates.complexity };
+      console.log('Setting Complexity:', updates.complexity);
+    }
+    if (updates.profitability !== undefined) {
+      properties['Profitability'] = { number: updates.profitability };
+      console.log('Setting Profitability:', updates.profitability);
+    }
+    if (updates.store !== undefined) {
+      if (updates.store === null || updates.store === '') {
+        properties['Store'] = { select: null };
+        console.log('Clearing Store');
+      } else {
+        properties['Store'] = { select: { name: updates.store } };
+        console.log('Setting Store:', updates.store);
+      }
+    }
+    if (updates.dueDate !== undefined) {
+      if (updates.dueDate === null || updates.dueDate === '') {
+        properties['Due Date'] = { date: null };
+        console.log('Clearing Due Date');
+      } else {
+        properties['Due Date'] = { date: { start: updates.dueDate } };
+        console.log('Setting Due Date:', updates.dueDate);
+      }
+    }
+    if (updates.intakeNotes !== undefined) {
+      properties['Intake Notes'] = { 
+        rich_text: [{ text: { content: updates.intakeNotes || '' } }] 
+      };
+      console.log('Setting Intake Notes:', updates.intakeNotes);
+    }
+
+    // Billing fields
+    if (updates.total !== undefined) {
+      if (updates.total === null || updates.total === '') {
+        properties['Total'] = { number: null };
+        console.log('Clearing Total');
+      } else {
+        properties['Total'] = { number: parseFloat(updates.total) };
+        console.log('Setting Total:', updates.total);
+      }
+    }
+    
+    if (updates.commission !== undefined) {
+      if (updates.commission === null || updates.commission === '') {
+        properties['Commission'] = { number: null };
+        console.log('Clearing Commission');
+      } else {
+        properties['Commission'] = { number: parseFloat(updates.commission) };
+        console.log('Setting Commission:', updates.commission);
+      }
+    }
+    
+    // Add discount field handling (percentage as integer)
+    if (updates.discount !== undefined) {
+      if (updates.discount === null || updates.discount === '') {
+        properties['Discount'] = { number: null };
+        console.log('Clearing Discount');
+      } else {
+        properties['Discount'] = { number: parseInt(updates.discount) };
+        console.log('Setting Discount:', updates.discount);
+      }
+    }
+    
+    // Add taxAmount field handling
+    if (updates.taxAmount !== undefined) {
+      if (updates.taxAmount === null || updates.taxAmount === '') {
+        properties['taxAmount'] = { number: null };
+        console.log('Clearing taxAmount');
+      } else {
+        properties['taxAmount'] = { number: parseFloat(updates.taxAmount) };
+        console.log('Setting taxAmount:', updates.taxAmount);
+      }
+    }
+
+    // Measurement fields
+    if (updates.neckReliefBefore !== undefined) {
+      properties['Neck Relief Before'] = updates.neckReliefBefore !== null ? { number: updates.neckReliefBefore } : { number: null };
+    }
+    if (updates.before1stString1stFret !== undefined) {
+      properties['Before 1st string at 1st fret'] = updates.before1stString1stFret !== null ? { number: updates.before1stString1stFret } : { number: null };
+    }
+    if (updates.before1stString12thFret !== undefined) {
+      properties['Before 1st string at 12th fret'] = updates.before1stString12thFret !== null ? { number: updates.before1stString12thFret } : { number: null };
+    }
+    if (updates.before6thString1stFret !== undefined) {
+      properties['Before 6th string at 1st fret'] = updates.before6thString1stFret !== null ? { number: updates.before6thString1stFret } : { number: null };
+    }
+    if (updates.before6thString12thFret !== undefined) {
+      properties['Before 6th string at 12th fret'] = updates.before6thString12thFret !== null ? { number: updates.before6thString12thFret } : { number: null };
+    }
+    if (updates.neckReliefAfter !== undefined) {
+      properties['Neck Relief After'] = updates.neckReliefAfter !== null ? { number: updates.neckReliefAfter } : { number: null };
+    }
+    if (updates.after1stString1stFret !== undefined) {
+      properties['After 1st string at 1st fret'] = updates.after1stString1stFret !== null ? { number: updates.after1stString1stFret } : { number: null };
+    }
+    if (updates.after1stString12thFret !== undefined) {
+      properties['After 1st string at 12th fret'] = updates.after1stString12thFret !== null ? { number: updates.after1stString12thFret } : { number: null };
+    }
+    if (updates.after6thString1stFret !== undefined) {
+      properties['After 6th string at 1st fret'] = updates.after6thString1stFret !== null ? { number: updates.after6thString1stFret } : { number: null };
+    }
+    if (updates.after6thString12thFret !== undefined) {
+      properties['After 6th string at 12th fret'] = updates.after6thString12thFret !== null ? { number: updates.after6thString12thFret } : { number: null };
+    }
+
+    // Instrument detail fields
+    if (updates.instrumentFinish !== undefined) {
+      properties['Instrument Finish'] = { 
+        rich_text: [{ text: { content: updates.instrumentFinish || '' } }] 
+      };
+    }
+    if (updates.serialNumber !== undefined) {
+      properties['Serial Number'] = { 
+        rich_text: [{ text: { content: updates.serialNumber || '' } }] 
+      };
+    }
+    if (updates.instrumentType !== undefined) {
+      if (updates.instrumentType === null || updates.instrumentType === '') {
+        properties['Instrument Type'] = { select: null };
+      } else {
+        properties['Instrument Type'] = { select: { name: updates.instrumentType } };
+      }
+    }
+    if (updates.stringBrand !== undefined) {
+      properties['String Brand'] = { 
+        rich_text: [{ text: { content: updates.stringBrand || '' } }] 
+      };
+    }
+    if (updates.stringGauge !== undefined) {
+      properties['String Gauge'] = { 
+        rich_text: [{ text: { content: updates.stringGauge || '' } }] 
+      };
+    }
+    if (updates.tuning !== undefined) {
+      if (updates.tuning === null || updates.tuning === '') {
+        properties['Tuning'] = { select: null };
+      } else {
+        properties['Tuning'] = { select: { name: updates.tuning } };
+      }
+    }
+    if (updates.tremolo !== undefined) {
+      properties['Tremolo'] = { 
+        rich_text: [{ text: { content: updates.tremolo || '' } }] 
+      };
+    }
+    if (updates.fretboardRadius !== undefined) {
+      properties['Fretboard Radius'] = updates.fretboardRadius !== null ? { number: updates.fretboardRadius } : { number: null };
+    }
+    if (updates.fretwire !== undefined) {
+      properties['Fretwire'] = { 
+        rich_text: [{ text: { content: updates.fretwire || '' } }] 
+      };
+    }
+
+    // Actions (corrected field name to "Standard Actions")
+    if (updates.actions && typeof updates.actions === 'object') {
+      const actionMap = {
+        adjustedHeightRadius: 'Adjusted Height and Radius',
+        adjustedIntonation: 'Adjusted Intonation',
+        adjustedPickupHeight: 'Adjusted Pickup Height',
+        adjustedTrussRod: 'Adjusted Truss Rod',
+        adjustedStringSlots: 'Adjusted String Slots',
+        cleanedPolished: 'Cleaned and Polished',
+        installedStretchedStrings: 'Installed and Stretched Strings',
+        lubricatedStringSlots: 'Lubricated String Slots',
+        oiledFretboard: 'Oiled Fretboard',
+        polishedFrets: 'Polished Frets',
+        testedElectronics: 'Tested Electronics',
+        tightenedHardware: 'Tightened Hardware',
+        adjustedTremoloTension: 'Adjusted Tremolo Tension',
+        adjustedNeckAngle: 'Adjusted Neck Angle'
+      };
+
+      const selectedActions = [];
+      for (const [key, value] of Object.entries(updates.actions)) {
+        if (value && actionMap[key]) {
+          selectedActions.push({ name: actionMap[key] });
+        }
+      }
+
+      properties['Standard Actions'] = { multi_select: selectedActions };
+      console.log('Setting Standard Actions:', selectedActions.map(a => a.name).join(', '));
+    }
+
+    if (updates.additionalActions !== undefined) {
+      properties['Additional Actions'] = { 
+        rich_text: [{ text: { content: updates.additionalActions || '' } }] 
+      };
+      console.log('Setting Additional Actions:', updates.additionalActions);
+    }
+
+    if (updates.notes !== undefined) {
+      properties['Notes'] = { 
+        rich_text: [{ text: { content: updates.notes || '' } }] 
+      };
+      console.log('Setting Notes:', updates.notes);
+    }
+    
+    console.log('Updating project with properties:', Object.keys(properties));
+    
+    await notion.pages.update({
+      page_id: id,
+      properties
+    });
+    
+    console.log('Project updated successfully');
+    
+    return res.json({ 
+      success: true, 
+      message: 'Project updated successfully' 
+    });
+  } catch (error) {
+    console.error('Failed to update project:', error);
+    throw new Error(`Failed to update project: ${error.message}`);
+  }
+}
+
+// Debug schema function
+async function debugProjectSchema(res, notion, projectsDbId) {
+  try {
+    const database = await notion.databases.retrieve({ database_id: projectsDbId });
+    
+    const propertiesInfo = {};
+    for (const [name, prop] of Object.entries(database.properties)) {
+      propertiesInfo[name] = prop.type;
+    }
+    
+    return res.json({
+      title: database.title?.[0]?.plain_text,
+      properties: propertiesInfo
+    });
+  } catch (error) {
+    console.error('Failed to debug schema:', error);
+    return res.status(500).json({ 
+      error: 'Failed to retrieve database schema', 
+      detail: error.message 
+    });
+  }
+}
+
+function mapProject(page) {
+  const props = page.properties;
+
+  // Helper function to extract actions from multi-select (field name corrected)
+  const extractActions = (multiSelectProp) => {
+    if (!multiSelectProp?.multi_select) return {};
+    
+    const actions = {};
+    const actionMap = {
+      'Adjusted Height and Radius': 'adjustedHeightRadius',
+      'Adjusted Intonation': 'adjustedIntonation',
+      'Adjusted Pickup Height': 'adjustedPickupHeight',
+      'Adjusted Truss Rod': 'adjustedTrussRod',
+      'Adjusted String Slots': 'adjustedStringSlots',
+      'Cleaned and Polished': 'cleanedPolished',
+      'Installed and Stretched Strings': 'installedStretchedStrings',
+      'Lubricated String Slots': 'lubricatedStringSlots',
+      'Oiled Fretboard': 'oiledFretboard',
+      'Polished Frets': 'polishedFrets',
+      'Tested Electronics': 'testedElectronics',
+      'Tightened Hardware': 'tightenedHardware',
+      'Adjusted Tremolo Tension': 'adjustedTremoloTension',
+      'Adjusted Neck Angle': 'adjustedNeckAngle'
     };
 
-    // Save to localStorage and pop new window with the printable report:
-    localStorage.setItem('luthierReportData', JSON.stringify(payload));
-    window.open('luthier_report_template.html', '_blank', 'noopener');
-  }
+    multiSelectProp.multi_select.forEach(item => {
+      const key = actionMap[item.name];
+      if (key) actions[key] = true;
+    });
 
-  function generateEstimate() {
-    if (!currentProject) {
-      showMessage('Select a project first', 'error');
-      return;
-    }
-    // Pull any on-screen edits into the object:
-    syncEditorIntoCurrentProject();
+    return actions;
+  };
+
+  return {
+    id: page.id,
+    name: props['Name']?.title?.[0]?.plain_text ?? 'Untitled',
+    projectId: props['ID']?.number ? String(props['ID'].number) : '',
+    instrumentMake: props['Instrument Make']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentModel: props['Instrument Model']?.rich_text?.[0]?.plain_text ?? '',
+    status: props['Status']?.select?.name ?? 'Unknown',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    store: props['Store']?.select?.name ?? '',
+    intakeNotes: props['Intake Notes']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Numeric fields
+    complexity: props['Complexity']?.number ?? 3,
+    profitability: props['Profitability']?.number ?? 3,
+
+    // Billing fields (including Discount)
+    total: props['Total']?.number ?? null,
+    commission: props['Commission']?.number ?? null,
+    discount: props['Discount']?.number ?? null,
+    taxAmount: props['taxAmount']?.number ?? null,
+    minusCommission: props['Minus Commission']?.formula?.number ?? null,
+
+    // Dates for "days since worked"
+    lastWorked: props['Last Worked']?.date?.start ?? null,
+    dateCreated: props['Date Created']?.date?.start ?? null,
+    createdTime: page.created_time,
+
+    // Measurement fields
+    neckReliefBefore: props['Neck Relief Before']?.number ?? null,
+    before1stString1stFret: props['Before 1st string at 1st fret']?.number ?? null,
+    before1stString12thFret: props['Before 1st string at 12th fret']?.number ?? null,
+    before6thString1stFret: props['Before 6th string at 1st fret']?.number ?? null,
+    before6thString12thFret: props['Before 6th string at 12th fret']?.number ?? null,
+    neckReliefAfter: props['Neck Relief After']?.number ?? null,
+    after1stString1stFret: props['After 1st string at 1st fret']?.number ?? null,
+    after1stString12thFret: props['After 1st string at 12th fret']?.number ?? null,
+    after6thString1stFret: props['After 6th string at 1st fret']?.number ?? null,
+    after6thString12thFret: props['After 6th string at 12th fret']?.number ?? null,
+
+    // Instrument detail fields (updated field types)
+    instrumentFinish: props['Instrument Finish']?.rich_text?.[0]?.plain_text ?? '',
+    serialNumber: props['Serial Number']?.rich_text?.[0]?.plain_text ?? '',
+    instrumentType: props['Instrument Type']?.select?.name ?? '',
+    stringBrand: props['String Brand']?.rich_text?.[0]?.plain_text ?? '',
+    stringGauge: props['String Gauge']?.rich_text?.[0]?.plain_text ?? '',
+    tuning: props['Tuning']?.select?.name ?? '',
+    tremolo: props['Tremolo']?.rich_text?.[0]?.plain_text ?? '',
+    fretboardRadius: props['Fretboard Radius']?.number ?? null,
+    fretwire: props['Fretwire']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Actions (field name corrected to "Standard Actions")
+    actions: extractActions(props['Standard Actions']),
+    additionalActions: props['Additional Actions']?.rich_text?.[0]?.plain_text ?? '',
+    notes: props['Notes']?.rich_text?.[0]?.plain_text ?? '',
+
+    // Rollups/formulas (existing functionality)
+    totalEstimatedHour: props['Total Estimated Hour']?.rollup?.number ?? 0,
+    totalMilestones: props['Total Milestones']?.rollup?.number ?? 0,
+    completedMilestones: props['Completed Milestones']?.rollup?.number ?? 0,
+    progress: props['Progress %']?.formula?.number ?? 0
+  };
+}
+
+// Get workflow templates
+async function getWorkflows(res, notion, workflowsDbId) {
+  console.log('getWorkflows called with workflowsDbId:', workflowsDbId);
+  
+  if (!workflowsDbId) {
+    console.log('No workflows database ID provided');
+    return res.json({ workflows: [], error: 'No workflows database ID configured' });
+  }
+  
+  try {
+    console.log('Attempting to fetch workflows from database:', workflowsDbId);
     
-    // Ensure taxAmount is synced from the latest calculation
-    // This ensures the estimate uses the current tax calculation based on the store selection
-    currentProject.taxAmount = currentProject.calculatedTaxAmount || 0;
-
-    // Attach milestones and parts currently loaded for this project:
-    const payload = {
-      project: currentProject,
-      milestones: currentMilestones || [],
-      parts: currentParts || []
-    };
-
-    // Save to localStorage and pop new window with the estimate:
-    localStorage.setItem('luthierEstimateData', JSON.stringify(payload));
-    window.open('estimate_template.html', '_blank', 'noopener');
+    // First, try to retrieve the database info to verify access
+    try {
+      const dbInfo = await notion.databases.retrieve({
+        database_id: workflowsDbId
+      });
+      console.log('Workflows database found:', dbInfo.title?.[0]?.plain_text || 'Untitled');
+    } catch (dbError) {
+      console.error('Cannot access workflows database:', dbError.message);
+      return res.json({ 
+        workflows: [], 
+        error: `Cannot access workflows database: ${dbError.message}` 
+      });
+    }
+    
+    let allWorkflows = [];
+    let hasMore = true;
+    let nextCursor = undefined;
+    
+    while (hasMore) {
+      const response = await notion.databases.query({
+        database_id: workflowsDbId,
+        page_size: 100,
+        start_cursor: nextCursor
+      });
+      
+      allWorkflows = allWorkflows.concat(response.results);
+      hasMore = response.has_more;
+      nextCursor = response.next_cursor;
+    }
+    
+    console.log(`Found ${allWorkflows.length} workflows`);
+    
+    const workflows = allWorkflows
+      .filter(page => !page.archived)
+      .map(page => {
+        const props = page.properties;
+        return {
+          id: page.id,
+          name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
+          data: props.Data?.rich_text?.[0]?.plain_text ?? '[]'
+        };
+      });
+    
+    console.log(`Returning ${workflows.length} active workflows`);
+    return res.json({ workflows });
+  } catch (error) {
+    console.error('Failed to fetch workflows:', error);
+    return res.json({ 
+      workflows: [], 
+      error: `Failed to fetch workflows: ${error.message}` 
+    });
   }
+}
 
-  </script>
-</body>
-</html>
+// Create milestones for a project
+async function createMilestones(res, notion, milestonesDbId, data) {
+  const { projectId, milestones } = data;
+  
+  try {
+    const promises = milestones.map((milestone, index) => {
+      return notion.pages.create({
+        parent: { database_id: milestonesDbId },
+        properties: {
+          'Name': {
+            title: [{ text: { content: milestone.name } }]
+          },
+          'Work Order': {
+            relation: [{ id: projectId }]
+          },
+          'Estimated Hours': {
+            number: milestone.estimatedHours || 1
+          },
+          'Order (Sequence)': {
+            number: index + 1
+          },
+          'Status': {
+            select: { name: milestone.status || 'Not Started' }
+          },
+          'Milestone Type': {
+            select: { name: milestone.milestoneType || 'Individual' }
+          },
+          'includeInEstimate': {
+            checkbox: milestone.includeInEstimate !== false
+          },
+          'urgent': {
+            checkbox: milestone.urgent || false
+          }
+        }
+      });
+    });
+    
+    const results = await Promise.all(promises);
+    
+    return res.json({ 
+      success: true, 
+      message: `Created ${results.length} milestones`,
+      milestones: results.map(mapMilestone)
+    });
+  } catch (error) {
+    throw new Error(`Failed to create milestones: ${error.message}`);
+  }
+}
+
+// Save project progress
+async function saveProgress(res, notion, milestonesDbId, projectsDbId, data) {
+  const { projectId, updates } = data;
+  
+  try {
+    const updatePromises = updates.map(({ milestoneId, actualHours, status }) => {
+      return notion.pages.update({
+        page_id: milestoneId,
+        properties: {
+          'Actual Hours': { number: actualHours },
+          'Status': { select: { name: status } }
+        }
+      });
+    });
+    
+    await Promise.all(updatePromises);
+    
+    return res.json({ success: true, message: 'Progress saved successfully' });
+  } catch (error) {
+    throw new Error(`Failed to save progress: ${error.message}`);
+  }
+}
+
+// Update single milestone
+async function updateMilestone(res, notion, milestonesDbId, data) {
+  const { milestoneId, ...updates } = data;
+  
+  try {
+    const properties = {};
+    
+    if (updates.name) {
+      properties.Name = { title: [{ text: { content: updates.name } }] };
+    }
+    if (updates.estimatedHours !== undefined) {
+      properties['Estimated Hours'] = { number: updates.estimatedHours };
+    }
+    if (updates.actualHours !== undefined) {
+      properties['Actual Hours'] = { number: updates.actualHours };
+    }
+    if (updates.status) {
+      properties.Status = { select: { name: updates.status } };
+    }
+    if (updates.order !== undefined) {
+      properties['Order (Sequence)'] = { number: updates.order };
+    }
+    if (updates.dueDate !== undefined) {
+      properties['Due Date'] = updates.dueDate ? { date: { start: updates.dueDate } } : { date: null };
+    }
+    if (updates.notes !== undefined) {
+      properties.Notes = { rich_text: [{ text: { content: updates.notes || '' } }] };
+    }
+    if (updates.includeInEstimate !== undefined) {
+      properties.includeInEstimate = { checkbox: updates.includeInEstimate };
+    }
+    if (updates.urgent !== undefined) {
+      properties.urgent = { checkbox: updates.urgent };
+    }
+
+    await notion.pages.update({
+      page_id: milestoneId,
+      properties
+    });
+
+    return res.json({ success: true, message: 'Milestone updated successfully' });
+  } catch (error) {
+    throw new Error(`Failed to update milestone: ${error.message}`);
+  }
+}
+
+// Save complete milestone set for a project
+async function saveMilestones(res, notion, milestonesDbId, data) {
+  const { projectId, milestones } = data;
+  
+  try {
+    const existingResponse = await notion.databases.query({
+      database_id: milestonesDbId,
+      filter: {
+        property: 'Work Order',
+        relation: {
+          contains: projectId
+        }
+      }
+    });
+    
+    const existingMilestones = existingResponse.results.map(mapMilestone);
+    const updates = [];
+    
+    for (let i = 0; i < milestones.length; i++) {
+      const milestone = milestones[i];
+      
+      if (milestone.id && existingMilestones.find(m => m.id === milestone.id)) {
+        const updatePromise = notion.pages.update({
+          page_id: milestone.id,
+          properties: {
+            'Name': { title: [{ text: { content: milestone.name } }] },
+            'Estimated Hours': { number: milestone.estimatedHours },
+            'Order (Sequence)': { number: i + 1 },
+            'Status': { select: { name: milestone.status || 'Not Started' } },
+            'includeInEstimate': { checkbox: milestone.includeInEstimate !== false },
+            'urgent': { checkbox: milestone.urgent || false }
+          }
+        });
+        updates.push(updatePromise);
+      } else {
+        const createPromise = notion.pages.create({
+          parent: { database_id: milestonesDbId },
+          properties: {
+            'Name': { title: [{ text: { content: milestone.name } }] },
+            'Work Order': { relation: [{ id: projectId }] },
+            'Estimated Hours': { number: milestone.estimatedHours },
+            'Order (Sequence)': { number: i + 1 },
+            'Status': { select: { name: milestone.status || 'Not Started' } },
+            'Milestone Type': { select: { name: 'Individual' } },
+            'includeInEstimate': { checkbox: milestone.includeInEstimate !== false },
+            'urgent': { checkbox: milestone.urgent || false }
+          }
+        });
+        updates.push(createPromise);
+      }
+    }
+    
+    const milestoneIds = milestones.filter(m => m.id).map(m => m.id);
+    const toDelete = existingMilestones.filter(m => !milestoneIds.includes(m.id));
+    
+    for (const milestone of toDelete) {
+      const deletePromise = notion.pages.update({
+        page_id: milestone.id,
+        archived: true
+      });
+      updates.push(deletePromise);
+    }
+    
+    await Promise.all(updates);
+    
+    return res.json({ 
+      success: true, 
+      message: `Updated ${milestones.length} milestones, deleted ${toDelete.length} milestones`
+    });
+  } catch (error) {
+    throw new Error(`Failed to save milestones: ${error.message}`);
+  }
+}
+
+// Create new workflow
+async function createWorkflow(res, notion, workflowsDbId, data) {
+  const { name, data: workflowData } = data;
+  
+  console.log('Creating workflow:', { name, dataLength: workflowData?.length });
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  try {
+    try {
+      JSON.parse(workflowData || '[]');
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
+    }
+    
+    const response = await notion.pages.create({
+      parent: { database_id: workflowsDbId },
+      properties: {
+        'Name': {
+          title: [{ text: { content: name || 'Untitled Workflow' } }]
+        },
+        'Data': {
+          rich_text: [{ text: { content: workflowData || '[]' } }]
+        }
+      }
+    });
+    
+    const createdWorkflow = {
+      id: response.id,
+      name: name || 'Untitled Workflow',
+      data: workflowData || '[]'
+    };
+    
+    console.log('Workflow created successfully:', createdWorkflow.id);
+    return res.json({ success: true, workflow: createdWorkflow });
+  } catch (error) {
+    console.error('Failed to create workflow:', error);
+    throw new Error(`Failed to create workflow: ${error.message}`);
+  }
+}
+
+// Update existing workflow
+async function updateWorkflow(res, notion, workflowsDbId, data) {
+  const { id, name, data: workflowData } = data;
+  
+  console.log('Updating workflow:', { id, name, dataLength: workflowData?.length });
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Workflow ID is required for update' });
+  }
+  
+  try {
+    try {
+      JSON.parse(workflowData || '[]');
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON in workflow data' });
+    }
+    
+    await notion.pages.update({
+      page_id: id,
+      properties: {
+        'Name': {
+          title: [{ text: { content: name || 'Untitled Workflow' } }]
+        },
+        'Data': {
+          rich_text: [{ text: { content: workflowData || '[]' } }]
+        }
+      }
+    });
+    
+    console.log('Workflow updated successfully:', id);
+    return res.json({ success: true, message: 'Workflow updated successfully' });
+  } catch (error) {
+    console.error('Failed to update workflow:', error);
+    throw new Error(`Failed to update workflow: ${error.message}`);
+  }
+}
+
+// Delete workflow
+async function deleteWorkflow(res, notion, workflowsDbId, data) {
+  const { id } = data;
+  
+  console.log('Deleting workflow:', id);
+  
+  if (!workflowsDbId) {
+    return res.status(500).json({ error: 'Workflows database not configured' });
+  }
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Workflow ID is required for deletion' });
+  }
+  
+  try {
+    await notion.pages.update({
+      page_id: id,
+      archived: true
+    });
+    
+    console.log('Workflow deleted successfully:', id);
+    return res.json({ success: true, message: 'Workflow deleted successfully' });
+  } catch (error) {
+    console.error('Failed to delete workflow:', error);
+    throw new Error(`Failed to delete workflow: ${error.message}`);
+  }
+}
+
+function parseIntSafe(v) {
+  const n = typeof v === 'number' ? v : parseInt(String(v ?? '').trim(), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+function mapMilestone(page) {
+  const props = page.properties;
+  
+  return {
+    id: page.id,
+    projectId: props['Work Order']?.relation?.[0]?.id || null,
+    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
+    estimatedHours: props['Estimated Hours']?.number ?? 1,
+    actualHours: props['Actual Hours']?.number ?? 0,
+    order: props['Order (Sequence)']?.number ?? 1,
+    status: props.Status?.select?.name ?? 'Not Started',
+    milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
+    dueDate: props['Due Date']?.date?.start ?? null,
+    notes: props.Notes?.rich_text?.[0]?.plain_text ?? '',
+    includeInEstimate: props.includeInEstimate?.checkbox ?? true,
+    urgent: props.urgent?.checkbox ?? false
+  };
+}
+
+function mapPart(page) {
+  const props = page.properties;
+  
+  return {
+    id: page.id,
+    projectId: props['Work Order']?.relation?.[0]?.id || null,
+    name: props.Name?.title?.[0]?.plain_text ?? 'Untitled Part',
+    quantity: props.Quantity?.number ?? 1,
+    pricePerItem: props['Price Per Item']?.number ?? 0,
+    order: props['Order']?.number ?? 1
+  };
+}
+
+// Save complete parts set for a project
+async function saveParts(res, notion, partsDbId, data) {
+  console.log('saveParts called with partsDbId:', partsDbId ? 'Set' : 'NOT SET');
+  console.log('Parts data:', JSON.stringify(data, null, 2));
+  
+  const { projectId, parts } = data;
+  
+  // Initialize parts as empty array if not provided
+  const partsList = parts || [];
+  
+  if (!partsDbId) {
+    console.warn('Parts database not configured - NOTION_PARTS_DATABASE_ID is not set');
+    return res.status(200).json({ 
+      success: false, 
+      error: 'Parts database not configured',
+      message: 'Add NOTION_PARTS_DATABASE_ID environment variable to Vercel to enable parts feature.' 
+    });
+  }
+  
+  if (!projectId) {
+    console.error('No projectId provided');
+    return res.status(400).json({ 
+      success: false,
+      error: 'Project ID is required' 
+    });
+  }
+  
+  try {
+    console.log(`Querying parts database ${partsDbId} for project ${projectId}`);
+    console.log(`Parts to save: ${partsList.length}`);
+    
+    const existingResponse = await notion.databases.query({
+      database_id: partsDbId,
+      filter: {
+        property: 'Work Order',
+        relation: {
+          contains: projectId
+        }
+      }
+    });
+    
+    console.log(`Found ${existingResponse.results.length} existing parts`);
+    
+    const existingParts = existingResponse.results.map(mapPart);
+    const updates = [];
+    
+    for (let i = 0; i < partsList.length; i++) {
+      const part = partsList[i];
+      console.log(`Processing part ${i + 1}:`, part.name);
+      
+      if (part.id && existingParts.find(p => p.id === part.id)) {
+        // Update existing part
+        console.log(`Updating existing part: ${part.id}`);
+        const updatePromise = notion.pages.update({
+          page_id: part.id,
+          properties: {
+            'Name': { title: [{ text: { content: part.name || 'Unnamed Part' } }] },
+            'Quantity': { number: part.quantity || 1 },
+            'Price Per Item': { number: part.pricePerItem || 0 },
+            'Order': { number: i + 1 }
+          }
+        });
+        updates.push(updatePromise);
+      } else {
+        // Create new part
+        console.log(`Creating new part: ${part.name}`);
+        const createPromise = notion.pages.create({
+          parent: { database_id: partsDbId },
+          properties: {
+            'Name': { title: [{ text: { content: part.name || 'Unnamed Part' } }] },
+            'Work Order': { relation: [{ id: projectId }] },
+            'Quantity': { number: part.quantity || 1 },
+            'Price Per Item': { number: part.pricePerItem || 0 },
+            'Order': { number: i + 1 }
+          }
+        });
+        updates.push(createPromise);
+      }
+    }
+    
+    // Delete parts that are no longer in the list
+    const partIds = partsList.filter(p => p.id).map(p => p.id);
+    const toDelete = existingParts.filter(p => !partIds.includes(p.id));
+    
+    console.log(`Deleting ${toDelete.length} removed parts`);
+    for (const part of toDelete) {
+      const deletePromise = notion.pages.update({
+        page_id: part.id,
+        archived: true
+      });
+      updates.push(deletePromise);
+    }
+    
+    console.log(`Executing ${updates.length} database operations`);
+    await Promise.all(updates);
+    
+    console.log('Parts saved successfully');
+    return res.json({ 
+      success: true, 
+      message: `Saved ${partsList.length} parts, deleted ${toDelete.length} parts`
+    });
+  } catch (error) {
+    console.error('Failed to save parts - Full error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error status:', error.status);
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to save parts',
+      detail: error.message,
+      code: error.code,
+      hint: 'Check that NOTION_PARTS_DATABASE_ID is correct and the integration has access to the Parts database'
+    });
+  }
+}
+
+function parseRatingValue(ratingStr) {
+  if (!ratingStr) return 3;
+  if (typeof ratingStr === 'number') return ratingStr;
+  const match = ratingStr.match(/^(\d+)-/);
+  return match ? parseInt(match[1]) : 3;
+}
