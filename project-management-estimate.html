@@ -412,8 +412,8 @@
     }
 
     function getTaxRate() {
-      // Find the "Tax Rate 2025" entry in allParts
-      const taxRateEntry = allParts.find(p => p.name === 'Tax Rate 2025');
+      // Find the "Tax Rate" entry in allParts
+      const taxRateEntry = allParts.find(p => p.name === 'Tax Rate');
       if (taxRateEntry && taxRateEntry.pricePerItem) {
         return parseFloat(taxRateEntry.pricePerItem) || 0;
       }
