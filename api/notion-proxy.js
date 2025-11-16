@@ -464,9 +464,13 @@ async function createProject(res, notion, projectsDbId, data) {
 
 // Update project information - ENHANCED VERSION with billing fields including Discount
 async function updateProject(res, notion, projectsDbId, data) {
-  const { projectId, ...updates } = data;
+  const { id, ...updates } = data;
   
-  console.log('updateProject called with:', { projectId, updates });
+  console.log('updateProject called with:', { id, updates });
+  
+  if (!id) {
+    return res.status(400).json({ error: 'Project ID (Notion page ID) is required for update' });
+  }
   
   try {
     const properties = {};
@@ -707,7 +711,7 @@ async function updateProject(res, notion, projectsDbId, data) {
     console.log('Updating project with properties:', Object.keys(properties));
     
     await notion.pages.update({
-      page_id: projectId,
+      page_id: id,
       properties
     });
     
