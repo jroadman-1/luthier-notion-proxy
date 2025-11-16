@@ -13,6 +13,7 @@
     .projects-list{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);overflow-y:auto}
     .projects-header{padding:15px;border-bottom:1px solid #eee;font-weight:bold;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px}
     .header-buttons{display:flex;gap:5px}
+    .status-filter{padding:5px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff;cursor:pointer;min-width:130px}
     .project-item{padding:12px 15px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:.2s}
     .project-item:hover{background:#f8f9fa}
     .project-item.active{background:#e3f2fd;border-left:4px solid #2196f3}
@@ -127,6 +128,12 @@
       <div class="projects-header">
         Projects
         <div class="header-buttons">
+          <select id="statusFilter" class="status-filter" onchange="filterProjectsByStatus()">
+            <option value="all">All Projects</option>
+            <option value="On the Bench">On the Bench</option>
+            <option value="Waiting">Waiting</option>
+            <option value="Done">Done</option>
+          </select>
           <button class="btn small success" onclick="createNewProject()">New</button>
           <button class="btn small" onclick="refreshProjects()">Refresh</button>
         </div>
@@ -317,7 +324,16 @@
         return;
       }
 
-      allProjects.forEach(project => {
+      // Get selected filter
+      const filterSelect = document.getElementById('statusFilter');
+      const filterValue = filterSelect ? filterSelect.value : 'all';
+      
+      // Filter projects based on status
+      const filteredProjects = filterValue === 'all' 
+        ? allProjects 
+        : allProjects.filter(project => project.status === filterValue);
+
+      filteredProjects.forEach(project => {
         const isActive = !isNewProject && currentProject && currentProject.id === project.id;
         html += `
           <div class="project-item ${isActive ? 'active' : ''}" onclick="selectProject('${project.id}')">
@@ -331,6 +347,10 @@
       });
 
       container.innerHTML = html;
+    }
+
+    function filterProjectsByStatus() {
+      displayProjectsList();
     }
 
     function escapeHtml(text) {
