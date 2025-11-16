@@ -485,6 +485,15 @@
       document.getElementById('commissionAmountDisplay').textContent = '$' + commissionAmount.toFixed(2);
       document.getElementById('netAfterCommissionDisplay').textContent = '$' + netAfterCommission.toFixed(2);
       
+      // Update the billing summary box at the top if it exists
+      const summaryTotal = document.getElementById('summaryTotal');
+      const summaryCommission = document.getElementById('summaryCommission');
+      const summaryMinusCommission = document.getElementById('summaryMinusCommission');
+      
+      if (summaryTotal) summaryTotal.textContent = total.toFixed(2);
+      if (summaryCommission) summaryCommission.textContent = commissionAmount.toFixed(2);
+      if (summaryMinusCommission) summaryMinusCommission.textContent = netAfterCommission.toFixed(2);
+      
       // Store the calculated values for saving to Notion
       currentProject.calculatedTotal = total;
       currentProject.calculatedTaxAmount = taxAmount;
@@ -567,25 +576,26 @@
       }
 
       // Billing summary for existing projects with billing data
-      if (!isNewProject && (currentProject.total || currentProject.commission)) {
-        const total = currentProject.total || 0;
+      // Use calculated values if available, otherwise use saved values
+      if (!isNewProject && (currentProject.calculatedTotal || currentProject.total || currentProject.commission)) {
+        const total = currentProject.calculatedTotal || currentProject.total || 0;
         const commission = currentProject.commission || 0;
-        const minusCommission = currentProject.minusCommission || (total - commission);
+        const minusCommission = total - commission;
         
         content += `
           <div class="billing-summary">
             <h4>Project Billing Summary</h4>
             <div class="billing-stats">
               <div class="billing-stat">
-                <div class="value">${total.toFixed(2)}</div>
+                <div class="value" id="summaryTotal">${total.toFixed(2)}</div>
                 <div class="label">Total Amount</div>
               </div>
               <div class="billing-stat">
-                <div class="value">${commission.toFixed(2)}</div>
+                <div class="value" id="summaryCommission">${commission.toFixed(2)}</div>
                 <div class="label">Commission</div>
               </div>
               <div class="billing-stat">
-                <div class="value">${minusCommission.toFixed(2)}</div>
+                <div class="value" id="summaryMinusCommission">${minusCommission.toFixed(2)}</div>
                 <div class="label">Minus Commission</div>
               </div>
             </div>
