@@ -629,11 +629,11 @@
               <label>Store</label>
               <select id="store" onchange="markChanged(); calculateBillingTotals()">
                 <option value="">Select Store</option>
-                <option value="In Person" ${currentProject.store === 'In Person' ? 'selected' : ''}>In Person</option>
-                <option value="Spacetone" ${currentProject.store === 'Spacetone' ? 'selected' : ''}>Spacetone</option>
-                <option value="Lark Guitars" ${currentProject.store === 'Lark Guitars' ? 'selected' : ''}>Lark Guitars</option>
-                <option value="Robot Monster" ${currentProject.store === 'Robot Monster' ? 'selected' : ''}>Robot Monster</option>
-                <option value="Internet Order" ${currentProject.store === 'Internet Order' ? 'selected' : ''}>Internet Order</option>
+                <option value="In Person"        ${currentProject.store === 'In Person' ? 'selected' : ''}>In Person</option>
+                <option value="Spacetone"        ${currentProject.store === 'Spacetone' ? 'selected' : ''}>Spacetone</option>
+                <option value="Lark Guitars"     ${currentProject.store === 'Lark Guitars' ? 'selected' : ''}>Lark Guitars</option>
+                <option value="Robot Monster"    ${currentProject.store === 'Robot Monster' ? 'selected' : ''}>Robot Monster</option>
+                <option value="Internet Order"    ${currentProject.store === 'Internet Order' ? 'selected' : ''}>Internet Order</option>
               </select>
             </div>
             <div class="form-group full-width">
@@ -1903,16 +1903,15 @@ currentProject.additionalActions = document.getElementById('additionalActions')?
     // Pull any on-screen edits into the object:
     syncEditorIntoCurrentProject();
     
-    // Ensure taxAmount is synced (it may be stored as calculatedTaxAmount)
-    if (currentProject.calculatedTaxAmount && !currentProject.taxAmount) {
-      currentProject.taxAmount = currentProject.calculatedTaxAmount;
-    }
+    // Ensure taxAmount is synced from the latest calculation
+    // This ensures the report uses the current tax calculation based on the store selection
+    currentProject.taxAmount = currentProject.calculatedTaxAmount || 0;
 
     // Attach milestones currently loaded for this project:
     const payload = {
       project: currentProject,
       milestones: currentMilestones || [],
-      parts: currentParts || []  // ← ADD THIS LINE
+      parts: currentParts || []
     };
 
     // Save to localStorage and pop new window with the printable report:
@@ -1927,6 +1926,10 @@ currentProject.additionalActions = document.getElementById('additionalActions')?
     }
     // Pull any on-screen edits into the object:
     syncEditorIntoCurrentProject();
+    
+    // Ensure taxAmount is synced from the latest calculation
+    // This ensures the estimate uses the current tax calculation based on the store selection
+    currentProject.taxAmount = currentProject.calculatedTaxAmount || 0;
 
     // Attach milestones and parts currently loaded for this project:
     const payload = {
