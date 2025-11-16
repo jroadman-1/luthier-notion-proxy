@@ -1718,7 +1718,8 @@
             throw new Error('Failed to create project: Invalid response');
           }
         } else {
-          projectData.projectId = currentProject.id;
+          // For updates, we need to specify which Notion page to update using the id field
+          projectData.id = currentProject.id;
           const updateResponse = await fetch(`${API_URL}?action=update-project`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
