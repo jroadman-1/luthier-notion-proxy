@@ -322,8 +322,15 @@
       const filterSelect = document.getElementById('statusFilter');
       const filterValue = filterSelect ? filterSelect.value : 'On The Bench';
       
+      // Debug: Log all unique statuses to help identify the issue
+      const uniqueStatuses = [...new Set(allProjects.map(p => p.status))];
+      console.log('Available statuses in projects:', uniqueStatuses);
+      console.log('Currently filtering for:', filterValue);
+      console.log('Total projects loaded:', allProjects.length);
+      
       // Filter projects based on status
       const filteredProjects = allProjects.filter(project => project.status === filterValue);
+      console.log('Filtered projects count:', filteredProjects.length);
 
       if (filteredProjects.length === 0 && !isNewProject) {
         container.innerHTML = '<div class="empty-state">No projects found with this status</div>';
