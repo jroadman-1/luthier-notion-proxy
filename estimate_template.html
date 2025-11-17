@@ -249,7 +249,7 @@
         if (milestone.workflowGroupId) {
           if (!workflowGroups[milestone.workflowGroupId]) {
             workflowGroups[milestone.workflowGroupId] = {
-              name: milestone.workflowGroupName || 'Workflow Group',
+              name: milestone.workflowName || 'Workflow Group',
               totalHours: 0,
               milestones: []
             };
