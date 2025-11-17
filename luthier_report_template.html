@@ -67,7 +67,6 @@
 
     /* Section Styling - Compact */
     .section { margin-bottom: 12px; break-inside: avoid; }
-    .section.full-width { grid-column: 1 / -1; }
     .section-title { 
       font-size: 12px; 
       font-weight: bold; 
@@ -270,7 +269,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">Expert Luthier Services</div>
         <div class="contact-info">
-          123 Music Lane | Austin, TX 78701 | (512) 555-ROCK | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c2abaca4ad82b0ada3a6afa3aca5b7abb6a3b0b1eca1adaf">[email&#160;protected]</a>
+          123 Music Lane | Austin, TX 78701 | (512) 555-ROCK | info@roadmanguitars.com
         </div>
       </div>
       <div class="report-date">
@@ -419,14 +418,14 @@
         </div>
 
         <!-- Additional Work -->
-        <div class="section full-width">
+        <div class="section">
           <div class="section-title">Additional Work</div>
           <div class="notes-box" id="additionalWorkBox"></div>
         </div>
 
         <!-- Notes -->
-        <div class="section full-width">
-          <div class="section-title">Notes</div>
+        <div class="section">
+          <div class="section-title">Tech Notes</div>
           <div class="notes-box" id="techNotesBox"></div>
         </div>
       </div>
@@ -459,7 +458,7 @@
     </div>
   </div>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script>
   (function(){
     // Pull payload saved by the management page
     const raw = localStorage.getItem('luthierReportData');
@@ -683,4 +682,14 @@
     
     // Use stored total as fallback
     if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = par
+      billingTotal = parseFloat(p.total);
+    }
+    
+    // Display the total
+    if (billingTotal != null && !isNaN(billingTotal) && billingTotal > 0) {
+      setText('billingTotal', '$' + billingTotal.toFixed(2));
+    }
+  })();
+  </script>
+</body>
+</html>
