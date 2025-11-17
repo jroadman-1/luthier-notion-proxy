@@ -269,7 +269,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">Expert Luthier Services</div>
         <div class="contact-info">
-          123 Music Lane | Austin, TX 78701 | (512) 555-ROCK | info@roadmanguitars.com
+          123 Music Lane | Austin, TX 78701 | (512) 555-ROCK | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a4cdcac2cbe4d6cbc5c0c9c5cac3d1cdd0c5d6d78ac7cbc9">[email&#160;protected]</a>
         </div>
       </div>
       <div class="report-date">
@@ -386,12 +386,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Customer Request -->
-        <div class="section">
-          <div class="section-title">Customer Request</div>
-          <div class="notes-box" id="customerNotesBox"></div>
-        </div>
       </div>
 
       <!-- Right Column -->
@@ -422,13 +416,20 @@
           <div class="section-title">Additional Work</div>
           <div class="notes-box" id="additionalWorkBox"></div>
         </div>
-
-        <!-- Notes -->
-        <div class="section">
-          <div class="section-title">Tech Notes</div>
-          <div class="notes-box" id="techNotesBox"></div>
-        </div>
       </div>
+    </div>
+
+    <!-- Full-Width Sections -->
+    <!-- Customer Request -->
+    <div class="section" style="margin-bottom: 12px;">
+      <div class="section-title">Customer Request</div>
+      <div class="notes-box" id="customerNotesBox"></div>
+    </div>
+
+    <!-- Notes -->
+    <div class="section" style="margin-bottom: 12px;">
+      <div class="section-title">Notes</div>
+      <div class="notes-box" id="techNotesBox"></div>
     </div>
 
     <!-- Billing Section -->
@@ -458,7 +459,7 @@
     </div>
   </div>
 
-  <script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   (function(){
     // Pull payload saved by the management page
     const raw = localStorage.getItem('luthierReportData');
@@ -682,14 +683,4 @@
     
     // Use stored total as fallback
     if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = parseFloat(p.total);
-    }
-    
-    // Display the total
-    if (billingTotal != null && !isNaN(billingTotal) && billingTotal > 0) {
-      setText('billingTotal', '$' + billingTotal.toFixed(2));
-    }
-  })();
-  </script>
-</body>
-</html>
+      billingTotal = par
