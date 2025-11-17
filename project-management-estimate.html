@@ -1120,12 +1120,7 @@
         html += standalone.map(milestone => renderMilestoneRow(milestone)).join('');
       }
       
-      container.innerHTML = html;
-      
-      // Attach drag handlers for workflow groups
-      attachWorkflowGroupDragHandlers();
-      // Attach drag handlers for individual milestones  
-      attachMilestoneDragHandlers();
+      return html;
     }
     
     function renderMilestoneRow(milestone) {
@@ -1543,6 +1538,10 @@
       if (container) {
         container.innerHTML = renderMilestoneList();
         setupDragAndDrop();
+        
+        // Attach drag handlers for workflow groups and milestones
+        attachWorkflowGroupDragHandlers();
+        attachMilestoneDragHandlers();
         
         // Update time summary if it exists
         const timeSummary = document.querySelector('.time-summary');
