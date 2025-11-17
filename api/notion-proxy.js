@@ -1076,7 +1076,13 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
             'Order (Sequence)': { number: i + 1 },
             'Status': { select: { name: milestone.status || 'Not Started' } },
             'includeInEstimate': { checkbox: milestone.includeInEstimate !== false },
-            'urgent': { checkbox: milestone.urgent || false }
+            'urgent': { checkbox: milestone.urgent || false },
+            'workflowGroupId': { 
+              rich_text: [{ text: { content: milestone.workflowGroupId || '' } }] 
+            },
+            'workflowName': { 
+              rich_text: [{ text: { content: milestone.workflowName || '' } }] 
+            }
           }
         });
         updates.push(updatePromise);
@@ -1091,7 +1097,13 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
             'Status': { select: { name: milestone.status || 'Not Started' } },
             'Milestone Type': { select: { name: 'Individual' } },
             'includeInEstimate': { checkbox: milestone.includeInEstimate !== false },
-            'urgent': { checkbox: milestone.urgent || false }
+            'urgent': { checkbox: milestone.urgent || false },
+            'workflowGroupId': { 
+              rich_text: [{ text: { content: milestone.workflowGroupId || '' } }] 
+            },
+            'workflowName': { 
+              rich_text: [{ text: { content: milestone.workflowName || '' } }] 
+            }
           }
         });
         updates.push(createPromise);
@@ -1252,7 +1264,9 @@ function mapMilestone(page) {
     dueDate: props['Due Date']?.date?.start ?? null,
     notes: props.Notes?.rich_text?.[0]?.plain_text ?? '',
     includeInEstimate: props.includeInEstimate?.checkbox ?? true,
-    urgent: props.urgent?.checkbox ?? false
+    urgent: props.urgent?.checkbox ?? false,
+    workflowGroupId: props.workflowGroupId?.rich_text?.[0]?.plain_text ?? null,
+    workflowName: props.workflowName?.rich_text?.[0]?.plain_text ?? null
   };
 }
 
