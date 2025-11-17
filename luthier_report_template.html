@@ -269,7 +269,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">Expert Luthier Services</div>
         <div class="contact-info">
-          123 Music Lane | Austin, TX 78701 | (512) 555-ROCK | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a4cdcac2cbe4d6cbc5c0c9c5cac3d1cdd0c5d6d78ac7cbc9">[email&#160;protected]</a>
+          123 Music Lane | Austin, TX 78701 | (512) 555-ROCK | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bcd5d2dad3fcced3ddd8d1ddd2dbc9d5c8ddcecf92dfd3d1">[email&#160;protected]</a>
         </div>
       </div>
       <div class="report-date">
@@ -487,11 +487,7 @@
     setText('projId', p.projectId ? ('#' + p.projectId) : (p.id ? ('#' + String(p.id).slice(0,8)) : ''));
 
     // Header info
-    const instrumentName = [p.instrumentMake, p.instrumentModel].filter(Boolean).join(' ');
-    setText('customerName', p.name || '');
-    setText('instrumentName', instrumentName || p.instrumentType || '');
-    setText('statusText', p.status || '');
-    setText('serialNumberText', p.serialNumber || '');
+    const instrumentName = [('serialNumberText', p.serialNumber || '');
 
     // Measurements
     setText('m_relief_before', inch(p.neckReliefBefore));
@@ -682,4 +678,14 @@
     
     // Use stored total as fallback
     if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = par
+      billingTotal = parseFloat(p.total);
+    }
+    
+    // Display the total
+    if (billingTotal != null && !isNaN(billingTotal) && billingTotal > 0) {
+      setText('billingTotal', '$' + billingTotal.toFixed(2));
+    }
+  })();
+  </script>
+</body>
+</html>
