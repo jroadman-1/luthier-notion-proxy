@@ -120,7 +120,24 @@
       line-height: 1.6;
     }
 
+    /* Print Button */
+    .print-button { 
+      position: fixed; 
+      top: 10px; 
+      right: 10px; 
+      background: #007bff; 
+      color: white; 
+      border: none; 
+      padding: 8px 16px; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 12px;
+      z-index: 1000;
+    }
+    .print-button:hover { background: #0056b3; }
+
     @media print {
+      .print-button { display: none; }
       body { background: white; }
       .estimate-container { box-shadow: none; }
       @page { margin: 0.5in; }
@@ -128,6 +145,8 @@
   </style>
 </head>
 <body>
+  <button class="print-button" onclick="window.print()">🖨️ Print Estimate</button>
+
   <div class="estimate-container">
     <!-- Letterhead -->
     <div class="letterhead">
