@@ -493,8 +493,21 @@
         if (taxLine) taxLine.style.display = 'none';
       }
       
+      // Tip (non-taxable)
+      const tip = parseFloat(document.getElementById('tip')?.value) || 0;
+      const tipLine = document.getElementById('tipLine');
+      
+      if (tip > 0) {
+        if (tipLine) {
+          tipLine.style.display = 'flex';
+          document.getElementById('billingTip').textContent = '$' + tip.toFixed(2);
+        }
+      } else {
+        if (tipLine) tipLine.style.display = 'none';
+      }
+      
       // Total
-      const total = subtotal - discountAmount + taxAmount;
+      const total = subtotal - discountAmount + taxAmount + tip;
       
       // Commission (internal only)
       const commissionPercent = parseFloat(document.getElementById('commission')?.value) || 0;
@@ -522,11 +535,13 @@
       // Store the calculated values for saving to Notion
       currentProject.calculatedTotal = total;
       currentProject.calculatedTaxAmount = taxAmount;
+      currentProject.tip = tip;
       
       return {
         subtotal,
         discountAmount,
         taxAmount,
+        tip,
         total,
         commissionAmount,
         netAfterCommission
@@ -952,6 +967,10 @@
                 <span class="billing-label">Tax (<span id="taxRateDisplay">0</span>%)</span>
                 <span class="billing-value" id="billingTax">$0.00</span>
               </div>
+              <div class="billing-line" id="tipLine" style="display:none;">
+                <span class="billing-label">Tip</span>
+                <span class="billing-value" id="billingTip">$0.00</span>
+              </div>
               <div class="billing-line total">
                 <span class="billing-label">TOTAL AMOUNT</span>
                 <span class="billing-value" id="billingTotalDisplay">$0.00</span>
@@ -983,6 +1002,13 @@
                        value="${currentProject.commission || ''}" 
                        onchange="markChanged(); calculateBillingTotals()" 
                        placeholder="0">
+              </div>
+              <div class="form-group">
+                <label>Tip ($)</label>
+                <input type="number" step="0.01" min="0" id="tip" 
+                       value="${currentProject.tip || ''}" 
+                       onchange="markChanged(); calculateBillingTotals()" 
+                       placeholder="0.00">
               </div>
             </div>
           </div>
@@ -1883,6 +1909,7 @@
           taxAmount: currentProject.calculatedTaxAmount || null,
           commission: parseFloat(document.getElementById('commission').value) || null,  // This is now a percentage
           discount: parseInt(document.getElementById('discount').value) || null,
+          tip: parseFloat(document.getElementById('tip').value) || null,
           
           // Measurement data
           neckReliefBefore: document.getElementById('neckReliefBefore').value || null,
@@ -2070,9 +2097,11 @@
     const totalEl = document.getElementById('total');
     const commissionEl = document.getElementById('commission');
     const discountEl = document.getElementById('discount');
+    const tipEl = document.getElementById('tip');
     if (totalEl) currentProject.total = totalEl.value ? parseFloat(totalEl.value) : null;
     if (commissionEl) currentProject.commission = commissionEl.value ? parseFloat(commissionEl.value) : null;
     if (discountEl) currentProject.discount = discountEl.value ? parseInt(discountEl.value) : null;
+    if (tipEl) currentProject.tip = tipEl.value ? parseFloat(tipEl.value) : null;
 
     // Measurements (only if section expanded—safe to read anyway)
     const num = id => {
