@@ -207,14 +207,6 @@
       color: #2c7a2c;
       font-weight: 500;
     }
-    .billing-tip {
-      display: flex;
-      justify-content: space-between;
-      padding: 3px 0;
-      font-size: 10px;
-      color: #5c6ac4;
-      font-weight: 500;
-    }
     .billing-total {
       display: flex;
       justify-content: space-between;
@@ -277,7 +269,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">          </div>
         <div class="contact-info">
-          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7b09141a1f161a151c0e120f1a09083b1c161a121755181416">[email&#160;protected]</a>
+          San Antonio, TX | roadmanguitars@gmail.com
         </div>
       </div>
       <div class="report-date">
@@ -466,7 +458,7 @@
     </div>
   </div>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script>
   (function(){
     // Pull payload saved by the management page
     const raw = localStorage.getItem('luthierReportData');
@@ -688,20 +680,16 @@
       billingBreakdownEl.appendChild(taxDiv);
     }
     
-    // Display tip if it exists (non-taxable)
-    const tipAmount = (p.tip != null && p.tip !== '') ? parseFloat(p.tip) : 0;
-    if (tipAmount > 0) {
-      billingTotal += tipAmount;
-      
-      const tipDiv = document.createElement('div');
-      tipDiv.className = 'billing-tip';
-      tipDiv.innerHTML = `
-        <span>Tip</span>
-        <span>$${tipAmount.toFixed(2)}</span>
-      `;
-      billingBreakdownEl.appendChild(tipDiv);
-    }
-    
     // Use stored total as fallback
     if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = pa
+      billingTotal = parseFloat(p.total);
+    }
+    
+    // Display the total
+    if (billingTotal != null && !isNaN(billingTotal) && billingTotal > 0) {
+      setText('billingTotal', '$' + billingTotal.toFixed(2));
+    }
+  })();
+  </script>
+</body>
+</html>
