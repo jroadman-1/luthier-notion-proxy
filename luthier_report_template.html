@@ -277,7 +277,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">          </div>
         <div class="contact-info">
-          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e89a87898c8589868f9d819c899a9ba88f85898184c68b8785">[email&#160;protected]</a>
+          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7b09141a1f161a151c0e120f1a09083b1c161a121755181416">[email&#160;protected]</a>
         </div>
       </div>
       <div class="report-date">
@@ -704,18 +704,4 @@
     
     // Use stored total as fallback
     if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = parseFloat(p.total);
-    }
-    
-    // Display total
-    const totalDiv = document.createElement('div');
-    totalDiv.className = 'billing-total';
-    totalDiv.innerHTML = `
-      <span>Total</span>
-      <span>$${billingTotal.toFixed(2)}</span>
-    `;
-    billingBreakdownEl.appendChild(totalDiv);
-  }
-</script>
-</body>
-</html>
+      billingTotal = pa
