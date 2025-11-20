@@ -222,7 +222,7 @@ async function createProject(res, notion, projectsDbId, data) {
     // Actions
     actions, additionalActions,
     // Billing fields
-    total, commission, discount, taxAmount, notes
+    total, commission, discount, taxAmount, tip, notes
   } = data;
   
   console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
@@ -307,6 +307,11 @@ async function createProject(res, notion, projectsDbId, data) {
     // Add taxAmount field
     if (taxAmount !== undefined && taxAmount !== null && taxAmount !== '') {
       properties['taxAmount'] = { number: parseFloat(taxAmount) };
+    }
+    
+    // Add tip field
+    if (tip !== undefined && tip !== null && tip !== '') {
+      properties['Tip'] = { number: parseFloat(tip) };
     }
 
     // Add measurement fields
@@ -586,6 +591,17 @@ async function updateProject(res, notion, projectsDbId, data) {
         console.log('Setting taxAmount:', updates.taxAmount);
       }
     }
+    
+    // Add tip field handling
+    if (updates.tip !== undefined) {
+      if (updates.tip === null || updates.tip === '') {
+        properties['Tip'] = { number: null };
+        console.log('Clearing Tip');
+      } else {
+        properties['Tip'] = { number: parseFloat(updates.tip) };
+        console.log('Setting Tip:', updates.tip);
+      }
+    }
 
     // Measurement fields
     if (updates.neckReliefBefore !== undefined) {
@@ -819,6 +835,7 @@ function mapProject(page) {
     commission: props['Commission']?.number ?? null,
     discount: props['Discount']?.number ?? null,
     taxAmount: props['taxAmount']?.number ?? null,
+    tip: props['Tip']?.number ?? null,
     minusCommission: props['Minus Commission']?.formula?.number ?? null,
 
     // Dates for "days since worked"
