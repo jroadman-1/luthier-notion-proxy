@@ -299,7 +299,9 @@
         // Initialize actions
         actions: {},
         additionalActions: '',
-        notes: ''
+        notes: '',
+        // Capture current hourly rate at project creation time
+        hourlyRate: getCurrentHourlyRateFromParts()
       };
 
       currentMilestones = [];
@@ -446,12 +448,26 @@
     }
 
     function getHourlyRate() {
-      // Find the "Hourly Rate" entry in allParts
+      // First check if current project has a stored rate (for historical accuracy)
+      if (currentProject && currentProject.hourlyRate) {
+        return parseFloat(currentProject.hourlyRate);
+      }
+      
+      // Otherwise get current rate from Parts database (for new projects)
       const hourlyRateEntry = allParts.find(p => p.name === 'Hourly Rate');
       if (hourlyRateEntry && hourlyRateEntry.pricePerItem) {
         return parseFloat(hourlyRateEntry.pricePerItem) || 0;
       }
       return 100; // Default to $100/hour if not found
+    }
+    
+    function getCurrentHourlyRateFromParts() {
+      // Helper to always get the current rate from Parts (used when creating new projects)
+      const hourlyRateEntry = allParts.find(p => p.name === 'Hourly Rate');
+      if (hourlyRateEntry && hourlyRateEntry.pricePerItem) {
+        return parseFloat(hourlyRateEntry.pricePerItem) || 0;
+      }
+      return 100;
     }
 
     function calculateBillingTotals() {
@@ -1910,6 +1926,8 @@
           commission: parseFloat(document.getElementById('commission').value) || null,  // This is now a percentage
           discount: parseInt(document.getElementById('discount').value) || null,
           tip: parseFloat(document.getElementById('tip').value) || null,
+          // Store hourly rate with project for historical billing accuracy
+          hourlyRate: currentProject.hourlyRate || getCurrentHourlyRateFromParts(),
           
           // Measurement data
           neckReliefBefore: document.getElementById('neckReliefBefore').value || null,
