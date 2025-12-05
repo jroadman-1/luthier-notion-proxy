@@ -36,6 +36,24 @@
     .info-label { font-weight: bold; font-size: 11px; color: #666; text-transform: uppercase; margin-bottom: 3px; }
     .info-value { font-size: 13px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 2px; min-height: 16px; }
 
+    /* Client Notes (before services) */
+    .client-notes {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f0f7ff;
+      border-left: 4px solid #2c3e50;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .client-notes-title {
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
     /* Estimate Items Section */
     .estimate-section { margin-top: 30px; }
     .section-title { font-size: 16px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; margin-bottom: 15px; }
@@ -119,24 +137,6 @@
       font-size: 11px;
       line-height: 1.6;
     }
-    
-    /* Client Notes (before services) */
-    .client-notes {
-      margin-bottom: 20px;
-      padding: 15px;
-      background: #f0f7ff;
-      border-left: 4px solid #2c3e50;
-      border-radius: 4px;
-      font-size: 12px;
-      line-height: 1.6;
-      color: #333;
-    }
-    .client-notes-title {
-      font-weight: bold;
-      color: #2c3e50;
-      margin-bottom: 8px;
-      font-size: 13px;
-    }
 
     /* Print Button */
     .print-button { 
@@ -174,7 +174,7 @@
       <div class="company-info">
         <div class="company-name">Roadman Guitars</div>
         <div class="company-tagline">Guitar Setup & Repair</div>
-        <div class="contact-info"> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b2c0ddd3d6dfd3dcd5c7dbc6d3c0c1f2d5dfd3dbde9cd1dddf">[email&#160;protected]</a>  |  San Antonio, TX
+        <div class="contact-info"> roadmanguitars@gmail.com  |  San Antonio, TX
         </div>
       </div>
       <div class="report-date">
@@ -254,7 +254,7 @@
     </div>
   </div>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script>
   (function(){
     const data = JSON.parse(localStorage.getItem('luthierEstimateData') || '{}');
     const p = data.project || {};
@@ -428,4 +428,14 @@
       const taxRate = afterDiscount > 0 ? (taxAmount / afterDiscount) * 100 : 0;
       
       const taxLabel = document.getElementById('taxLabel');
-      taxLabel.textContent = 'TAX (' + taxRate.toFixed(
+      taxLabel.textContent = 'TAX (' + taxRate.toFixed(3) + '%)';
+      setText('taxAmount', '$' + taxAmount.toFixed(2));
+      taxSection.style.display = 'flex';
+    }
+    
+    // Set final total
+    setText('totalAmount', '$' + finalTotal.toFixed(2));
+  })();
+  </script>
+</body>
+</html>
