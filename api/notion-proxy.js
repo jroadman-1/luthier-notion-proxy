@@ -210,7 +210,7 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsD
 async function createProject(res, notion, projectsDbId, data) {
   const { 
     name, projectId, status, instrumentMake, instrumentModel, complexity, profitability, 
-    dueDate, store, intakeNotes,
+    dueDate, store, intakeNotes, estimateNotes,
     // Measurement fields
     neckReliefBefore, before1stString1stFret, before1stString12thFret, 
     before6thString1stFret, before6thString12thFret,
@@ -287,6 +287,12 @@ async function createProject(res, notion, projectsDbId, data) {
     if (intakeNotes !== undefined) {
       properties['Intake Notes'] = { 
         rich_text: [{ text: { content: intakeNotes || '' } }] 
+      };
+    }
+    
+    if (estimateNotes !== undefined) {
+      properties['Estimate Notes'] = { 
+        rich_text: [{ text: { content: estimateNotes || '' } }] 
       };
     }
     
@@ -552,6 +558,12 @@ async function updateProject(res, notion, projectsDbId, data) {
         rich_text: [{ text: { content: updates.intakeNotes || '' } }] 
       };
       console.log('Setting Intake Notes:', updates.intakeNotes);
+    }
+    if (updates.estimateNotes !== undefined) {
+      properties['Estimate Notes'] = { 
+        rich_text: [{ text: { content: updates.estimateNotes || '' } }] 
+      };
+      console.log('Setting Estimate Notes:', updates.estimateNotes);
     }
 
     // Billing fields
@@ -841,6 +853,7 @@ function mapProject(page) {
     dueDate: props['Due Date']?.date?.start ?? null,
     store: props['Store']?.select?.name ?? '',
     intakeNotes: props['Intake Notes']?.rich_text?.[0]?.plain_text ?? '',
+    estimateNotes: props['Estimate Notes']?.rich_text?.[0]?.plain_text ?? '',
 
     // Numeric fields
     complexity: props['Complexity']?.number ?? 3,
