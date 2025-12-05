@@ -119,6 +119,24 @@
       font-size: 11px;
       line-height: 1.6;
     }
+    
+    /* Client Notes (before services) */
+    .client-notes {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f0f7ff;
+      border-left: 4px solid #2c3e50;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .client-notes-title {
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
 
     /* Print Button */
     .print-button { 
@@ -156,7 +174,7 @@
       <div class="company-info">
         <div class="company-name">Roadman Guitars</div>
         <div class="company-tagline">Guitar Setup & Repair</div>
-        <div class="contact-info"> roadmanguitars@gmail.com  |  San Antonio, TX
+        <div class="contact-info"> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b2c0ddd3d6dfd3dcd5c7dbc6d3c0c1f2d5dfd3dbde9cd1dddf">[email&#160;protected]</a>  |  San Antonio, TX
         </div>
       </div>
       <div class="report-date">
@@ -183,6 +201,12 @@
           <div class="info-value" id="storeName"></div>
         </div>
       </div>
+    </div>
+
+    <!-- Client Notes (shown only if present) -->
+    <div class="client-notes" id="clientNotesSection" style="display: none;">
+      <div class="client-notes-title">Notes</div>
+      <div id="clientNotesContent"></div>
     </div>
 
     <!-- Services/Labor Section -->
@@ -230,7 +254,7 @@
     </div>
   </div>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   (function(){
     const data = JSON.parse(localStorage.getItem('luthierEstimateData') || '{}');
     const p = data.project || {};
@@ -253,6 +277,16 @@
     setText('instrumentInfo', `${p.instrumentMake || ''} ${p.instrumentModel || ''}`.trim() || 'N/A');
     setText('customerName', p.name || 'N/A');
     setText('storeName', p.store || '');
+    
+    // Show estimate notes if present
+    if (p.estimateNotes && p.estimateNotes.trim()) {
+      const notesSection = document.getElementById('clientNotesSection');
+      const notesContent = document.getElementById('clientNotesContent');
+      if (notesSection && notesContent) {
+        notesContent.textContent = p.estimateNotes;
+        notesSection.style.display = 'block';
+      }
+    }
     
     // Calculate subtotal from services and parts
     let subtotal = 0;
@@ -394,14 +428,4 @@
       const taxRate = afterDiscount > 0 ? (taxAmount / afterDiscount) * 100 : 0;
       
       const taxLabel = document.getElementById('taxLabel');
-      taxLabel.textContent = 'TAX (' + taxRate.toFixed(3) + '%)';
-      setText('taxAmount', '$' + taxAmount.toFixed(2));
-      taxSection.style.display = 'flex';
-    }
-    
-    // Set final total
-    setText('totalAmount', '$' + finalTotal.toFixed(2));
-  })();
-  </script>
-</body>
-</html>
+      taxLabel.textContent = 'TAX (' + taxRate.toFixed(
