@@ -265,6 +265,7 @@
         profitability: 3,
         dueDate: null,
         intakeNotes: '',
+        estimateNotes: '',
         store: '',
         totalEstimatedHour: 0,
         totalMilestones: 0,
@@ -714,6 +715,10 @@
             <div class="form-group full-width">
               <label>Intake Notes</label>
               <textarea id="intakeNotes" onchange="markChanged()" placeholder="Enter any initial notes, requirements, or special instructions for this project...">${escapeHtml(currentProject.intakeNotes || '')}</textarea>
+            </div>
+            <div class="form-group full-width">
+              <label>Estimate Notes</label>
+              <textarea id="estimateNotes" onchange="markChanged()" placeholder="Notes to the client explaining the estimate...">${escapeHtml(currentProject.estimateNotes || '')}</textarea>
             </div>
           </div>
         </div>
@@ -2110,6 +2115,7 @@
     currentProject.dueDate = val('dueDate') || null;
     currentProject.store = val('store') || '';
     currentProject.intakeNotes = val('intakeNotes') || '';
+    currentProject.estimateNotes = val('estimateNotes') || '';
 
     // Billing (if shown)
     const totalEl = document.getElementById('total');
