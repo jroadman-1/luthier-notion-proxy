@@ -222,7 +222,7 @@ async function createProject(res, notion, projectsDbId, data) {
     // Actions
     actions, additionalActions,
     // Billing fields
-    total, commission, discount, taxAmount, tip, notes
+    total, commission, discount, taxAmount, tip, hourlyRate, notes
   } = data;
   
   console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
@@ -312,6 +312,11 @@ async function createProject(res, notion, projectsDbId, data) {
     // Add tip field
     if (tip !== undefined && tip !== null && tip !== '') {
       properties['Tip'] = { number: parseFloat(tip) };
+    }
+    
+    // Add hourlyRate field (captures rate at project creation time)
+    if (hourlyRate !== undefined && hourlyRate !== null && hourlyRate !== '') {
+      properties['Hourly Rate'] = { number: parseFloat(hourlyRate) };
     }
 
     // Add measurement fields
@@ -602,6 +607,17 @@ async function updateProject(res, notion, projectsDbId, data) {
         console.log('Setting Tip:', updates.tip);
       }
     }
+    
+    // Add hourlyRate field handling (captures rate at project creation time)
+    if (updates.hourlyRate !== undefined) {
+      if (updates.hourlyRate === null || updates.hourlyRate === '') {
+        properties['Hourly Rate'] = { number: null };
+        console.log('Clearing Hourly Rate');
+      } else {
+        properties['Hourly Rate'] = { number: parseFloat(updates.hourlyRate) };
+        console.log('Setting Hourly Rate:', updates.hourlyRate);
+      }
+    }
 
     // Measurement fields
     if (updates.neckReliefBefore !== undefined) {
@@ -836,6 +852,7 @@ function mapProject(page) {
     discount: props['Discount']?.number ?? null,
     taxAmount: props['taxAmount']?.number ?? null,
     tip: props['Tip']?.number ?? null,
+    hourlyRate: props['Hourly Rate']?.number ?? null,
     minusCommission: props['Minus Commission']?.formula?.number ?? null,
 
     // Dates for "days since worked"
