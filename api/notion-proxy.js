@@ -137,6 +137,12 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsD
               select: {
                 equals: 'Done'
               }
+              },
+            {
+              property: 'Status',
+              select: {
+                equals: 'Returned'
+              }
             }
           ]
         },
