@@ -2,7 +2,7 @@
   "name": "Roadman Guitars Dashboard",
   "short_name": "Roadman",
   "description": "Project Management Dashboard for Roadman Guitars",
-  "start_url": "/launcher.html",
+  "start_url": "/public/launcher.html",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
