@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Priority Manager - Roadman Guitars</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .lists-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .list-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .list-section h2 {
+            color: #555;
+            font-size: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .project-list {
+            min-height: 100px;
+        }
+
+        .project-item {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: move;
+            transition: all 0.2s;
+        }
+
+        .project-item:hover {
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .project-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .project-item.drag-over {
+            border-top: 3px solid #4CAF50;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .project-info {
+            flex: 1;
+        }
+
+        .customer-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .project-title {
+            color: #666;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .creation-date {
+            color: #999;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .skip-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .skip-btn:hover {
+            background: #f57c00;
+        }
+
+        .skip-btn:active {
+            transform: scale(0.95);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .refresh-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn:hover {
+            background: #45a049;
+        }
+
+        @media (max-width: 768px) {
+            .lists-container {
+                grid-template-columns: 1fr;
+            }
+
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .list-section {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Priority Manager</h1>
+        
+        <button class="refresh-btn" onclick="loadProjects()">Refresh Lists</button>
+
+        <div id="error-container"></div>
+        <div id="loading" class="loading">Loading projects...</div>
+
+        <div class="lists-container" style="display: none;">
+            <div class="list-section">
+                <h2>Quick Jobs (FIFO)</h2>
+                <div id="quick-jobs-list" class="project-list"></div>
+            </div>
+
+            <div class="list-section">
+                <h2>Long Projects</h2>
+                <div id="long-projects-list" class="project-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://roadman-guitars-notion-proxy.vercel.app/api';
+        const TODAY = new Date().toISOString().split('T')[0];
+        
+        let projects = [];
+        let draggedElement = null;
+        let draggedProjectId = null;
+
+        // Get skipped projects from localStorage
+        function getSkippedProjects() {
+            const skipped = localStorage.getItem('skipped-projects');
+            if (!skipped) return {};
+            
+            const parsed = JSON.parse(skipped);
+            
+            // Clean up old dates
+            if (parsed.date !== TODAY) {
+                localStorage.removeItem('skipped-projects');
+                return {};
+            }
+            
+            return parsed.ids || {};
+        }
+
+        // Skip a project for today
+        function skipProject(projectId) {
+            const skipped = getSkippedProjects();
+            skipped[projectId] = true;
+            
+            localStorage.setItem('skipped-projects', JSON.stringify({
+                date: TODAY,
+                ids: skipped
+            }));
+            
+            // Hide the project
+            const element = document.querySelector(`[data-project-id="${projectId}"]`);
+            if (element) {
+                element.style.display = 'none';
+            }
+        }
+
+        // Load projects from Notion
+        async function loadProjects() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.querySelector('.lists-container').style.display = 'none';
+                document.getElementById('error-container').innerHTML = '';
+
+                const response = await fetch(`${API_BASE}/projects`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Filter for "On the Bench" projects only
+                projects = data.filter(p => p.status === 'On the Bench');
+                
+                renderProjects();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.querySelector('.lists-container').style.display = 'grid';
+                
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                document.getElementById('error-container').innerHTML = `
+                    <div class="error">
+                        <strong>Error loading projects:</strong> ${error.message}
+                    </div>
+                `;
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Render projects into lists
+        function renderProjects() {
+            const skipped = getSkippedProjects();
+            
+            // Separate projects by type
+            const quickJobs = projects.filter(p => p.project_type === 'Quick Job' && !skipped[p.id]);
+            const longProjects = projects.filter(p => p.project_type === 'Long Project' && !skipped[p.id]);
+            
+            // Sort by custom order, then by creation date
+            quickJobs.sort((a, b) => {
+                if (a.quick_job_order !== null && b.quick_job_order !== null) {
+                    return a.quick_job_order - b.quick_job_order;
+                }
+                if (a.quick_job_order !== null) return -1;
+                if (b.quick_job_order !== null) return 1;
+                return new Date(a.created_time) - new Date(b.created_time);
+            });
+            
+            longProjects.sort((a, b) => {
+                if (a.multi_session_order !== null && b.multi_session_order !== null) {
+                    return a.multi_session_order - b.multi_session_order;
+                }
+                if (a.multi_session_order !== null) return -1;
+                if (b.multi_session_order !== null) return 1;
+                return new Date(a.created_time) - new Date(b.created_time);
+            });
+            
+            // Render lists
+            renderList('quick-jobs-list', quickJobs, 'Quick Job');
+            renderList('long-projects-list', longProjects, 'Long Project');
+        }
+
+        // Render individual list
+        function renderList(containerId, projectsList, listType) {
+            const container = document.getElementById(containerId);
+            
+            if (projectsList.length === 0) {
+                container.innerHTML = '<div class="empty-state">No projects in this list</div>';
+                return;
+            }
+            
+            container.innerHTML = projectsList.map(project => {
+                const createdDate = new Date(project.created_time).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                
+                return `
+                    <div class="project-item" 
+                         draggable="true"
+                         data-project-id="${project.id}"
+                         data-list-type="${listType}">
+                        <div class="project-header">
+                            <div class="project-info">
+                                <div class="customer-name">${project.customer_name || 'Unknown Customer'}</div>
+                                <div class="project-title">${project.project_title || 'Untitled Project'}</div>
+                                <div class="creation-date">Created: ${createdDate}</div>
+                            </div>
+                            <button class="skip-btn" data-project-id="${project.id}">Skip Today</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Add event listeners using event delegation
+            addDragListeners(container);
+        }
+
+        // Add drag and drop listeners
+        function addDragListeners(container) {
+            container.addEventListener('dragstart', handleDragStart);
+            container.addEventListener('dragend', handleDragEnd);
+            container.addEventListener('dragover', handleDragOver);
+            container.addEventListener('drop', handleDrop);
+            container.addEventListener('dragenter', handleDragEnter);
+            container.addEventListener('dragleave', handleDragLeave);
+            
+            // Handle skip button clicks
+            container.addEventListener('click', (e) => {
+                if (e.target.classList.contains('skip-btn')) {
+                    const projectId = e.target.getAttribute('data-project-id');
+                    skipProject(projectId);
+                }
+            });
+        }
+
+        function handleDragStart(e) {
+            if (!e.target.classList.contains('project-item')) return;
+            
+            draggedElement = e.target;
+            draggedProjectId = e.target.getAttribute('data-project-id');
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.innerHTML);
+        }
+
+        function handleDragEnd(e) {
+            if (!e.target.classList.contains('project-item')) return;
+            
+            e.target.classList.remove('dragging');
+            
+            // Remove all drag-over classes
+            document.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            const target = e.target.closest('.project-item');
+            if (target && target !== draggedElement) {
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            const target = e.target.closest('.project-item');
+            if (target) {
+                target.classList.remove('drag-over');
+            }
+        }
+
+        async function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            
+            const target = e.target.closest('.project-item');
+            if (!target || target === draggedElement) return false;
+            
+            const listType = draggedElement.getAttribute('data-list-type');
+            const targetListType = target.getAttribute('data-list-type');
+            
+            // Only allow drops within same list
+            if (listType !== targetListType) return false;
+            
+            // Reorder elements in DOM
+            const container = target.parentNode;
+            const allItems = Array.from(container.querySelectorAll('.project-item'));
+            const draggedIndex = allItems.indexOf(draggedElement);
+            const targetIndex = allItems.indexOf(target);
+            
+            if (draggedIndex < targetIndex) {
+                target.parentNode.insertBefore(draggedElement, target.nextSibling);
+            } else {
+                target.parentNode.insertBefore(draggedElement, target);
+            }
+            
+            // Update order in Notion
+            await updateProjectOrder(container, listType);
+            
+            return false;
+        }
+
+        // Update project order in Notion
+        async function updateProjectOrder(container, listType) {
+            const items = container.querySelectorAll('.project-item');
+            const orderField = listType === 'Quick Job' ? 'quick_job_order' : 'multi_session_order';
+            
+            const updates = Array.from(items).map((item, index) => {
+                const projectId = item.getAttribute('data-project-id');
+                return {
+                    id: projectId,
+                    [orderField]: index
+                };
+            });
+            
+            // Update each project
+            for (const update of updates) {
+                try {
+                    await fetch(`${API_BASE}/projects/${update.id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            [orderField]: update[orderField]
+                        })
+                    });
+                } catch (error) {
+                    console.error(`Error updating project ${update.id}:`, error);
+                }
+            }
+        }
+
+        // Initial load
+        loadProjects();
+    </script>
+</body>
+</html>
