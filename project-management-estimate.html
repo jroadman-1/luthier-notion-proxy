@@ -268,6 +268,7 @@
         intakeNotes: '',
         estimateNotes: '',
         store: '',
+        project_type: 'Quick Job',
         totalEstimatedHour: 0,
         totalMilestones: 0,
         completedMilestones: 0,
@@ -713,6 +714,13 @@
                 <option value="Robot Monster"    ${currentProject.store === 'Robot Monster' ? 'selected' : ''}>Robot Monster</option>
                 <option value="Internet Order"    ${currentProject.store === 'Internet Order' ? 'selected' : ''}>Internet Order</option>
                 <option value="Internet Order"    ${currentProject.store === 'Interstellar Guitars' ? 'selected' : ''}>Interstellar Guitars</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Project Type</label>
+              <select id="projectType" onchange="markChanged()">
+                <option value="Quick Job" ${(currentProject.project_type || 'Quick Job') === 'Quick Job' ? 'selected' : ''}>Quick Job</option>
+                <option value="Long Project" ${currentProject.project_type === 'Long Project' ? 'selected' : ''}>Long Project</option>
               </select>
             </div>
             <div class="form-group full-width">
@@ -1925,6 +1933,7 @@
           profitability: parseInt(document.getElementById('profitability').value),
           dueDate: document.getElementById('dueDate').value || null,
           store: document.getElementById('store').value,
+          project_type: document.getElementById('projectType').value || 'Quick Job',
           intakeNotes: document.getElementById('intakeNotes').value,
           estimateNotes: document.getElementById('estimateNotes').value,
           notes: document.getElementById('notes').value,
