@@ -774,6 +774,27 @@ async function updateProject(res, notion, projectsDbId, data) {
       console.log('Setting Notes:', updates.notes);
     }
     
+    // Priority manager fields
+    if (updates.project_type !== undefined) {
+      if (updates.project_type === null || updates.project_type === '') {
+        properties['project_type'] = { select: null };
+        console.log('Clearing project_type');
+      } else {
+        properties['project_type'] = { select: { name: updates.project_type } };
+        console.log('Setting project_type:', updates.project_type);
+      }
+    }
+    
+    if (updates.quick_job_order !== undefined) {
+      properties['quick_job_order'] = updates.quick_job_order !== null ? { number: updates.quick_job_order } : { number: null };
+      console.log('Setting quick_job_order:', updates.quick_job_order);
+    }
+    
+    if (updates.multi_session_order !== undefined) {
+      properties['multi_session_order'] = updates.multi_session_order !== null ? { number: updates.multi_session_order } : { number: null };
+      console.log('Setting multi_session_order:', updates.multi_session_order);
+    }
+    
     console.log('Updating project with properties:', Object.keys(properties));
     
     await notion.pages.update({
@@ -878,6 +899,11 @@ function mapProject(page) {
     lastWorked: props['Last Worked']?.date?.start ?? null,
     dateCreated: props['Date Created']?.date?.start ?? null,
     createdTime: page.created_time,
+
+    // Priority manager fields
+    project_type: props['project_type']?.select?.name ?? null,
+    quick_job_order: props['quick_job_order']?.number ?? null,
+    multi_session_order: props['multi_session_order']?.number ?? null,
 
     // Measurement fields
     neckReliefBefore: props['Neck Relief Before']?.rich_text?.[0]?.plain_text ?? null,
