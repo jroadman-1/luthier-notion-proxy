@@ -1503,20 +1503,10 @@ async function getTodos(res, notion, databaseId) {
     const response = await notion.databases.query({
       database_id: databaseId,
       filter: {
-        and: [
-          {
-            property: 'Done',
-            checkbox: {
-              equals: false
-            }
-          },
-          {
-            property: 'List',
-            select: {
-              is_empty: true
-            }
-          }
-        ]
+        property: 'Done',
+        checkbox: {
+          equals: false
+        }
       },
       sorts: [
         {
@@ -1525,6 +1515,8 @@ async function getTodos(res, notion, databaseId) {
         }
       ]
     });
+
+    console.log('Raw todos response:', JSON.stringify(response.results.slice(0, 2), null, 2));
 
     const todos = response.results.map(page => {
       const props = page.properties;
@@ -1538,7 +1530,12 @@ async function getTodos(res, notion, databaseId) {
       };
     });
 
-    return res.status(200).json({ todos });
+    // Filter for empty List in JavaScript since Notion filter might not work as expected
+    const filteredTodos = todos.filter(t => !t.list || t.list === '');
+    console.log('Total todos (not done):', todos.length);
+    console.log('Filtered todos (no list):', filteredTodos.length);
+
+    return res.status(200).json({ todos: filteredTodos });
   } catch (error) {
     console.error('Error fetching todos:', error);
     return res.status(500).json({ 
