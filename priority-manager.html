@@ -758,6 +758,23 @@
             }
         }
 
+        // Reload just the todos (faster than reloading everything)
+        async function reloadTodos() {
+            try {
+                const response = await fetch(`${API_BASE}/notion-proxy?action=todos`);
+                
+                if (response.ok) {
+                    const todosData = await response.json();
+                    todos = todosData.todos || [];
+                    renderTodos();
+                } else {
+                    console.error('Failed to reload todos');
+                }
+            } catch (error) {
+                console.error('Error reloading todos:', error);
+            }
+        }
+
         // Add new todo
         async function addNewTodo() {
             const input = document.getElementById('new-todo-input');
@@ -783,8 +800,8 @@
                     // Clear input
                     input.value = '';
                     
-                    // Reload todos to show the new one
-                    await loadProjects();
+                    // Just reload todos instead of everything
+                    await reloadTodos();
                 } else {
                     alert('Failed to create todo: ' + (result.error || 'Unknown error'));
                 }
