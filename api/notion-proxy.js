@@ -1530,6 +1530,12 @@ async function getTodos(res, notion, databaseId) {
       };
     });
 
+    // Log some sample todos to see their list values
+    console.log('Sample todos with list values:');
+    todos.slice(0, 5).forEach(t => {
+      console.log(`  "${t.note}": list = "${t.list}" (type: ${typeof t.list})`);
+    });
+
     // Filter for empty List in JavaScript since Notion filter might not work as expected
     const filteredTodos = todos.filter(t => !t.list || t.list === '');
     console.log('Total todos (not done):', todos.length);
