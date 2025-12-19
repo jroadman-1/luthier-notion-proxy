@@ -463,7 +463,9 @@
         // Update project order in Notion
         async function updateProjectOrder(container, listType) {
             const items = container.querySelectorAll('.project-item');
+            console.log('Updating order for list type:', listType);
             const orderField = listType === 'Quick Job' ? 'quick_job_order' : 'multi_session_order';
+            console.log('Using order field:', orderField);
             
             const updates = Array.from(items).map((item, index) => {
                 const projectId = item.getAttribute('data-project-id');
@@ -476,7 +478,8 @@
             // Update each project
             for (const update of updates) {
                 try {
-                    await fetch(`${API_BASE}/notion-proxy?action=update-project`, {
+                    console.log('Sending update:', update);
+                    const response = await fetch(`${API_BASE}/notion-proxy?action=update-project`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
@@ -486,6 +489,8 @@
                             [orderField]: update[orderField]
                         })
                     });
+                    const result = await response.json();
+                    console.log('Update result:', result);
                 } catch (error) {
                     console.error(`Error updating project ${update.id}:`, error);
                 }
