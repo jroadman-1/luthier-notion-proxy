@@ -1530,12 +1530,14 @@ async function getTodos(res, notion, databaseId) {
       };
     });
 
-    // Filter for empty List - handle both null and the string "null"
+    // Filter for empty List - check for any falsy value or the string "null"
     const filteredTodos = todos.filter(t => {
-      return !t.list || t.list === '' || t.list === 'null' || t.list === null || t.list === undefined;
+      const listValue = t.list;
+      // Check if list is falsy (null, undefined, empty string, false, 0, NaN) or the string "null"
+      return !listValue || listValue === 'null';
     });
     
-    // Return debug info
+    // Return debug info with ALL todos to see what's happening
     return res.status(200).json({ 
       todos: filteredTodos,
       debug: {
@@ -1545,6 +1547,15 @@ async function getTodos(res, notion, databaseId) {
           note: t.note,
           list: t.list,
           listType: typeof t.list
+        })),
+        allTodosListValues: todos.map(t => ({
+          note: t.note.substring(0, 30),
+          list: t.list,
+          listType: typeof t.list,
+          isNull: t.list === null,
+          isUndefined: t.list === undefined,
+          isEmpty: t.list === '',
+          isFalsy: !t.list
         }))
       }
     });
