@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   
   try {
-    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+    const { NOTION_TOKEN, NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID, NOTION_INBOX_DATABASE_ID } = process.env;
     
     if (!NOTION_TOKEN || !NOTION_DATABASE_ID || !NOTION_MILESTONES_DATABASE_ID) {
       return res.status(500).json({ error: 'Missing required environment variables' });
@@ -41,11 +41,13 @@ module.exports = async (req, res) => {
 
 async function handleGet(req, res, notion) {
   const { action } = req.query;
-  const { NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  const { NOTION_DATABASE_ID, NOTION_MILESTONES_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID, NOTION_INBOX_DATABASE_ID } = process.env;
   
   switch (action) {
     case 'workflows':
       return await getWorkflows(res, notion, NOTION_WORKFLOWS_DATABASE_ID);
+    case 'todos':
+      return await getTodos(res, notion, NOTION_INBOX_DATABASE_ID);
     case 'debug-project-schema':
       return await debugProjectSchema(res, notion, NOTION_DATABASE_ID);
     default:
@@ -79,7 +81,7 @@ async function handlePost(req, res, notion) {
 async function handlePut(req, res, notion) {
   const { action } = req.query;
   const data = req.body;
-  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID, NOTION_INBOX_DATABASE_ID } = process.env;
   
   switch (action) {
     case 'update-milestone':
@@ -88,6 +90,8 @@ async function handlePut(req, res, notion) {
       return await updateProject(res, notion, NOTION_DATABASE_ID, data);
     case 'update-workflow':
       return await updateWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    case 'update-todo':
+      return await updateTodo(res, notion, NOTION_INBOX_DATABASE_ID, data);
     default:
       return res.status(400).json({ error: 'Invalid action' });
   }
@@ -1484,4 +1488,98 @@ function parseRatingValue(ratingStr) {
   if (typeof ratingStr === 'number') return ratingStr;
   const match = ratingStr.match(/^(\d+)-/);
   return match ? parseInt(match[1]) : 3;
+}
+
+// ============================================
+// INBOX / TODOS FUNCTIONS
+// ============================================
+
+async function getTodos(res, notion, databaseId) {
+  if (!databaseId) {
+    return res.status(500).json({ error: 'NOTION_INBOX_DATABASE_ID not configured' });
+  }
+
+  try {
+    const response = await notion.databases.query({
+      database_id: databaseId,
+      filter: {
+        and: [
+          {
+            property: 'Done',
+            checkbox: {
+              equals: false
+            }
+          },
+          {
+            property: 'List',
+            select: {
+              is_empty: true
+            }
+          }
+        ]
+      },
+      sorts: [
+        {
+          property: 'Created Date',
+          direction: 'descending'
+        }
+      ]
+    });
+
+    const todos = response.results.map(page => {
+      const props = page.properties;
+      
+      return {
+        id: page.id,
+        note: props['Note']?.title?.[0]?.plain_text || '',
+        createdDate: props['Created Date']?.created_time || page.created_time,
+        done: props['Done']?.checkbox || false,
+        list: props['List']?.select?.name || null
+      };
+    });
+
+    return res.status(200).json({ todos });
+  } catch (error) {
+    console.error('Error fetching todos:', error);
+    return res.status(500).json({ 
+      error: 'Failed to fetch todos',
+      detail: error.message
+    });
+  }
+}
+
+async function updateTodo(res, notion, databaseId, data) {
+  if (!databaseId) {
+    return res.status(500).json({ error: 'NOTION_INBOX_DATABASE_ID not configured' });
+  }
+
+  try {
+    const { id, done } = data;
+
+    if (!id) {
+      return res.status(400).json({ error: 'Todo ID required' });
+    }
+
+    const properties = {};
+    
+    if (done !== undefined) {
+      properties['Done'] = { checkbox: done };
+    }
+
+    await notion.pages.update({
+      page_id: id,
+      properties
+    });
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Todo updated successfully' 
+    });
+  } catch (error) {
+    console.error('Error updating todo:', error);
+    return res.status(500).json({ 
+      error: 'Failed to update todo',
+      detail: error.message
+    });
+  }
 }
