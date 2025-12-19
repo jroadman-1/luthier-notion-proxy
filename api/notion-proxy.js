@@ -58,7 +58,7 @@ async function handleGet(req, res, notion) {
 async function handlePost(req, res, notion) {
   const { action } = req.query;
   const data = req.body;
-  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID } = process.env;
+  const { NOTION_MILESTONES_DATABASE_ID, NOTION_DATABASE_ID, NOTION_PARTS_DATABASE_ID, NOTION_WORKFLOWS_DATABASE_ID, NOTION_INBOX_DATABASE_ID } = process.env;
   
   switch (action) {
     case 'create-project':
@@ -73,6 +73,8 @@ async function handlePost(req, res, notion) {
       return await saveParts(res, notion, NOTION_PARTS_DATABASE_ID, data);
     case 'create-workflow':
       return await createWorkflow(res, notion, NOTION_WORKFLOWS_DATABASE_ID, data);
+    case 'create-todo':
+      return await createTodo(res, notion, NOTION_INBOX_DATABASE_ID, data);
     default:
       return res.status(400).json({ error: 'Invalid action' });
   }
@@ -1599,6 +1601,51 @@ async function updateTodo(res, notion, databaseId, data) {
     console.error('Error updating todo:', error);
     return res.status(500).json({ 
       error: 'Failed to update todo',
+      detail: error.message
+    });
+  }
+}
+
+async function createTodo(res, notion, databaseId, data) {
+  if (!databaseId) {
+    return res.status(500).json({ error: 'NOTION_INBOX_DATABASE_ID not configured' });
+  }
+
+  try {
+    const { note } = data;
+
+    if (!note || !note.trim()) {
+      return res.status(400).json({ error: 'Todo note is required' });
+    }
+
+    const newPage = await notion.pages.create({
+      parent: { database_id: databaseId },
+      properties: {
+        'Note': {
+          title: [
+            {
+              text: {
+                content: note.trim()
+              }
+            }
+          ]
+        },
+        'Done': {
+          checkbox: false
+        }
+        // List field is left empty by default
+      }
+    });
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Todo created successfully',
+      id: newPage.id
+    });
+  } catch (error) {
+    console.error('Error creating todo:', error);
+    return res.status(500).json({ 
+      error: 'Failed to create todo',
       detail: error.message
     });
   }
