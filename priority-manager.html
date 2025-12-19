@@ -74,11 +74,26 @@
         }
 
         .project-item.dragging {
-            opacity: 0.5;
+            opacity: 0.4;
         }
 
         .project-item.drag-over {
             border-top: 3px solid #4CAF50;
+            margin-top: 8px;
+        }
+        
+        .drop-placeholder {
+            height: 40px;
+            background: #e8f5e9;
+            border: 2px dashed #4CAF50;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4CAF50;
+            font-size: 12px;
+            font-weight: 600;
         }
 
         .drag-handle {
@@ -451,12 +466,27 @@
             e.target.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/html', e.target.innerHTML);
+            
+            // Create placeholder
+            const placeholder = document.createElement('div');
+            placeholder.className = 'drop-placeholder';
+            placeholder.textContent = '↓ Drop here';
+            placeholder.id = 'drag-placeholder';
+            
+            // Insert placeholder after dragged element
+            draggedElement.parentNode.insertBefore(placeholder, draggedElement.nextSibling);
         }
 
         function handleDragEnd(e) {
             if (!e.target.classList.contains('project-item')) return;
             
             e.target.classList.remove('dragging');
+            
+            // Remove placeholder
+            const placeholder = document.getElementById('drag-placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
             
             // Remove all drag-over classes
             document.querySelectorAll('.drag-over').forEach(el => {
@@ -469,6 +499,24 @@
                 e.preventDefault();
             }
             e.dataTransfer.dropEffect = 'move';
+            
+            const target = e.target.closest('.project-item');
+            const placeholder = document.getElementById('drag-placeholder');
+            
+            if (target && target !== draggedElement && placeholder) {
+                // Move placeholder to show drop position
+                const rect = target.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                
+                if (e.clientY < midpoint) {
+                    // Drop above target
+                    target.parentNode.insertBefore(placeholder, target);
+                } else {
+                    // Drop below target
+                    target.parentNode.insertBefore(placeholder, target.nextSibling);
+                }
+            }
+            
             return false;
         }
 
@@ -491,26 +539,17 @@
                 e.stopPropagation();
             }
             
-            const target = e.target.closest('.project-item');
-            if (!target || target === draggedElement) return false;
+            const placeholder = document.getElementById('drag-placeholder');
+            if (!placeholder) return false;
             
             const listType = draggedElement.getAttribute('data-list-type');
-            const targetListType = target.getAttribute('data-list-type');
+            const container = placeholder.parentNode;
             
-            // Only allow drops within same list
-            if (listType !== targetListType) return false;
+            // Place dragged element at placeholder position
+            container.insertBefore(draggedElement, placeholder);
             
-            // Reorder elements in DOM
-            const container = target.parentNode;
-            const allItems = Array.from(container.querySelectorAll('.project-item'));
-            const draggedIndex = allItems.indexOf(draggedElement);
-            const targetIndex = allItems.indexOf(target);
-            
-            if (draggedIndex < targetIndex) {
-                target.parentNode.insertBefore(draggedElement, target.nextSibling);
-            } else {
-                target.parentNode.insertBefore(draggedElement, target);
-            }
+            // Remove placeholder
+            placeholder.remove();
             
             // Update order in Notion
             await updateProjectOrder(container, listType);
