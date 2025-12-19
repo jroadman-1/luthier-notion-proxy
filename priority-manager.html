@@ -385,7 +385,19 @@
                 if (todosResponse.ok) {
                     const todosData = await todosResponse.json();
                     todos = todosData.todos || [];
+                    
+                    // Log debug info if available
+                    if (todosData.debug) {
+                        console.log('=== TODOS DEBUG INFO ===');
+                        console.log('Total todos (not done):', todosData.debug.totalTodos);
+                        console.log('Filtered todos (no list):', todosData.debug.filteredTodos);
+                        console.log('Sample todos with list values:');
+                        console.table(todosData.debug.sampleTodos);
+                        console.log('========================');
+                    }
+                    
                     console.log('Todos loaded:', todos.length);
+                    console.log('First 5 todos:', todos.slice(0, 5).map(t => ({note: t.note, list: t.list})));
                 } else {
                     console.warn('Could not load todos');
                     todos = [];
