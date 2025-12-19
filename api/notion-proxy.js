@@ -1530,18 +1530,24 @@ async function getTodos(res, notion, databaseId) {
       };
     });
 
-    // Log some sample todos to see their list values
-    console.log('Sample todos with list values:');
-    todos.slice(0, 5).forEach(t => {
-      console.log(`  "${t.note}": list = "${t.list}" (type: ${typeof t.list})`);
+    // Filter for empty List - handle both null and the string "null"
+    const filteredTodos = todos.filter(t => {
+      return !t.list || t.list === '' || t.list === 'null' || t.list === null || t.list === undefined;
     });
-
-    // Filter for empty List in JavaScript since Notion filter might not work as expected
-    const filteredTodos = todos.filter(t => !t.list || t.list === '');
-    console.log('Total todos (not done):', todos.length);
-    console.log('Filtered todos (no list):', filteredTodos.length);
-
-    return res.status(200).json({ todos: filteredTodos });
+    
+    // Return debug info
+    return res.status(200).json({ 
+      todos: filteredTodos,
+      debug: {
+        totalTodos: todos.length,
+        filteredTodos: filteredTodos.length,
+        sampleTodos: todos.slice(0, 5).map(t => ({
+          note: t.note,
+          list: t.list,
+          listType: typeof t.list
+        }))
+      }
+    });
   } catch (error) {
     console.error('Error fetching todos:', error);
     return res.status(500).json({ 
