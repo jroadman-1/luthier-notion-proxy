@@ -525,13 +525,16 @@
         if (tipLine) tipLine.style.display = 'none';
       }
       
-      // Total
-      const total = subtotal - discountAmount + taxAmount + tip;
+      // Total (without tip for commission calculation)
+      const totalBeforeTip = subtotal - discountAmount + taxAmount;
       
-      // Commission (internal only)
+      // Commission (internal only) - calculated on total before tip
       const commissionPercent = parseFloat(document.getElementById('commission')?.value) || 0;
-      const commissionAmount = (total * commissionPercent) / 100;
-      const netAfterCommission = total - commissionAmount;
+      const commissionAmount = (totalBeforeTip * commissionPercent) / 100;
+      const netAfterCommission = totalBeforeTip - commissionAmount;
+      
+      // Final total includes tip after commission
+      const total = netAfterCommission + tip;
       
       // Update display
       document.getElementById('billingSubtotal').textContent = '$' + subtotal.toFixed(2);
