@@ -60,8 +60,6 @@
     .milestone-name input{width:100%;border:none;background:transparent;padding:4px;font-size:14px}
     .milestone-hours{width:80px}
     .milestone-hours input{width:100%;border:none;background:transparent;padding:4px;text-align:center;font-size:14px}
-    .milestone-actual-hours{width:80px}
-    .milestone-actual-hours input{width:100%;border:none;background:transparent;padding:4px;text-align:center;font-size:12px;color:#666}
     .milestone-fixed-price{width:80px}
     .milestone-fixed-price input{width:100%;border:none;background:transparent;padding:4px;text-align:center;font-size:12px;color:#2196f3;font-weight:bold}
     .milestone-status{width:100px}
@@ -1230,16 +1228,6 @@
                    placeholder="$"
                    style="border:1px solid #e0e0e0;border-radius:3px;">
           </div>
-          <div class="milestone-actual-hours">
-            <input type="number" step="0.25" min="0.25"
-                   value="${milestone.status === 'Completed' ? (milestone.actualHours || '') : ''}"
-                   onchange="updateMilestone(${index}, 'actualHours', this.value)"
-                   placeholder="Actual"
-                   title="Actual Hours"
-                   ${milestone.status !== 'Completed' ? 'disabled' : ''}
-                   id="actual-hours-${index}"
-                   style="${milestone.status !== 'Completed' ? 'background:#f5f5f5;color:#ccc;' : ''}">
-          </div>
           <div class="milestone-status">
             <select onchange="updateMilestone(${index}, 'status', this.value)">
               <option value="Not Started" ${milestone.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
@@ -1280,29 +1268,12 @@
       
       if (checkbox.checked) {
         milestone.status = 'Completed';
-        // Pre-fill actual hours with estimated hours if not already set
-        if (!milestone.actualHours) {
-          milestone.actualHours = milestone.estimatedHours || 1;
-        }
       } else {
         milestone.status = 'Not Started';
-        // Clear actual hours when unchecking
-        milestone.actualHours = null;
       }
       
       refreshMilestoneList();
       markChanged();
-      
-      // Focus on actual hours input if just completed
-      if (checkbox.checked) {
-        setTimeout(() => {
-          const actualInput = document.getElementById(`actual-hours-${index}`);
-          if (actualInput) {
-            actualInput.focus();
-            actualInput.select();
-          }
-        }, 100);
-      }
     }
 
     async function saveSingleMilestone(index) {
