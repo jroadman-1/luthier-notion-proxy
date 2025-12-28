@@ -526,6 +526,23 @@ async function updateProject(res, notion, projectsDbId, data) {
     if (updates.status) {
       properties.Status = { select: { name: updates.status } };
       console.log('Setting Status:', updates.status);
+      
+      // Automatically set paidDate when status changes to "Paid"
+      if (updates.status === 'Paid' && !updates.paidDate) {
+        properties['paidDate'] = { date: { start: new Date().toISOString().split('T')[0] } };
+        console.log('Automatically setting paidDate to today');
+      }
+    }
+    
+    // Allow manual override of paidDate if provided
+    if (updates.paidDate !== undefined) {
+      if (updates.paidDate === null || updates.paidDate === '') {
+        properties['paidDate'] = { date: null };
+        console.log('Clearing paidDate');
+      } else {
+        properties['paidDate'] = { date: { start: updates.paidDate } };
+        console.log('Setting paidDate:', updates.paidDate);
+      }
     }
     if (updates.instrumentMake !== undefined) {
       properties['Instrument Make'] = { 
@@ -905,6 +922,7 @@ function mapProject(page) {
     lastWorked: props['Last Worked']?.date?.start ?? null,
     dateCreated: props['Date Created']?.date?.start ?? null,
     createdTime: page.created_time,
+    paidDate: props['paidDate']?.date?.start ?? null,
 
     // Priority manager fields
     project_type: props['project_type']?.select?.name ?? null,
