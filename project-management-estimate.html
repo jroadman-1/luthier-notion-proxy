@@ -677,13 +677,17 @@
             </div>
             <div class="form-group">
               <label>Status</label>
-              <select id="projectStatus" onchange="markChanged()">
+              <select id="projectStatus" onchange="handleStatusChange()">
                 <option value="On The Bench" ${currentProject.status === 'On The Bench' ? 'selected' : ''}>On The Bench</option>
                 <option value="Waiting" ${currentProject.status === 'Waiting' ? 'selected' : ''}>Waiting</option>
                 <option value="Done" ${currentProject.status === 'Done' ? 'selected' : ''}>Done</option>
                 <option value="Paid" ${currentProject.status === 'Paid' ? 'selected' : ''}>Paid</option>
                  <option value="Returned" ${currentProject.status === 'Returned' ? 'selected' : ''}>Returned</option>
               </select>
+            </div>
+            <div class="form-group" id="paidDateGroup" style="display: ${currentProject.status === 'Paid' ? 'block' : 'none'};">
+              <label>Paid Date</label>
+              <input type="date" id="paidDate" value="${currentProject.paidDate || ''}" onchange="markChanged()">
             </div>
             <div class="form-group">
               <label>Instrument Make</label>
@@ -1904,6 +1908,26 @@
         .sort((a, b) => a.order - b.order);
     }
 
+    function handleStatusChange() {
+      const status = document.getElementById('projectStatus').value;
+      const paidDateGroup = document.getElementById('paidDateGroup');
+      const paidDateInput = document.getElementById('paidDate');
+      
+      // Show/hide paid date field based on status
+      if (status === 'Paid') {
+        paidDateGroup.style.display = 'block';
+        // Auto-populate with today's date if not already set
+        if (!paidDateInput.value) {
+          const today = new Date().toISOString().split('T')[0];
+          paidDateInput.value = today;
+        }
+      } else {
+        paidDateGroup.style.display = 'none';
+      }
+      
+      markChanged();
+    }
+
     function markChanged() {
       hasUnsavedChanges = true;
       updateSaveButton();
@@ -1932,6 +1956,7 @@
           name: document.getElementById('projectName').value,
           projectId: document.getElementById('projectIdInput').value,
           status: document.getElementById('projectStatus').value,
+          paidDate: document.getElementById('paidDate').value || null,
           instrumentMake: document.getElementById('instrumentMake').value,
           instrumentModel: document.getElementById('instrumentModel').value,
           complexity: parseInt(document.getElementById('complexity').value),
