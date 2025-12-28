@@ -1119,6 +1119,9 @@ async function updateMilestone(res, notion, milestonesDbId, data) {
     if (updates.actualHours !== undefined) {
       properties['Actual Hours'] = { number: updates.actualHours };
     }
+    if (updates.fixedPrice !== undefined) {
+      properties['fixedPrice'] = { number: updates.fixedPrice ? parseFloat(updates.fixedPrice) : null };
+    }
     if (updates.status) {
       properties.Status = { select: { name: updates.status } };
     }
@@ -1176,6 +1179,7 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
           properties: {
             'Name': { title: [{ text: { content: milestone.name } }] },
             'Estimated Hours': { number: milestone.estimatedHours },
+            'fixedPrice': { number: milestone.fixedPrice ? parseFloat(milestone.fixedPrice) : null },
             'Order (Sequence)': { number: i + 1 },
             'Status': { select: { name: milestone.status || 'Not Started' } },
             'includeInEstimate': { checkbox: milestone.includeInEstimate !== false },
@@ -1196,6 +1200,7 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
             'Name': { title: [{ text: { content: milestone.name } }] },
             'Work Order': { relation: [{ id: projectId }] },
             'Estimated Hours': { number: milestone.estimatedHours },
+            'fixedPrice': { number: milestone.fixedPrice ? parseFloat(milestone.fixedPrice) : null },
             'Order (Sequence)': { number: i + 1 },
             'Status': { select: { name: milestone.status || 'Not Started' } },
             'Milestone Type': { select: { name: 'Individual' } },
@@ -1361,6 +1366,7 @@ function mapMilestone(page) {
     name: props.Name?.title?.[0]?.plain_text ?? 'Untitled',
     estimatedHours: props['Estimated Hours']?.number ?? 1,
     actualHours: props['Actual Hours']?.number ?? 0,
+    fixedPrice: props['fixedPrice']?.number ?? null,
     order: props['Order (Sequence)']?.number ?? 1,
     status: props.Status?.select?.name ?? 'Not Started',
     milestoneType: props['Milestone Type']?.select?.name ?? 'Individual',
