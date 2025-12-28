@@ -531,10 +531,12 @@
       // Commission (internal only) - calculated on total before tip
       const commissionPercent = parseFloat(document.getElementById('commission')?.value) || 0;
       const commissionAmount = (totalBeforeTip * commissionPercent) / 100;
-      const netAfterCommission = totalBeforeTip - commissionAmount;
       
-      // Final total includes tip after commission
-      const total = netAfterCommission + tip;
+      // Net after commission now includes the tip
+      const netAfterCommission = totalBeforeTip - commissionAmount + tip;
+      
+      // Final total is the same as net after commission
+      const total = netAfterCommission;
       
       // Update display
       document.getElementById('billingSubtotal').textContent = '$' + subtotal.toFixed(2);
