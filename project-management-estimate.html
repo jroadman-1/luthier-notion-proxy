@@ -564,6 +564,7 @@
       
       // Store the calculated values for saving to Notion
       currentProject.calculatedTotal = total;
+      currentProject.calculatedSubtotal = subtotal;
       currentProject.calculatedTaxAmount = taxAmount;
       currentProject.tip = tip;
       
@@ -1957,6 +1958,7 @@
           
           // Billing data - save calculated total, tax amount, and commission percentage
           total: currentProject.calculatedTotal || null,
+          subtotal: currentProject.calculatedSubtotal || null,
           taxAmount: currentProject.calculatedTaxAmount || null,
           commission: parseFloat(document.getElementById('commission').value) || null,  // This is now a percentage
           discount: parseInt(document.getElementById('discount').value) || null,
