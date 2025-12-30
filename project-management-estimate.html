@@ -531,18 +531,15 @@
         if (tipLine) tipLine.style.display = 'none';
       }
       
-      // Total (without tip for commission calculation)
-      const totalBeforeTip = subtotal - discountAmount + taxAmount;
+      // Total (customer-facing amount: subtotal - discount + tax + tip)
+      const total = subtotal - discountAmount + taxAmount + tip;
       
       // Commission (internal only) - calculated on total before tip
       const commissionPercent = parseFloat(document.getElementById('commission')?.value) || 0;
-      const commissionAmount = (totalBeforeTip * commissionPercent) / 100;
+      const commissionAmount = ((subtotal - discountAmount + taxAmount) * commissionPercent) / 100;
       
-      // Net after commission now includes the tip
-      const netAfterCommission = totalBeforeTip - commissionAmount + tip;
-      
-      // Final total is the same as net after commission
-      const total = netAfterCommission;
+      // Net after commission (what you actually receive)
+      const netAfterCommission = total - commissionAmount;
       
       // Update display
       document.getElementById('billingSubtotal').textContent = '$' + subtotal.toFixed(2);
@@ -563,7 +560,8 @@
       if (summaryMinusCommission) summaryMinusCommission.textContent = netAfterCommission.toFixed(2);
       
       // Store the calculated values for saving to Notion
-      currentProject.calculatedTotal = total;
+      currentProject.calculatedTotal = total;  // Customer-facing total (before commission)
+      currentProject.calculatedCommission = commissionAmount;  // Dollar amount of commission
       currentProject.calculatedSubtotal = subtotal;
       currentProject.calculatedTaxAmount = taxAmount;
       currentProject.tip = tip;
@@ -1956,11 +1954,11 @@
           estimateNotes: document.getElementById('estimateNotes').value,
           notes: document.getElementById('notes').value,
           
-          // Billing data - save calculated total, tax amount, and commission percentage
-          total: currentProject.calculatedTotal || null,
+          // Billing data - save calculated total, tax amount, and commission amount
+          total: currentProject.calculatedTotal || null,  // Customer-facing total (includes tip, before commission)
           subtotal: currentProject.calculatedSubtotal || null,
           taxAmount: currentProject.calculatedTaxAmount || null,
-          commission: parseFloat(document.getElementById('commission').value) || null,  // This is now a percentage
+          commission: currentProject.calculatedCommission || null,  // Dollar amount of commission
           discount: parseInt(document.getElementById('discount').value) || null,
           tip: parseFloat(document.getElementById('tip').value) || null,
           // Store hourly rate with project for historical billing accuracy
