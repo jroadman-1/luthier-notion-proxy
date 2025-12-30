@@ -561,7 +561,6 @@
       
       // Store the calculated values for saving to Notion
       currentProject.calculatedTotal = total;  // Customer-facing total (before commission)
-      currentProject.calculatedCommission = commissionAmount;  // Dollar amount of commission
       currentProject.calculatedSubtotal = subtotal;
       currentProject.calculatedTaxAmount = taxAmount;
       currentProject.tip = tip;
@@ -1954,11 +1953,11 @@
           estimateNotes: document.getElementById('estimateNotes').value,
           notes: document.getElementById('notes').value,
           
-          // Billing data - save calculated total, tax amount, and commission amount
+          // Billing data - save calculated values
           total: currentProject.calculatedTotal || null,  // Customer-facing total (includes tip, before commission)
           subtotal: currentProject.calculatedSubtotal || null,
           taxAmount: currentProject.calculatedTaxAmount || null,
-          commission: currentProject.calculatedCommission || null,  // Dollar amount of commission
+          commission: parseFloat(document.getElementById('commission').value) || null,  // Commission percentage
           discount: parseInt(document.getElementById('discount').value) || null,
           tip: parseFloat(document.getElementById('tip').value) || null,
           // Store hourly rate with project for historical billing accuracy
