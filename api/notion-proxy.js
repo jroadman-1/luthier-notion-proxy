@@ -234,7 +234,7 @@ async function createProject(res, notion, projectsDbId, data) {
     // Actions
     actions, additionalActions,
     // Billing fields
-    total, commission, discount, taxAmount, tip, hourlyRate, notes
+    total, subtotal, commission, discount, taxAmount, tip, hourlyRate, notes
   } = data;
   
   console.log('Creating new project:', { name, projectId, status, instrumentMake, instrumentModel });
@@ -311,6 +311,10 @@ async function createProject(res, notion, projectsDbId, data) {
     // Add billing fields
     if (total !== undefined && total !== null && total !== '') {
       properties['Total'] = { number: parseFloat(total) };
+    }
+    
+    if (subtotal !== undefined && subtotal !== null && subtotal !== '') {
+      properties['Subtotal'] = { number: parseFloat(subtotal) };
     }
     
     if (commission !== undefined && commission !== null && commission !== '') {
@@ -603,6 +607,16 @@ async function updateProject(res, notion, projectsDbId, data) {
       } else {
         properties['Total'] = { number: parseFloat(updates.total) };
         console.log('Setting Total:', updates.total);
+      }
+    }
+    
+    if (updates.subtotal !== undefined) {
+      if (updates.subtotal === null || updates.subtotal === '') {
+        properties['Subtotal'] = { number: null };
+        console.log('Clearing Subtotal');
+      } else {
+        properties['Subtotal'] = { number: parseFloat(updates.subtotal) };
+        console.log('Setting Subtotal:', updates.subtotal);
       }
     }
     
@@ -911,6 +925,7 @@ function mapProject(page) {
 
     // Billing fields (including Discount)
     total: props['Total']?.number ?? null,
+    subtotal: props['Subtotal']?.number ?? null,
     commission: props['Commission']?.number ?? null,
     discount: props['Discount']?.number ?? null,
     taxAmount: props['taxAmount']?.number ?? null,
