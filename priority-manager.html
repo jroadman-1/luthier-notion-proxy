@@ -811,6 +811,16 @@
             }
         }
 
+        // Listen for project status changes from other tabs (project manager)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'project_status_changed') {
+                console.log('Project status changed, reloading...');
+                loadProjects();
+                // Clear the flag
+                localStorage.removeItem('project_status_changed');
+            }
+        });
+
         // Initial load
         loadProjects();
     </script>
