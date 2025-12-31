@@ -245,7 +245,7 @@
         showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allParts.length} parts, ${allWorkflows.length} workflows`, 'success');
       } catch (error) {
         console.error('Failed to refresh projects:', error);
-        const errorMsg = `Failed to load projects: ${error.message}`;
+        const errorMsg = `Failed to load projects: ${error?.message || String(error)}`;
         document.getElementById('projectsList').innerHTML =
           `<div class="error">${errorMsg}<br><br>Check the browser console for details.</div>`;
         showMessage(errorMsg, 'error');
@@ -1302,7 +1302,7 @@
         refreshMilestoneList();
       } catch (error) {
         console.error('Failed to save milestone:', error);
-        showMessage('Failed to save milestone progress: ' + error.message, 'error');
+        showMessage('Failed to save milestone progress: ' + (error?.message || String(error)), 'error');
       }
     }
 
@@ -1337,7 +1337,7 @@
         refreshMilestoneList();
       } catch (error) {
         console.error('Failed to save all milestones:', error);
-        showMessage('Failed to save milestone progress: ' + error.message, 'error');
+        showMessage('Failed to save milestone progress: ' + (error?.message || String(error)), 'error');
       }
     }
 
@@ -2104,7 +2104,7 @@
 
       } catch (error) {
         console.error('Save failed:', error);
-        showMessage('Failed to save changes: ' + error.message, 'error');
+        showMessage('Failed to save changes: ' + (error?.message || String(error)), 'error');
         document.getElementById('saveBtn').textContent = 'Save Changes *';
       }
     }
