@@ -359,7 +359,17 @@
       console.log('Total projects loaded:', allProjects.length);
       
       // Filter projects based on status
-      const filteredProjects = allProjects.filter(project => project.status === filterValue);
+      let filteredProjects = allProjects.filter(project => project.status === filterValue);
+      
+      // Sort Waiting projects by creation date (oldest first)
+      if (filterValue === 'Waiting') {
+        filteredProjects.sort((a, b) => {
+          const dateA = new Date(a.dateCreated || a.createdTime || 0);
+          const dateB = new Date(b.dateCreated || b.createdTime || 0);
+          return dateA - dateB; // Ascending order (oldest first)
+        });
+      }
+      
       console.log('Filtered projects count:', filteredProjects.length);
 
       if (filteredProjects.length === 0 && !isNewProject) {
@@ -688,6 +698,10 @@
                 <option value="Paid" ${currentProject.status === 'Paid' ? 'selected' : ''}>Paid</option>
                  <option value="Returned" ${currentProject.status === 'Returned' ? 'selected' : ''}>Returned</option>
               </select>
+            </div>
+            <div class="form-group">
+              <label>Date Created</label>
+              <div class="readonly-display" style="font-size:14px;text-align:left;">${currentProject.dateCreated ? new Date(currentProject.dateCreated).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}) : (currentProject.createdTime ? new Date(currentProject.createdTime).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}) : 'Not yet created')}</div>
             </div>
             <div class="form-group" id="paidDateGroup" style="display: ${currentProject.status === 'Paid' ? 'block' : 'none'};">
               <label>Paid Date</label>
