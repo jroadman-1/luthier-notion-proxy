@@ -1171,6 +1171,8 @@ async function updateMilestone(res, notion, milestonesDbId, data) {
 async function saveMilestones(res, notion, milestonesDbId, data) {
   const { projectId, milestones } = data;
   
+  console.log(`saveMilestones called for project ${projectId} with ${milestones.length} milestones`);
+  
   try {
     const existingResponse = await notion.databases.query({
       database_id: milestonesDbId,
@@ -1183,12 +1185,15 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
     });
     
     const existingMilestones = existingResponse.results.map(mapMilestone);
+    console.log(`Found ${existingMilestones.length} existing milestones in Notion`);
+    
     const updates = [];
     
     for (let i = 0; i < milestones.length; i++) {
       const milestone = milestones[i];
       
       if (milestone.id && existingMilestones.find(m => m.id === milestone.id)) {
+        console.log(`Updating milestone ${i + 1}: ${milestone.name} (${milestone.id})`);
         const updatePromise = notion.pages.update({
           page_id: milestone.id,
           properties: {
@@ -1209,6 +1214,7 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
         });
         updates.push(updatePromise);
       } else {
+        console.log(`Creating new milestone ${i + 1}: ${milestone.name}`);
         const createPromise = notion.pages.create({
           parent: { database_id: milestonesDbId },
           properties: {
@@ -1233,10 +1239,13 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
       }
     }
     
+    // Find milestones to delete (in Notion but not in submitted array)
     const milestoneIds = milestones.filter(m => m.id).map(m => m.id);
     const toDelete = existingMilestones.filter(m => !milestoneIds.includes(m.id));
     
+    console.log(`Deleting ${toDelete.length} milestones not in submitted array`);
     for (const milestone of toDelete) {
+      console.log(`Archiving milestone: ${milestone.name} (${milestone.id})`);
       const deletePromise = notion.pages.update({
         page_id: milestone.id,
         archived: true
@@ -1244,13 +1253,16 @@ async function saveMilestones(res, notion, milestonesDbId, data) {
       updates.push(deletePromise);
     }
     
+    console.log(`Executing ${updates.length} total database operations`);
     await Promise.all(updates);
     
+    console.log('All milestone operations completed successfully');
     return res.json({ 
       success: true, 
       message: `Updated ${milestones.length} milestones, deleted ${toDelete.length} milestones`
     });
   } catch (error) {
+    console.error('Failed to save milestones:', error);
     throw new Error(`Failed to save milestones: ${error.message}`);
   }
 }
