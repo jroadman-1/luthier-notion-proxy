@@ -2060,21 +2060,22 @@
           showMessage('Project updated successfully', 'success');
         }
 
-        if (currentMilestones.length > 0) {
-          const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              projectId: currentProject.id,
-              milestones: currentMilestones
-            })
-          });
-          if (!milestoneResponse.ok) {
-            const errorText = await milestoneResponse.text();
-            throw new Error(`Failed to save milestones: ${errorText}`);
-          }
-          await milestoneResponse.json();
+        // Always call save-milestones to handle both updates AND deletions
+        // (if all milestones are deleted, we still need to archive them in Notion)
+        const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: currentProject.id,
+            milestones: currentMilestones
+          })
+        });
+        if (!milestoneResponse.ok) {
+          const errorText = await milestoneResponse.text();
+          throw new Error(`Failed to save milestones: ${errorText}`);
         }
+        const milestoneResult = await milestoneResponse.json();
+        console.log('Milestones saved:', milestoneResult.message);
 
         // Save parts (including deletions) - always call API to sync with Notion
         try {
