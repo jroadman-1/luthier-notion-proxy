@@ -277,7 +277,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">          </div>
         <div class="contact-info">
-          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f5879a949198949b92809c81948786b59298949c99db969a98">[email&#160;protected]</a>
+          San Antonio, TX | info@roadmanguitars.com
         </div>
       </div>
       <div class="report-date">
@@ -559,7 +559,7 @@
     // Filter only billable milestones (matching estimate logic)
     const billableMilestones = ms.filter(m => m && m.name && m.includeInEstimate !== false);
     
-    // Group milestones by workflow for DISPLAY purposes only
+    // Group milestones by workflow
     const workflowGroups = {};
     const standaloneMilestones = [];
     
@@ -568,11 +568,11 @@
         if (!workflowGroups[milestone.workflowGroupId]) {
           workflowGroups[milestone.workflowGroupId] = {
             name: milestone.workflowName || 'Workflow',
-            milestones: [],
+            totalHours: 0,
             order: milestone.order || 999
           };
         }
-        workflowGroups[milestone.workflowGroupId].milestones.push(milestone);
+        workflowGroups[milestone.workflowGroupId].totalHours += parseFloat(milestone.estimatedHours) || 0;
         workflowGroups[milestone.workflowGroupId].order = Math.min(
           workflowGroups[milestone.workflowGroupId].order, 
           milestone.order || 999
@@ -599,35 +599,33 @@
     // Render workflow and milestone items
     allItems.forEach(item => {
       if (item.type === 'workflow') {
-        // Calculate workflow total by rounding EACH milestone individually, then summing
-        let workflowTotal = 0;
-        item.data.milestones.forEach(m => {
+        // Calculate cost by rounding EACH milestone individually then summing
+        let cost = 0;
+        billableMilestones.filter(m => m.workflowGroupId === Object.keys(workflowGroups).find(k => workflowGroups[k] === item.data)).forEach(m => {
           if (m.fixedPrice && parseFloat(m.fixedPrice) > 0) {
-            workflowTotal += parseFloat(m.fixedPrice);
+            cost += parseFloat(m.fixedPrice);
           } else {
             const hourlyCalculation = (parseFloat(m.estimatedHours) || 0) * HOURLY_RATE;
-            workflowTotal += Math.ceil(hourlyCalculation); // Round UP each milestone
+            cost += Math.ceil(hourlyCalculation);
           }
         });
-        
-        subtotal += workflowTotal;
+        subtotal += cost;
         
         const itemDiv = document.createElement('div');
         itemDiv.className = 'billing-item';
         itemDiv.innerHTML = `
           <span class="billing-item-name">${item.data.name}</span>
-          <span class="billing-item-amount">$${workflowTotal.toFixed(2)}</span>
+          <span class="billing-item-amount">$${cost.toFixed(2)}</span>
         `;
         billingBreakdownEl.appendChild(itemDiv);
       } else {
-        // Standalone milestone - round individually
         let cost;
         if (item.data.fixedPrice && parseFloat(item.data.fixedPrice) > 0) {
           cost = parseFloat(item.data.fixedPrice);
         } else {
           const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
           const hourlyCalculation = estimatedHours * HOURLY_RATE;
-          cost = Math.ceil(hourlyCalculation); // Round UP to nearest dollar
+          cost = Math.ceil(hourlyCalculation);
         }
         subtotal += cost;
         
