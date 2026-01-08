@@ -277,7 +277,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">          </div>
         <div class="contact-info">
-          San Antonio, TX | info@roadmanguitars.com
+          San Antonio, TX | roadmanguitars@gmail.com
         </div>
       </div>
       <div class="report-date">
@@ -599,16 +599,7 @@
     // Render workflow and milestone items
     allItems.forEach(item => {
       if (item.type === 'workflow') {
-        // Calculate cost by rounding EACH milestone individually then summing
-        let cost = 0;
-        billableMilestones.filter(m => m.workflowGroupId === Object.keys(workflowGroups).find(k => workflowGroups[k] === item.data)).forEach(m => {
-          if (m.fixedPrice && parseFloat(m.fixedPrice) > 0) {
-            cost += parseFloat(m.fixedPrice);
-          } else {
-            const hourlyCalculation = (parseFloat(m.estimatedHours) || 0) * HOURLY_RATE;
-            cost += Math.ceil(hourlyCalculation);
-          }
-        });
+        const cost = item.data.totalHours * HOURLY_RATE;
         subtotal += cost;
         
         const itemDiv = document.createElement('div');
@@ -619,14 +610,8 @@
         `;
         billingBreakdownEl.appendChild(itemDiv);
       } else {
-        let cost;
-        if (item.data.fixedPrice && parseFloat(item.data.fixedPrice) > 0) {
-          cost = parseFloat(item.data.fixedPrice);
-        } else {
-          const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
-          const hourlyCalculation = estimatedHours * HOURLY_RATE;
-          cost = Math.ceil(hourlyCalculation);
-        }
+        const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
+        const cost = estimatedHours * HOURLY_RATE;
         subtotal += cost;
         
         const itemDiv = document.createElement('div');
@@ -712,3 +697,21 @@
       tipDiv.className = 'billing-tip';
       tipDiv.innerHTML = `
         <span>Tip</span>
+        <span>$${tipAmount.toFixed(2)}</span>
+      `;
+      billingBreakdownEl.appendChild(tipDiv);
+    }
+    
+    // Use stored total as fallback
+    if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
+      billingTotal = parseFloat(p.total);
+    }
+    
+    // Display the total
+    if (billingTotal != null && !isNaN(billingTotal) && billingTotal > 0) {
+      setText('billingTotal', '$' + billingTotal.toFixed(2));
+    }
+  })();
+  </script>
+</body>
+</html>
