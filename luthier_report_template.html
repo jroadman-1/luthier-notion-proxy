@@ -466,7 +466,7 @@
     </div>
   </div>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script>
   (function(){
     // Pull payload saved by the management page
     const raw = localStorage.getItem('luthierReportData');
@@ -712,11 +712,3 @@
       tipDiv.className = 'billing-tip';
       tipDiv.innerHTML = `
         <span>Tip</span>
-        <span>$${tipAmount.toFixed(2)}</span>
-      `;
-      billingBreakdownEl.appendChild(tipDiv);
-    }
-    
-    // Use stored total as fallback
-    if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = pa
