@@ -600,15 +600,14 @@
     // Render workflow and milestone items
     allItems.forEach(item => {
       if (item.type === 'workflow') {
-        // For workflows, sum up individual milestone costs with rounding and fixed price support
         let cost = 0;
+        const groupId = Object.keys(workflowGroups).find(k => workflowGroups[k] === item.data);
         billableMilestones.forEach(m => {
-          if (m.workflowGroupId === Object.keys(workflowGroups).find(k => workflowGroups[k] === item.data)) {
+          if (m.workflowGroupId === groupId) {
             if (m.fixedPrice && parseFloat(m.fixedPrice) > 0) {
               cost += parseFloat(m.fixedPrice);
             } else {
-              const hourlyCalculation = (parseFloat(m.estimatedHours) || 0) * HOURLY_RATE;
-              cost += Math.ceil(hourlyCalculation);
+              cost += Math.ceil((parseFloat(m.estimatedHours) || 0) * HOURLY_RATE);
             }
           }
         });
@@ -622,14 +621,11 @@
         `;
         billingBreakdownEl.appendChild(itemDiv);
       } else {
-        // Standalone milestone with fixed price support
         let cost;
         if (item.data.fixedPrice && parseFloat(item.data.fixedPrice) > 0) {
           cost = parseFloat(item.data.fixedPrice);
         } else {
-          const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
-          const hourlyCalculation = estimatedHours * HOURLY_RATE;
-          cost = Math.ceil(hourlyCalculation);
+          cost = Math.ceil((parseFloat(item.data.estimatedHours) || 0) * HOURLY_RATE);
         }
         subtotal += cost;
         
