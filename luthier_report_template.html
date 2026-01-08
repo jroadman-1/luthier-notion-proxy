@@ -277,7 +277,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">          </div>
         <div class="contact-info">
-          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3e4c515f5a535f50594b574a5f4c4d7e59535f5752105d5153">[email&#160;protected]</a>
+          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="52203d33363f333c35273b2633202112353f333b3e7c313d3f">[email&#160;protected]</a>
         </div>
       </div>
       <div class="report-date">
@@ -600,14 +600,17 @@
     // Render workflow and milestone items
     allItems.forEach(item => {
       if (item.type === 'workflow') {
+        // Calculate workflow cost by processing each milestone individually (matches management page logic)
         let cost = 0;
         const groupId = Object.keys(workflowGroups).find(k => workflowGroups[k] === item.data);
         billableMilestones.forEach(m => {
           if (m.workflowGroupId === groupId) {
+            // Use fixed price if provided, otherwise calculate from hours and round UP
             if (m.fixedPrice && parseFloat(m.fixedPrice) > 0) {
               cost += parseFloat(m.fixedPrice);
             } else {
-              cost += Math.ceil((parseFloat(m.estimatedHours) || 0) * HOURLY_RATE);
+              const hourlyCalculation = (parseFloat(m.estimatedHours) || 0) * HOURLY_RATE;
+              cost += Math.ceil(hourlyCalculation);
             }
           }
         });
@@ -621,11 +624,14 @@
         `;
         billingBreakdownEl.appendChild(itemDiv);
       } else {
+        // Standalone milestone - use fixed price if provided, otherwise calculate from hours and round UP
         let cost;
         if (item.data.fixedPrice && parseFloat(item.data.fixedPrice) > 0) {
           cost = parseFloat(item.data.fixedPrice);
         } else {
-          cost = Math.ceil((parseFloat(item.data.estimatedHours) || 0) * HOURLY_RATE);
+          const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
+          const hourlyCalculation = estimatedHours * HOURLY_RATE;
+          cost = Math.ceil(hourlyCalculation);
         }
         subtotal += cost;
         
@@ -719,4 +725,12 @@
     
     // Use stored total as fallback
     if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = pa
+      billingTotal = parseFloat(p.total);
+    }
+    
+    // Final total
+    setText('billingTotal', '$' + billingTotal.toFixed(2));
+  })();
+  </script>
+</body>
+</html>
