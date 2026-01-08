@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -277,7 +278,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">          </div>
         <div class="contact-info">
-          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8dffe2ece9e0ece3eaf8e4f9ecfffecdeae0ece4e1a3eee2e0">[email&#160;protected]</a>
+          San Antonio, TX | roadmanguitars@gmail.com
         </div>
       </div>
       <div class="report-date">
@@ -466,7 +467,7 @@
     </div>
   </div>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  <script>
   (function(){
     // Pull payload saved by the management page
     const raw = localStorage.getItem('luthierReportData');
@@ -567,7 +568,6 @@
       if (milestone.workflowGroupId) {
         if (!workflowGroups[milestone.workflowGroupId]) {
           workflowGroups[milestone.workflowGroupId] = {
-            groupId: milestone.workflowGroupId,  // Store groupId for later matching
             name: milestone.workflowName || 'Workflow',
             totalHours: 0,
             order: milestone.order || 999
@@ -600,20 +600,7 @@
     // Render workflow and milestone items
     allItems.forEach(item => {
       if (item.type === 'workflow') {
-        // For workflows, calculate cost by rounding each milestone individually
-        const workflowGroupId = item.data.groupId;
-        const workflowMilestones = billableMilestones.filter(m => m.workflowGroupId === workflowGroupId);
-        
-        // Calculate cost by rounding each milestone individually (matches management page logic)
-        const cost = workflowMilestones.reduce((sum, m) => {
-          if (m.fixedPrice && parseFloat(m.fixedPrice) > 0) {
-            return sum + parseFloat(m.fixedPrice);
-          } else {
-            const hourlyCalculation = (parseFloat(m.estimatedHours) || 0) * HOURLY_RATE;
-            return sum + Math.ceil(hourlyCalculation); // Round UP to nearest dollar
-          }
-        }, 0);
-        
+        const cost = item.data.totalHours * HOURLY_RATE;
         subtotal += cost;
         
         const itemDiv = document.createElement('div');
@@ -624,15 +611,8 @@
         `;
         billingBreakdownEl.appendChild(itemDiv);
       } else {
-        // Standalone milestone
-        let cost;
-        if (item.data.fixedPrice && parseFloat(item.data.fixedPrice) > 0) {
-          cost = parseFloat(item.data.fixedPrice);
-        } else {
-          const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
-          const hourlyCalculation = estimatedHours * HOURLY_RATE;
-          cost = Math.ceil(hourlyCalculation); // Round UP to nearest dollar
-        }
+        const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
+        const cost = estimatedHours * HOURLY_RATE;
         subtotal += cost;
         
         const itemDiv = document.createElement('div');
@@ -725,4 +705,14 @@
     
     // Use stored total as fallback
     if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = pa
+      billingTotal = parseFloat(p.total);
+    }
+    
+    // Display the total
+    if (billingTotal != null && !isNaN(billingTotal) && billingTotal > 0) {
+      setText('billingTotal', '$' + billingTotal.toFixed(2));
+    }
+  })();
+  </script>
+</body>
+</html>
