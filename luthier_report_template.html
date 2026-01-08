@@ -567,6 +567,7 @@
       if (milestone.workflowGroupId) {
         if (!workflowGroups[milestone.workflowGroupId]) {
           workflowGroups[milestone.workflowGroupId] = {
+            groupId: milestone.workflowGroupId,  // Store groupId for later matching
             name: milestone.workflowName || 'Workflow',
             totalHours: 0,
             order: milestone.order || 999
@@ -599,14 +600,9 @@
     // Render workflow and milestone items
     allItems.forEach(item => {
       if (item.type === 'workflow') {
-        // For workflows, we need to sum individual milestone costs with rounding
-        // Find all milestones belonging to this workflow
-        const workflowMilestones = billableMilestones.filter(m => {
-          // Match milestones by checking workflowGroupId
-          return m.workflowGroupId && Object.keys(workflowGroups).some(groupId => {
-            return groupId === m.workflowGroupId && workflowGroups[groupId] === item.data;
-          });
-        });
+        // For workflows, calculate cost by rounding each milestone individually
+        const workflowGroupId = item.data.groupId;
+        const workflowMilestones = billableMilestones.filter(m => m.workflowGroupId === workflowGroupId);
         
         // Calculate cost by rounding each milestone individually (matches management page logic)
         const cost = workflowMilestones.reduce((sum, m) => {
