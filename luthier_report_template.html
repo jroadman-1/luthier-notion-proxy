@@ -277,7 +277,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">          </div>
         <div class="contact-info">
-          San Antonio, TX | roadmanguitars@gmail.com
+          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3e4c515f5a535f50594b574a5f4c4d7e59535f5752105d5153">[email&#160;protected]</a>
         </div>
       </div>
       <div class="report-date">
@@ -466,7 +466,7 @@
     </div>
   </div>
 
-  <script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   (function(){
     // Pull payload saved by the management page
     const raw = localStorage.getItem('luthierReportData');
@@ -599,7 +599,18 @@
     // Render workflow and milestone items
     allItems.forEach(item => {
       if (item.type === 'workflow') {
-        const cost = item.data.totalHours * HOURLY_RATE;
+        // For workflows, sum up individual milestone costs with rounding and fixed price support
+        let cost = 0;
+        billableMilestones.forEach(m => {
+          if (m.workflowGroupId === Object.keys(workflowGroups).find(k => workflowGroups[k] === item.data)) {
+            if (m.fixedPrice && parseFloat(m.fixedPrice) > 0) {
+              cost += parseFloat(m.fixedPrice);
+            } else {
+              const hourlyCalculation = (parseFloat(m.estimatedHours) || 0) * HOURLY_RATE;
+              cost += Math.ceil(hourlyCalculation);
+            }
+          }
+        });
         subtotal += cost;
         
         const itemDiv = document.createElement('div');
@@ -610,8 +621,15 @@
         `;
         billingBreakdownEl.appendChild(itemDiv);
       } else {
-        const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
-        const cost = estimatedHours * HOURLY_RATE;
+        // Standalone milestone with fixed price support
+        let cost;
+        if (item.data.fixedPrice && parseFloat(item.data.fixedPrice) > 0) {
+          cost = parseFloat(item.data.fixedPrice);
+        } else {
+          const estimatedHours = parseFloat(item.data.estimatedHours) || 0;
+          const hourlyCalculation = estimatedHours * HOURLY_RATE;
+          cost = Math.ceil(hourlyCalculation);
+        }
         subtotal += cost;
         
         const itemDiv = document.createElement('div');
@@ -704,14 +722,4 @@
     
     // Use stored total as fallback
     if ((!billingTotal || isNaN(billingTotal)) && p.total != null) {
-      billingTotal = parseFloat(p.total);
-    }
-    
-    // Display the total
-    if (billingTotal != null && !isNaN(billingTotal) && billingTotal > 0) {
-      setText('billingTotal', '$' + billingTotal.toFixed(2));
-    }
-  })();
-  </script>
-</body>
-</html>
+      billingTotal = pa
