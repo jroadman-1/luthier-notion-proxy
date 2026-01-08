@@ -256,25 +256,8 @@
     }
     .print-button:hover { background: #0056b3; }
     
-    /* Debug section */
-    .debug-section {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background: #ffe6e6;
-      border: 2px solid #ff0000;
-      padding: 10px;
-      max-width: 400px;
-      font-size: 10px;
-      font-family: monospace;
-      z-index: 1000;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
     @media print { 
-      .print-button { display: none; }
-      .debug-section { display: none; } 
+      .print-button { display: none; } 
       .report-container { padding: 0; }
       .section { break-inside: avoid; }
       body { font-size: 10px; }
@@ -294,7 +277,7 @@
         <div class="company-name">ROADMAN GUITARS</div>
         <div class="company-tagline">          </div>
         <div class="contact-info">
-          San Antonio, TX | <a href="mailto:info@roadmanguitars.com">info@roadmanguitars.com</a>
+          San Antonio, TX | <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f5879a949198949b92809c81948786b59298949c99db969a98">[email&#160;protected]</a>
         </div>
       </div>
       <div class="report-date">
@@ -483,16 +466,7 @@
     </div>
   </div>
 
-  <!-- Debug Section (hidden on print) -->
-  <div class="debug-section" id="debugSection">
-    <strong>Debug Info:</strong><br>
-    Milestones: <span id="debugMilestonesCount">0</span><br>
-    Billable: <span id="debugBillableCount">0</span><br>
-    Hourly Rate: $<span id="debugHourlyRate">0</span><br>
-    <div id="debugDetails" style="margin-top: 5px; font-size: 9px;"></div>
-  </div>
-
-  <script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   (function(){
     // Pull payload saved by the management page
     const raw = localStorage.getItem('luthierReportData');
@@ -582,50 +556,10 @@
     let subtotal = 0;
     const billingBreakdownEl = document.getElementById('billingBreakdown');
     
-    // Debug logging
-    console.log('Report Data Debug:');
-    console.log('- Total milestones:', ms.length);
-    console.log('- Milestones:', ms);
-    console.log('- Hourly rate:', HOURLY_RATE);
-    
-    // Update debug display
-    document.getElementById('debugMilestonesCount').textContent = ms.length;
-    document.getElementById('debugHourlyRate').textContent = HOURLY_RATE;
-    
     // Filter only billable milestones (matching estimate logic)
     const billableMilestones = ms.filter(m => m && m.name && m.includeInEstimate !== false);
     
-    console.log('- Billable milestones:', billableMilestones.length);
-    console.log('- Billable data:', billableMilestones);
-    
-    document.getElementById('debugBillableCount').textContent = billableMilestones.length;
-    
-    // If no billable milestones, log why each was filtered out
-    if (billableMilestones.length === 0 && ms.length > 0) {
-      console.log('No billable milestones found. Checking reasons:');
-      let debugHTML = 'Filtering issues:<br>';
-      ms.forEach((m, i) => {
-        const reason = !m ? 'null/undefined' : 
-                       !m.name ? 'no name' :
-                       m.includeInEstimate === false ? 'includeInEstimate=false' : 'passed';
-        debugHTML += `  M${i}: ${reason}<br>`;
-        console.log(`  Milestone ${i}:`, {
-          name: m.name,
-          hasName: !!m.name,
-          includeInEstimate: m.includeInEstimate,
-          passesFilter: !!(m && m.name && m.includeInEstimate !== false)
-        });
-      });
-      document.getElementById('debugDetails').innerHTML = debugHTML;
-    } else if (billableMilestones.length > 0) {
-      let debugHTML = 'Billable milestones:<br>';
-      billableMilestones.forEach((m, i) => {
-        debugHTML += `  ${m.name} (${m.estimatedHours}h)<br>`;
-      });
-      document.getElementById('debugDetails').innerHTML = debugHTML;
-    }
-    
-    // Group milestones by workflow
+    // Group milestones by workflow for DISPLAY purposes only
     const workflowGroups = {};
     const standaloneMilestones = [];
     
@@ -633,13 +567,12 @@
       if (milestone.workflowGroupId) {
         if (!workflowGroups[milestone.workflowGroupId]) {
           workflowGroups[milestone.workflowGroupId] = {
-            groupId: milestone.workflowGroupId,  // Store groupId for later matching
             name: milestone.workflowName || 'Workflow',
-            totalHours: 0,
+            milestones: [],
             order: milestone.order || 999
           };
         }
-        workflowGroups[milestone.workflowGroupId].totalHours += parseFloat(milestone.estimatedHours) || 0;
+        workflowGroups[milestone.workflowGroupId].milestones.push(milestone);
         workflowGroups[milestone.workflowGroupId].order = Math.min(
           workflowGroups[milestone.workflowGroupId].order, 
           milestone.order || 999
@@ -666,31 +599,28 @@
     // Render workflow and milestone items
     allItems.forEach(item => {
       if (item.type === 'workflow') {
-        // For workflows, calculate cost by rounding each milestone individually
-        const workflowGroupId = item.data.groupId;
-        const workflowMilestones = billableMilestones.filter(m => m.workflowGroupId === workflowGroupId);
-        
-        // Calculate cost by rounding each milestone individually (matches management page logic)
-        const cost = workflowMilestones.reduce((sum, m) => {
+        // Calculate workflow total by rounding EACH milestone individually, then summing
+        let workflowTotal = 0;
+        item.data.milestones.forEach(m => {
           if (m.fixedPrice && parseFloat(m.fixedPrice) > 0) {
-            return sum + parseFloat(m.fixedPrice);
+            workflowTotal += parseFloat(m.fixedPrice);
           } else {
             const hourlyCalculation = (parseFloat(m.estimatedHours) || 0) * HOURLY_RATE;
-            return sum + Math.ceil(hourlyCalculation); // Round UP to nearest dollar
+            workflowTotal += Math.ceil(hourlyCalculation); // Round UP each milestone
           }
-        }, 0);
+        });
         
-        subtotal += cost;
+        subtotal += workflowTotal;
         
         const itemDiv = document.createElement('div');
         itemDiv.className = 'billing-item';
         itemDiv.innerHTML = `
           <span class="billing-item-name">${item.data.name}</span>
-          <span class="billing-item-amount">$${cost.toFixed(2)}</span>
+          <span class="billing-item-amount">$${workflowTotal.toFixed(2)}</span>
         `;
         billingBreakdownEl.appendChild(itemDiv);
       } else {
-        // Standalone milestone
+        // Standalone milestone - round individually
         let cost;
         if (item.data.fixedPrice && parseFloat(item.data.fixedPrice) > 0) {
           cost = parseFloat(item.data.fixedPrice);
