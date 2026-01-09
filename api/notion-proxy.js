@@ -222,7 +222,7 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsD
 async function createProject(res, notion, projectsDbId, data) {
   const { 
     name, projectId, status, instrumentMake, instrumentModel, complexity, profitability, 
-    dueDate, store, intakeNotes, estimateNotes,
+    dueDate, store, project_type, intakeNotes, estimateNotes,
     // Measurement fields
     neckReliefBefore, before1stString1stFret, before1stString12thFret, 
     before6thString1stFret, before6thString12thFret,
@@ -287,6 +287,12 @@ async function createProject(res, notion, projectsDbId, data) {
     if (store !== undefined && store !== '') {
       properties['Store'] = { 
         select: { name: store }
+      };
+    }
+
+    if (project_type !== undefined && project_type !== '') {
+      properties['project_type'] = { 
+        select: { name: project_type }
       };
     }
 
