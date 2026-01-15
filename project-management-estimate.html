@@ -155,7 +155,8 @@
         <div class="header-buttons">
           <select id="statusFilter" class="status-filter" onchange="filterProjectsByStatus()">
             <option value="On The Bench">On the Bench</option>
-            <option value="Waiting">Waiting</option>
+            <option value="Waiting-quick">Waiting-quick</option>
+            <option value="Waiting-long">Waiting-long</option>
             <option value="Done">Done</option>
             <option value="Returned">Returned</option>
           </select>
@@ -360,9 +361,9 @@
       
       // Filter projects based on status
       let filteredProjects = allProjects.filter(project => project.status === filterValue);
-      
+
       // Sort Waiting projects by creation date (oldest first)
-      if (filterValue === 'Waiting') {
+      if (filterValue === 'Waiting-quick' || filterValue === 'Waiting-long') {
         filteredProjects.sort((a, b) => {
           const dateA = new Date(a.dateCreated || a.createdTime || 0);
           const dateB = new Date(b.dateCreated || b.createdTime || 0);
@@ -693,7 +694,8 @@
               <label>Status</label>
               <select id="projectStatus" onchange="handleStatusChange()">
                 <option value="On The Bench" ${currentProject.status === 'On The Bench' ? 'selected' : ''}>On The Bench</option>
-                <option value="Waiting" ${currentProject.status === 'Waiting' ? 'selected' : ''}>Waiting</option>
+                <option value="Waiting-quick" ${currentProject.status === 'Waiting-quick' ? 'selected' : ''}>Waiting-quick</option>
+                <option value="Waiting-long" ${currentProject.status === 'Waiting-long' ? 'selected' : ''}>Waiting-long</option>
                 <option value="Done" ${currentProject.status === 'Done' ? 'selected' : ''}>Done</option>
                 <option value="Paid" ${currentProject.status === 'Paid' ? 'selected' : ''}>Paid</option>
                  <option value="Returned" ${currentProject.status === 'Returned' ? 'selected' : ''}>Returned</option>
