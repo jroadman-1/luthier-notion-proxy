@@ -135,7 +135,13 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsD
             {
               property: 'Status',
               select: {
-                equals: 'Waiting'
+                equals: 'Waiting-quick'
+              }
+            },
+            {
+              property: 'Status',
+              select: {
+                equals: 'Waiting-long'
               }
             },
             {
@@ -206,7 +212,7 @@ async function getAllData(req, res, notion, projectsDbId, milestonesDbId, partsD
     const milestones = allMilestones.map(mapMilestone);
     const parts = allParts.map(mapPart);
     
-    console.log(`API returning ${projects.length} projects (On The Bench, Waiting, Done, Returned), ${milestones.length} milestones, and ${parts.length} parts`);
+    console.log(`API returning ${projects.length} projects (On The Bench, Waiting-quick, Waiting-long, Done, Returned), ${milestones.length} milestones, and ${parts.length} parts`);
     
     return res.json({ projects, milestones, parts });
   } catch (error) {
