@@ -18,6 +18,12 @@
     .project-item:hover{background:#f8f9fa}
     .project-item.active{background:#e3f2fd;border-left:4px solid #2196f3}
     .project-item.new-project{background:#f0f8ff;border-left:4px solid #4caf50;font-style:italic}
+    .project-item.quick-job{background:#e8f5e9}
+    .project-item.long-project{background:#ffebee}
+    .project-item.quick-job:hover{background:#c8e6c9}
+    .project-item.long-project:hover{background:#ffcdd2}
+    .project-item.quick-job.active{background:#a5d6a7;border-left:4px solid #2196f3}
+    .project-item.long-project.active{background:#ef9a9a;border-left:4px solid #2196f3}
     .project-name{font-weight:bold;color:#2c3e50;margin-bottom:4px}
     .project-details{font-size:12px;color:#666}
     .project-editor{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);display:flex;flex-direction:column}
@@ -481,11 +487,12 @@
 
       filteredProjects.forEach(project => {
         const isActive = !isNewProject && currentProject && currentProject.id === project.id;
+        const projectTypeClass = project.project_type === 'Long Project' ? 'long-project' : 'quick-job';
         html += `
-          <div class="project-item ${isActive ? 'active' : ''}" onclick="selectProject('${project.id}')">
+          <div class="project-item ${isActive ? 'active' : ''} ${projectTypeClass}" onclick="selectProject('${project.id}')">
             <div class="project-name">${escapeHtml(project.name)}</div>
             <div class="project-details">
-              ${escapeHtml(project.instrumentMake)} ${escapeHtml(project.instrumentModel)} • 
+              ${escapeHtml(project.instrumentMake)} ${escapeHtml(project.instrumentModel)} •
               ${project.totalMilestones || 0} milestones
             </div>
           </div>
