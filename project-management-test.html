@@ -1,0 +1,2542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Management - Luthier</title>
+  <style>
+    body{
+      font-family: Arial, sans-serif;max-width:1400px;margin:0 auto;padding:20px;background:#f5f5f5
+    }
+    .header{background:#2c3e50;color:#fff;padding:20px;border-radius:8px;text-align:center;margin-bottom:20px}
+    .main-container{display:grid;grid-template-columns:300px 1fr;gap:20px;height:calc(100vh - 140px)}
+    .projects-list{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);overflow-y:auto}
+    .projects-header{padding:15px;border-bottom:1px solid #eee;font-weight:bold;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px}
+    .header-buttons{display:flex;gap:5px}
+    .status-filter{padding:5px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px;background:#fff;cursor:pointer;min-width:130px}
+    .project-item{padding:12px 15px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:.2s}
+    .project-item:hover{background:#f8f9fa}
+    .project-item.active{background:#e3f2fd;border-left:4px solid #2196f3}
+    .project-item.new-project{background:#f0f8ff;border-left:4px solid #4caf50;font-style:italic}
+    .project-name{font-weight:bold;color:#2c3e50;margin-bottom:4px}
+    .project-details{font-size:12px;color:#666}
+    .project-editor{background:#fff;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);display:flex;flex-direction:column}
+    .editor-header{padding:20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+    .project-id-input{width:200px;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box}
+    .editor-content{flex:1;padding:20px;overflow-y:auto}
+    .form-section{margin-bottom:30px}
+    .form-section h3{margin:0 0 15px;color:#2c3e50}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px}
+    .form-group{margin-bottom:15px}
+    .form-group.full-width{grid-column:1 / -1}
+    .form-group label{display:block;font-weight:bold;margin-bottom:5px;color:#333}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box}
+    .form-group textarea{height:80px;resize:vertical}
+    .tabs{display:flex;border-bottom:2px solid #e9ecef;margin-bottom:20px}
+    .tab{padding:12px 24px;cursor:pointer;border:none;background:none;font-size:14px;font-weight:bold;color:#666;border-bottom:2px solid transparent}
+    .tab.active{color:#2196f3;border-bottom-color:#2196f3}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .milestone-list{max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:10px;background:#fafafa}
+    .milestone-row{display:flex;align-items:center;gap:10px;padding:8px;margin-bottom:5px;background:#fff;border-radius:4px;border-left:3px solid #ddd;position:relative}
+    .milestone-include{width:60px;text-align:center;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
+    .milestone-include input[type="checkbox"]{margin:0;cursor:pointer}
+    .milestone-include label{font-size:10px;color:#666;text-align:center;line-height:1.1}
+    .milestone-urgent{width:60px;text-align:center;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
+    .milestone-urgent input[type="checkbox"]{margin:0;cursor:pointer}
+    .milestone-urgent label{font-size:10px;color:#d32f2f;text-align:center;line-height:1.1;font-weight:bold}
+    .milestone-row.urgent{border-left-color:#ff5252;background:#fff5f5}
+    .milestone-row.dragging{opacity:.5;z-index:1000}
+    .milestone-row.over{outline:2px dashed #2196f3}
+    .milestone-row.ready{border-left-color:#4caf50}
+    .milestone-row.completed{border-left-color:#2196f3;opacity:.7;background:#f0f8ff}
+    .milestone-row.not-started{border-left-color:#bbb}
+    .drag-handle{cursor:grab;color:#999;font-size:16px;width:20px;text-align:center;user-select:none;padding:4px}
+    .drag-handle:hover{color:#666;background:#f0f0f0;border-radius:3px}
+    .drag-handle:active{cursor:grabbing}
+    .milestone-order{width:30px;text-align:center;font-weight:bold;color:#666;font-size:12px}
+    .milestone-checkbox{width:18px;height:18px;cursor:pointer;margin-right:5px}
+    .milestone-name{flex:1}
+    .milestone-name input{width:100%;border:none;background:transparent;padding:4px;font-size:14px}
+    .milestone-hours{width:80px}
+    .milestone-hours input{width:100%;border:none;background:transparent;padding:4px;text-align:center;font-size:14px}
+    .milestone-fixed-price{width:80px}
+    .milestone-fixed-price input{width:100%;border:none;background:transparent;padding:4px;text-align:center;font-size:12px;color:#2196f3;font-weight:bold}
+    .milestone-status{width:100px}
+    .milestone-status select{width:100%;border:none;background:transparent;padding:2px;font-size:12px}
+    .milestone-actions{display:flex;gap:5px;width:80px;align-items:center}
+    .remove-milestone{background:#ff5252;color:#fff;border:none;border-radius:3px;padding:4px 8px;cursor:pointer;font-size:11px}
+    .save-milestone-btn{background:#4caf50;color:#fff;border:none;border-radius:3px;padding:4px 8px;cursor:pointer;font-size:11px}
+    .milestone-completion-controls{display:flex;align-items:center;gap:5px}
+    .actual-hours-input{width:60px;padding:2px 4px;border:1px solid #ddd;border-radius:3px;font-size:12px}
+    .save-milestone-btn{background:#4caf50;color:#fff;border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px}
+    .btn{background:#2196f3;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer;font-size:14px;margin-right:10px;margin-bottom:10px}
+    .btn:hover{background:#1976d2}
+    .btn.success{background:#4caf50}
+    .btn.secondary{background:#6c757d}
+    .btn.danger{background:#ff5252}
+    .btn.small{padding:5px 10px;font-size:12px}
+    .workflow-selector{margin-bottom:15px}
+    .workflow-preview{background:#f8f9fa;padding:15px;border-radius:4px;margin-top:10px}
+    .auto-split-controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;margin-bottom:15px}
+    .loading,.empty-state{text-align:center;padding:40px;color:#666}
+    .save-indicator{color:#4caf50;font-size:12px;margin-left:10px}
+    .error{background:#f8d7da;color:#721c24;padding:10px;border-radius:4px;margin:10px 0}
+    .success{background:#d4edda;color:#155724;padding:10px;border-radius:4px;margin:10px 0}
+    .new-project-indicator{background:#e8f5e8;color:#2e7d32;padding:10px;border-radius:4px;margin-bottom:15px;border-left:4px solid #4caf50}
+    .collapsible-section{cursor:pointer}
+    .collapsible-section h3{cursor:pointer;display:flex;align-items:center;gap:10px}
+    .collapsible-toggle{transition:transform 0.2s}
+    .collapsible-content{margin-top:15px}
+    .time-summary{background:#e8f5e8;padding:15px;border-radius:6px;margin-bottom:20px;border-left:4px solid #4caf50}
+    .time-summary h4{margin:0 0 10px;color:#2e7d32}
+    .time-summary .time-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+    .time-stat{text-align:center;padding:8px;background:rgba(255,255,255,0.7);border-radius:4px}
+    .time-stat .value{font-size:18px;font-weight:bold;color:#2e7d32}
+    .time-stat .label{font-size:12px;color:#666;margin-top:2px}
+    .checkbox-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:15px}
+    .checkbox-item{display:flex;align-items:center;gap:6px;font-size:14px}
+    .checkbox-item input[type="checkbox"]{margin:0}
+    .billing-summary{background:#e8f2ff;padding:15px;border-radius:6px;margin-bottom:20px;border-left:4px solid #2196f3}
+    .billing-summary h4{margin:0 0 10px;color:#1976d2}
+    .readonly-display{background:#f8f9fa;padding:10px;border-radius:4px;border:1px solid #ddd;font-weight:bold;color:#2c3e50;font-size:16px}
+    .billing-line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e9ecef}
+    .billing-line.total{border-top:2px solid #2c3e50;margin-top:10px;padding-top:10px;font-size:18px;font-weight:bold;color:#2c3e50}
+    .billing-line.subtotal{font-weight:600;color:#666}
+    .billing-line.internal{background:#fff9e6;padding:8px 10px;border-radius:4px;margin-top:10px;border:1px dashed #ffc107}
+    .billing-label{font-weight:600}
+    .billing-value{font-weight:bold}
+    .billing-stat .label{font-size:12px;color:#666;margin-top:2px}
+    .readonly-display{background:#f8f9fa;color:#666;font-weight:bold;text-align:center;padding:8px 12px;border:1px solid #e9ecef;border-radius:4px;margin-top:5px}
+    .parts-list{max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:10px;background:#fafafa;margin-bottom:15px}
+    .part-row{display:grid;grid-template-columns:2fr 100px 120px 120px 60px;gap:10px;align-items:center;padding:8px;margin-bottom:5px;background:#fff;border-radius:4px;border-left:3px solid #4caf50}
+    .part-row input{width:100%;border:1px solid #ddd;padding:6px 8px;border-radius:3px;font-size:14px}
+    .part-row input[readonly]{background:#f5f5f5;color:#666}
+    .part-row .remove-part{background:#ff5252;color:#fff;border:none;border-radius:3px;padding:6px 10px;cursor:pointer;font-size:11px}
+    .parts-total{background:#e8f5e8;padding:12px 15px;border-radius:4px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid #4caf50;font-weight:bold}
+  /* Workflow Group Styles - ADD THESE */
+.workflow-group-header {
+  cursor: move;
+  user-select: none;
+}
+.workflow-group-header:hover {
+  background: #bbdefb !important;
+}
+.workflow-group-drag-handle {
+  font-size: 18px;
+  color: #1976d2;
+  cursor: grab;
+  padding: 0 8px;
+}
+.workflow-group.dragging {
+  opacity: 0.5;
+  border: 2px solid #2196f3 !important;
+}
+.workflow-group.drag-over {
+  border: 2px solid #2196f3 !important;
+  background: #e3f2fd !important;
+}
+
+/* Workflow Browser Styles */
+.workflow-browser {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.workflow-search-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+.workflow-search-bar input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+.workflow-categories {
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+}
+.workflow-category {
+  border-bottom: 1px solid #e9ecef;
+}
+.workflow-category:last-child {
+  border-bottom: none;
+}
+.workflow-category-header {
+  padding: 12px 15px;
+  background: #f8f9fa;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  color: #2c3e50;
+  border-bottom: 1px solid #e9ecef;
+}
+.workflow-category-header:hover {
+  background: #e9ecef;
+}
+.workflow-category-toggle {
+  transition: transform 0.2s;
+  font-size: 12px;
+}
+.workflow-category-toggle.expanded {
+  transform: rotate(90deg);
+}
+.workflow-category-content {
+  display: none;
+  padding: 10px;
+}
+.workflow-category-content.expanded {
+  display: block;
+}
+.workflow-checkbox-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  transition: background 0.2s;
+}
+.workflow-checkbox-item:hover {
+  background: #f8f9fa;
+}
+.workflow-checkbox-item input[type="checkbox"] {
+  margin-top: 3px;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+.workflow-checkbox-label {
+  flex: 1;
+  cursor: pointer;
+}
+.workflow-checkbox-name {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 3px;
+}
+.workflow-checkbox-details {
+  font-size: 12px;
+  color: #666;
+}
+.workflow-selection-summary {
+  padding: 10px 15px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  color: #1976d2;
+  font-size: 14px;
+}
+  
+  
+  
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎸 Project Management</h1>
+    <p>Manage projects and milestones</p>
+  </div>
+
+  <div class="main-container">
+    <!-- Projects List -->
+    <div class="projects-list">
+      <div class="projects-header">
+        Projects
+        <div class="header-buttons">
+          <select id="statusFilter" class="status-filter" onchange="filterProjectsByStatus()">
+            <option value="On The Bench">On the Bench</option>
+            <option value="Waiting-quick">Waiting-quick</option>
+            <option value="Waiting-long">Waiting-long</option>
+            <option value="Done">Done</option>
+            <option value="Returned">Returned</option>
+          </select>
+          <button class="btn small success" onclick="createNewProject()">New</button>
+          <button class="btn small" onclick="refreshProjects()">Refresh</button>
+        </div>
+      </div>
+      <div id="projectsList">
+        <div class="loading">Loading projects...</div>
+      </div>
+    </div>
+
+    <!-- Project Editor -->
+    <div class="project-editor">
+      <div class="editor-header">
+        <div>
+          <h2 id="editorTitle">Select a project</h2>
+          <input type="text" id="projectIdInput" class="project-id-input" placeholder="Project ID" style="display:none;" onchange="markChanged()">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+  <button class="btn success" onclick="saveProject()" id="saveBtn" disabled>Save Changes</button>
+  <button class="btn" onclick="openReportForCurrent()">Open Report</button>
+  <button class="btn" onclick="generateEstimate()" style="background:#f39c12;">Generate Estimate</button>
+  <button class="btn secondary" onclick="cancelChanges()">Cancel</button>
+</div>
+      </div>
+
+      <div class="editor-content" id="editorContent">
+        <div class="empty-state">
+          <h3>Select a project to edit</h3>
+          <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration - Update this to match your Vercel deployment
+    const API_URL = '/api/notion-proxy';
+
+    let allProjects = [];
+    let allMilestones = [];
+    let allWorkflows = [];
+    let allParts = [];
+    let currentProject = null;
+    let currentMilestones = [];
+    let currentParts = [];
+    let hasUnsavedChanges = false;
+    let isNewProject = false;
+
+    // Initialize
+    window.onload = function () {
+      refreshProjects();
+    };
+
+    async function refreshProjects() {
+      try {
+        showMessage('Loading projects...', 'info');
+
+        const [dataResponse, workflowsResponse] = await Promise.all([
+          fetch(API_URL),
+          fetch(`${API_URL}?action=workflows`)
+        ]);
+
+        if (!dataResponse.ok) {
+          const errorText = await dataResponse.text();
+          throw new Error(`Data API failed with ${dataResponse.status}: ${errorText}`);
+        }
+
+        const data = await dataResponse.json();
+
+        let workflows = { workflows: [] };
+        if (workflowsResponse.ok) {
+          workflows = await workflowsResponse.json();
+        } else {
+          const errorText = await workflowsResponse.text();
+          console.warn('Workflows API failed:', workflowsResponse.status, errorText);
+          showMessage('Workflows could not be loaded, continuing without them', 'info');
+        }
+
+        allProjects = data.projects || [];
+        allMilestones = data.milestones || [];
+        allParts = data.parts || [];
+        allWorkflows = workflows.workflows || [];
+
+        displayProjectsList();
+        showMessage(`Loaded ${allProjects.length} projects, ${allMilestones.length} milestones, ${allParts.length} parts, ${allWorkflows.length} workflows`, 'success');
+      } catch (error) {
+        console.error('Failed to refresh projects:', error);
+        const errorMsg = `Failed to load projects: ${error?.message || String(error)}`;
+        document.getElementById('projectsList').innerHTML =
+          `<div class="error">${errorMsg}<br><br>Check the browser console for details.</div>`;
+        showMessage(errorMsg, 'error');
+      }
+    }
+
+    function createNewProject() {
+      if (hasUnsavedChanges && !confirm('You have unsaved changes. Continue anyway?')) return;
+
+      currentProject = {
+        id: null,
+        name: 'New Project',
+        projectId: '',
+        instrumentMake: '',
+        instrumentModel: '',
+        status: 'On The Bench',
+        complexity: 3,
+        profitability: 3,
+        dueDate: null,
+        intakeNotes: '',
+        estimateNotes: '',
+        store: '',
+        project_type: 'Quick Job',
+        totalEstimatedHour: 0,
+        totalMilestones: 0,
+        completedMilestones: 0,
+        progress: 0,
+        // Initialize billing fields
+        total: null,
+        commission: null,
+        discount: null,
+        minusCommission: null,
+        // Initialize measurement fields
+        neckReliefBefore: null,
+        before1stString1stFret: null,
+        before1stString12thFret: null,
+        before6thString1stFret: null,
+        before6thString12thFret: null,
+        neckReliefAfter: null,
+        after1stString1stFret: null,
+        after1stString12thFret: null,
+        after6thString1stFret: null,
+        after6thString12thFret: null,
+        // Initialize instrument details
+        instrumentFinish: '',
+        serialNumber: '',
+        instrumentType: '',
+        stringBrand: '',
+        stringGauge: '',
+        tuning: '',
+        tremolo: '',
+        fretboardRadius: null,
+        fretwire: '',
+        // Initialize actions
+        actions: {},
+        additionalActions: '',
+        notes: '',
+        // Capture current hourly rate at project creation time
+        hourlyRate: getCurrentHourlyRateFromParts()
+      };
+
+      currentMilestones = [];
+      currentParts = [];
+      isNewProject = true;
+      hasUnsavedChanges = true;
+
+      displayProjectEditor();
+      displayProjectsList();
+      updateSaveButton();
+    }
+
+    function showMessage(message, type = 'info') {
+      let msgEl = document.getElementById('globalMessage');
+      if (!msgEl) {
+        msgEl = document.createElement('div');
+        msgEl.id = 'globalMessage';
+        msgEl.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 10px; border-radius: 4px; z-index: 1000; max-width: 300px;';
+        document.body.appendChild(msgEl);
+      }
+      msgEl.textContent = message;
+      msgEl.className = type;
+
+      if (type === 'success') {
+        setTimeout(() => {
+          if (msgEl.parentNode) msgEl.parentNode.removeChild(msgEl);
+        }, 3000);
+      }
+    }
+
+    function displayProjectsList() {
+      const container = document.getElementById('projectsList');
+      let html = '';
+
+      if (isNewProject && currentProject) {
+        html += `
+          <div class="project-item new-project active">
+            <div class="project-name">${escapeHtml(currentProject.name)} (New)</div>
+            <div class="project-details">Unsaved new project</div>
+          </div>
+        `;
+      }
+
+      // Get selected filter - always filter, no "all" option
+      const filterSelect = document.getElementById('statusFilter');
+      const filterValue = filterSelect ? filterSelect.value : 'On The Bench';
+      
+      // Debug: Log all unique statuses to help identify the issue
+      const uniqueStatuses = [...new Set(allProjects.map(p => p.status))];
+      console.log('Available statuses in projects:', uniqueStatuses);
+      console.log('Currently filtering for:', filterValue);
+      console.log('Total projects loaded:', allProjects.length);
+      
+      // Filter projects based on status
+      let filteredProjects = allProjects.filter(project => project.status === filterValue);
+
+      // Sort Waiting projects by creation date (oldest first)
+      if (filterValue === 'Waiting-quick' || filterValue === 'Waiting-long') {
+        filteredProjects.sort((a, b) => {
+          const dateA = new Date(a.dateCreated || a.createdTime || 0);
+          const dateB = new Date(b.dateCreated || b.createdTime || 0);
+          return dateA - dateB; // Ascending order (oldest first)
+        });
+      }
+      
+      console.log('Filtered projects count:', filteredProjects.length);
+
+      if (filteredProjects.length === 0 && !isNewProject) {
+        container.innerHTML = '<div class="empty-state">No projects found with this status</div>';
+        return;
+      }
+
+      filteredProjects.forEach(project => {
+        const isActive = !isNewProject && currentProject && currentProject.id === project.id;
+        html += `
+          <div class="project-item ${isActive ? 'active' : ''}" onclick="selectProject('${project.id}')">
+            <div class="project-name">${escapeHtml(project.name)}</div>
+            <div class="project-details">
+              ${escapeHtml(project.instrumentMake)} ${escapeHtml(project.instrumentModel)} • 
+              ${project.totalMilestones || 0} milestones
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function filterProjectsByStatus() {
+      displayProjectsList();
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function selectProject(projectId) {
+      if (hasUnsavedChanges && !confirm('You have unsaved changes. Continue anyway?')) return;
+
+      currentProject = allProjects.find(p => p.id === projectId);
+      if (!currentProject) {
+        showMessage('Project not found', 'error');
+        return;
+      }
+
+      isNewProject = false;
+      loadProjectMilestones(projectId);
+      loadProjectParts(projectId);
+
+      displayProjectEditor();
+      displayProjectsList();
+
+      hasUnsavedChanges = false;
+      updateSaveButton();
+      
+      // Calculate billing totals after everything is loaded
+      setTimeout(() => calculateBillingTotals(), 100);
+    }
+
+    function loadProjectMilestones(projectId) {
+      currentMilestones = allMilestones
+        .filter(m => m.projectId === projectId)
+        .sort((a, b) => a.order - b.order)
+        .map(m => ({
+          ...m,
+          // Ensure defaults for older milestones without these fields
+          urgent: m.urgent === true,  // default false
+          includeInEstimate: m.includeInEstimate !== false,  // default true (billable)
+          workflowGroupId: m.workflowGroupId || null,  // null = standalone
+          workflowName: m.workflowName || null
+        }));
+    }
+
+    function calculateTotalActualHours() {
+      return currentMilestones
+        .filter(m => m.status === 'Completed' && m.actualHours)
+        .reduce((total, m) => total + (m.actualHours || 0), 0);
+    }
+
+    function calculateEstimatedHours() {
+      return currentMilestones.reduce((total, m) => total + (m.estimatedHours || 0), 0);
+    }
+
+    function getTaxRate() {
+      // Find the "Tax Rate" entry in allParts
+      const taxRateEntry = allParts.find(p => p.name === 'Tax Rate');
+      if (taxRateEntry && taxRateEntry.pricePerItem) {
+        return parseFloat(taxRateEntry.pricePerItem) || 0;
+      }
+      return 0;
+    }
+
+    function getHourlyRate() {
+      // First check if current project has a stored rate (for historical accuracy)
+      if (currentProject && currentProject.hourlyRate) {
+        return parseFloat(currentProject.hourlyRate);
+      }
+      
+      // Otherwise get current rate from Parts database (for new projects)
+      const hourlyRateEntry = allParts.find(p => p.name === 'Hourly Rate');
+      if (hourlyRateEntry && hourlyRateEntry.pricePerItem) {
+        return parseFloat(hourlyRateEntry.pricePerItem) || 0;
+      }
+      return 100; // Default to $100/hour if not found
+    }
+    
+    function getCurrentHourlyRateFromParts() {
+      // Helper to always get the current rate from Parts (used when creating new projects)
+      const hourlyRateEntry = allParts.find(p => p.name === 'Hourly Rate');
+      if (hourlyRateEntry && hourlyRateEntry.pricePerItem) {
+        return parseFloat(hourlyRateEntry.pricePerItem) || 0;
+      }
+      return 100;
+    }
+
+    function calculateBillingTotals() {
+      // Get hourly rate from Parts database
+      const hourlyRate = getHourlyRate();
+      
+      // Calculate labor cost from billable milestones
+      const billableMilestones = currentMilestones.filter(m => m.includeInEstimate !== false);
+      const laborCost = billableMilestones.reduce((sum, m) => {
+        // Use fixed price if provided, otherwise calculate from hours and round UP
+        if (m.fixedPrice && parseFloat(m.fixedPrice) > 0) {
+          return sum + parseFloat(m.fixedPrice);
+        } else {
+          const hourlyCalculation = (parseFloat(m.estimatedHours) || 0) * hourlyRate;
+          return sum + Math.ceil(hourlyCalculation); // Round UP to nearest dollar
+        }
+      }, 0);
+      
+      // Calculate parts cost
+      const partsCost = currentParts.reduce((sum, part) => {
+        return sum + ((parseFloat(part.quantity) || 0) * (parseFloat(part.pricePerItem) || 0));
+      }, 0);
+      
+      // Subtotal
+      const subtotal = laborCost + partsCost;
+      
+      // Discount
+      const discountPercent = parseFloat(document.getElementById('discount')?.value) || 0;
+      const discountAmount = (subtotal * discountPercent) / 100;
+      
+      // Tax (only if Store is "In Person")
+      const store = document.getElementById('store')?.value || '';
+      const taxLine = document.getElementById('taxLine');
+      let taxAmount = 0;
+      
+      if (store === 'In Person') {
+        const taxRate = getTaxRate();
+        taxAmount = (subtotal - discountAmount) * taxRate;
+        if (taxLine) {
+          taxLine.style.display = 'flex';
+          document.getElementById('taxRateDisplay').textContent = (taxRate * 100).toFixed(3);
+          document.getElementById('billingTax').textContent = '$' + taxAmount.toFixed(2);
+        }
+      } else {
+        if (taxLine) taxLine.style.display = 'none';
+      }
+      
+      // Tip (non-taxable)
+      const tip = parseFloat(document.getElementById('tip')?.value) || 0;
+      const tipLine = document.getElementById('tipLine');
+      
+      if (tip > 0) {
+        if (tipLine) {
+          tipLine.style.display = 'flex';
+          document.getElementById('billingTip').textContent = '$' + tip.toFixed(2);
+        }
+      } else {
+        if (tipLine) tipLine.style.display = 'none';
+      }
+      
+      // Total (customer-facing amount: subtotal - discount + tax + tip)
+      const total = subtotal - discountAmount + taxAmount + tip;
+      
+      // Commission (internal only) - calculated on total before tip
+      const commissionPercent = parseFloat(document.getElementById('commission')?.value) || 0;
+      const commissionAmount = ((subtotal - discountAmount + taxAmount) * commissionPercent) / 100;
+      
+      // Net after commission (what you actually receive)
+      const netAfterCommission = total - commissionAmount;
+      
+      // Update display
+      document.getElementById('billingSubtotal').textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('discountPercentDisplay').textContent = discountPercent;
+      document.getElementById('billingDiscount').textContent = '-$' + discountAmount.toFixed(2);
+      document.getElementById('billingTotalDisplay').textContent = '$' + total.toFixed(2);
+      document.getElementById('commissionPercentDisplay').textContent = commissionPercent;
+      document.getElementById('commissionAmountDisplay').textContent = '$' + commissionAmount.toFixed(2);
+      document.getElementById('netAfterCommissionDisplay').textContent = '$' + netAfterCommission.toFixed(2);
+      
+      // Update the billing summary box at the top if it exists
+      const summaryTotal = document.getElementById('summaryTotal');
+      const summaryCommission = document.getElementById('summaryCommission');
+      const summaryMinusCommission = document.getElementById('summaryMinusCommission');
+      
+      if (summaryTotal) summaryTotal.textContent = total.toFixed(2);
+      if (summaryCommission) summaryCommission.textContent = commissionAmount.toFixed(2);
+      if (summaryMinusCommission) summaryMinusCommission.textContent = netAfterCommission.toFixed(2);
+      
+      // Store the calculated values for saving to Notion
+      currentProject.calculatedTotal = total;  // Customer-facing total (before commission)
+      currentProject.calculatedSubtotal = subtotal;
+      currentProject.calculatedTaxAmount = taxAmount;
+      currentProject.tip = tip;
+      
+      return {
+        subtotal,
+        discountAmount,
+        taxAmount,
+        tip,
+        total,
+        commissionAmount,
+        netAfterCommission
+      };
+    }
+
+    function updateBillingCalculation() {
+      // Legacy function - now calls the new comprehensive calculation
+      calculateBillingTotals();
+    }
+
+    function calculateMinusCommission() {
+      // Legacy function - kept for compatibility
+      const calcs = calculateBillingTotals();
+      return calcs.netAfterCommission;
+    }
+
+    function displayProjectEditor() {
+      if (!currentProject) return;
+
+      document.getElementById('editorTitle').textContent = isNewProject ? 'New Project' : currentProject.name;
+      
+      // Show/hide project ID input
+      const projectIdInput = document.getElementById('projectIdInput');
+      if (isNewProject || currentProject) {
+        projectIdInput.style.display = 'block';
+        projectIdInput.value = currentProject.projectId || '';
+      } else {
+        projectIdInput.style.display = 'none';
+      }
+
+      let content = '';
+      if (isNewProject) {
+        content += `
+          <div class="new-project-indicator">
+            <strong>Creating New Project</strong><br>
+            Fill in the details below and click "Save Changes" to create this project in Notion.
+          </div>
+        `;
+      }
+
+      // Time summary for existing projects
+      if (!isNewProject && currentMilestones.length > 0) {
+        const totalActual = calculateTotalActualHours();
+        const totalEstimated = calculateEstimatedHours();
+        const completedCount = currentMilestones.filter(m => m.status === 'Completed').length;
+        const totalCount = currentMilestones.length;
+        
+        content += `
+          <div class="time-summary">
+            <h4>Project Time Summary</h4>
+            <div class="time-stats">
+              <div class="time-stat">
+                <div class="value">${totalActual.toFixed(1)}h</div>
+                <div class="label">Total Actual Time</div>
+              </div>
+              <div class="time-stat">
+                <div class="value">${totalEstimated.toFixed(1)}h</div>
+                <div class="label">Total Estimated</div>
+              </div>
+              <div class="time-stat">
+                <div class="value">${completedCount}/${totalCount}</div>
+                <div class="label">Completed Milestones</div>
+              </div>
+              <div class="time-stat">
+                <div class="value">${totalCount > 0 ? Math.round((completedCount/totalCount)*100) : 0}%</div>
+                <div class="label">Progress</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Billing summary for existing projects with billing data
+      // Use calculated values if available, otherwise use saved values
+      if (!isNewProject && (currentProject.calculatedTotal || currentProject.total || currentProject.commission)) {
+        const total = currentProject.calculatedTotal || currentProject.total || 0;
+        const commission = currentProject.commission || 0;
+        const minusCommission = total - commission;
+        
+        content += `
+          <div class="billing-summary">
+            <h4>Project Billing Summary</h4>
+            <div class="billing-stats">
+              <div class="billing-stat">
+                <div class="value" id="summaryTotal">${total.toFixed(2)}</div>
+                <div class="label">Total Amount</div>
+              </div>
+              <div class="billing-stat">
+                <div class="value" id="summaryCommission">${commission.toFixed(2)}</div>
+                <div class="label">Commission</div>
+              </div>
+              <div class="billing-stat">
+                <div class="value" id="summaryMinusCommission">${minusCommission.toFixed(2)}</div>
+                <div class="label">Minus Commission</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      content += `
+        <div class="form-section">
+          <h3>Project Details</h3>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Project Name</label>
+              <input type="text" id="projectName" value="${escapeHtml(currentProject.name || '')}" onchange="markChanged()">
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="projectStatus" onchange="handleStatusChange()">
+                <option value="On The Bench" ${currentProject.status === 'On The Bench' ? 'selected' : ''}>On The Bench</option>
+                <option value="Waiting-quick" ${currentProject.status === 'Waiting-quick' ? 'selected' : ''}>Waiting-quick</option>
+                <option value="Waiting-long" ${currentProject.status === 'Waiting-long' ? 'selected' : ''}>Waiting-long</option>
+                <option value="Done" ${currentProject.status === 'Done' ? 'selected' : ''}>Done</option>
+                <option value="Paid" ${currentProject.status === 'Paid' ? 'selected' : ''}>Paid</option>
+                 <option value="Returned" ${currentProject.status === 'Returned' ? 'selected' : ''}>Returned</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Date Created</label>
+              <div class="readonly-display" style="font-size:14px;text-align:left;">${currentProject.dateCreated ? new Date(currentProject.dateCreated).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}) : (currentProject.createdTime ? new Date(currentProject.createdTime).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}) : 'Not yet created')}</div>
+            </div>
+            <div class="form-group" id="paidDateGroup" style="display: ${currentProject.status === 'Paid' ? 'block' : 'none'};">
+              <label>Paid Date</label>
+              <input type="date" id="paidDate" value="${currentProject.paidDate || ''}" onchange="markChanged()">
+            </div>
+            <div class="form-group">
+              <label>Instrument Make</label>
+              <input type="text" id="instrumentMake" value="${escapeHtml(currentProject.instrumentMake || '')}" onchange="markChanged()">
+            </div>
+            <div class="form-group">
+              <label>Instrument Model</label>
+              <input type="text" id="instrumentModel" value="${escapeHtml(currentProject.instrumentModel || '')}" onchange="markChanged()">
+            </div>
+            <div class="form-group">
+              <label>Complexity (1-5)</label>
+              <select id="complexity" onchange="markChanged()">
+                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.complexity || 3) === n ? 'selected' : ''}>${n} - ${['Simple','Easy','Moderate','Complex','Very Complex'][n-1]}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Profitability (1-5)</label>
+              <select id="profitability" onchange="markChanged()">
+                ${[1,2,3,4,5].map(n => `<option value="${n}" ${(currentProject.profitability || 3) === n ? 'selected' : ''}>${n} - ${['Low','Below Average','Standard','Good','Excellent'][n-1]}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Due Date</label>
+              <input type="date" id="dueDate" value="${currentProject.dueDate || ''}" onchange="markChanged()">
+            </div>
+            <div class="form-group">
+              <label>Store</label>
+              <select id="store" onchange="markChanged(); calculateBillingTotals()">
+                <option value="">Select Store</option>
+                <option value="In Person"        ${currentProject.store === 'In Person' ? 'selected' : ''}>In Person</option>
+                <option value="Spacetone"        ${currentProject.store === 'Spacetone' ? 'selected' : ''}>Spacetone</option>
+                <option value="Lark Guitars"     ${currentProject.store === 'Lark Guitars' ? 'selected' : ''}>Lark Guitars</option>
+                <option value="Robot Monster"    ${currentProject.store === 'Robot Monster' ? 'selected' : ''}>Robot Monster</option>
+                <option value="Internet Order"    ${currentProject.store === 'Internet Order' ? 'selected' : ''}>Internet Order</option>
+                <option value="Internet Order"    ${currentProject.store === 'Interstellar Guitars' ? 'selected' : ''}>Interstellar Guitars</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Project Type</label>
+              <select id="projectType" onchange="markChanged()">
+                <option value="Quick Job" ${(currentProject.project_type || 'Quick Job') === 'Quick Job' ? 'selected' : ''}>Quick Job</option>
+                <option value="Long Project" ${currentProject.project_type === 'Long Project' ? 'selected' : ''}>Long Project</option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label>Intake Notes</label>
+              <textarea id="intakeNotes" onchange="markChanged()" placeholder="Enter any initial notes, requirements, or special instructions for this project...">${escapeHtml(currentProject.intakeNotes || '')}</textarea>
+            </div>
+            <div class="form-group full-width">
+              <label>Estimate Notes</label>
+              <textarea id="estimateNotes" onchange="markChanged()" placeholder="Notes to the client explaining the estimate...">${escapeHtml(currentProject.estimateNotes || '')}</textarea>
+            </div>
+          </div>
+        </div>
+
+        
+
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('measurements')">
+            <span id="measurementsToggle" class="collapsible-toggle">▶</span>
+            Measurements (Before/After)
+          </h3>
+          <div id="measurementsContent" class="collapsible-content" style="display: none;">
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <h4 style="margin: 0 0 15px 0; color: #666; font-size: 14px;">Before Measurements</h4>
+              </div>
+              <div class="form-group full-width">
+                <label>Neck Relief Before</label>
+                <input type="text" id="neckReliefBefore" 
+                       value="${currentProject.neckReliefBefore || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 1st Fret</label>
+                <input type="number" step="0.001" id="before1stString1stFret" 
+                       value="${currentProject.before1stString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 12th Fret</label>
+                <input type="number" step="0.001" id="before1stString12thFret" 
+                       value="${currentProject.before1stString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 1st Fret</label>
+                <input type="number" step="0.001" id="before6thString1stFret" 
+                       value="${currentProject.before6thString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 12th Fret</label>
+                <input type="number" step="0.001" id="before6thString12thFret" 
+                       value="${currentProject.before6thString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              
+              <div class="form-group full-width">
+                <h4 style="margin: 20px 0 15px 0; color: #666; font-size: 14px;">After Measurements</h4>
+              </div>
+              <div class="form-group full-width">
+                <label>Neck Relief After</label>
+                <input type="text" id="neckReliefAfter" 
+                       value="${currentProject.neckReliefAfter || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 1st Fret</label>
+                <input type="number" step="0.001" id="after1stString1stFret" 
+                       value="${currentProject.after1stString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>1st String at 12th Fret</label>
+                <input type="number" step="0.001" id="after1stString12thFret" 
+                       value="${currentProject.after1stString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 1st Fret</label>
+                <input type="number" step="0.001" id="after6thString1stFret" 
+                       value="${currentProject.after6thString1stFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+              <div class="form-group">
+                <label>6th String at 12th Fret</label>
+                <input type="number" step="0.001" id="after6thString12thFret" 
+                       value="${currentProject.after6thString12thFret || ''}" 
+                       onchange="markChanged()" placeholder="0.000">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('instrumentDetails')">
+            <span id="instrumentDetailsToggle" class="collapsible-toggle">▶</span>
+            Instrument Details
+          </h3>
+          <div id="instrumentDetailsContent" class="collapsible-content" style="display: none;">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Instrument Finish/Color</label>
+                <input type="text" id="instrumentFinish" value="${escapeHtml(currentProject.instrumentFinish || '')}" onchange="markChanged()">
+              </div>
+              <div class="form-group">
+                <label>Serial Number</label>
+                <input type="text" id="serialNumber" value="${escapeHtml(currentProject.serialNumber || '')}" onchange="markChanged()">
+              </div>
+              <div class="form-group">
+                <label>Instrument Type</label>
+                <select id="instrumentType" onchange="markChanged()">
+                  <option value="">Select Type</option>
+                  <option value="Guitar" ${currentProject.instrumentType === 'Guitar' ? 'selected' : ''}>Guitar</option>
+                  <option value="Banjo" ${currentProject.instrumentType === 'Banjo' ? 'selected' : ''}>Banjo</option>
+                  <option value="Bass" ${currentProject.instrumentType === 'Bass' ? 'selected' : ''}>Bass</option>
+                  <option value="Mandolin" ${currentProject.instrumentType === 'Mandolin' ? 'selected' : ''}>Mandolin</option>
+                  <option value="12 string guitar" ${currentProject.instrumentType === '12 string guitar' ? 'selected' : ''}>12 string guitar</option>
+                  <option value="Pickup" ${currentProject.instrumentType === 'Pickup' ? 'selected' : ''}>Pickup</option>
+                  <option value="Classical Guitar" ${currentProject.instrumentType === 'Classical Guitar' ? 'selected' : ''}>Classical Guitar</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>String Brand</label>
+                <input type="text" id="stringBrand" value="${escapeHtml(currentProject.stringBrand || '')}" onchange="markChanged()">
+              </div>
+              <div class="form-group">
+                <label>String Gauge</label>
+                <input type="text" id="stringGauge" value="${escapeHtml(currentProject.stringGauge || '')}" onchange="markChanged()">
+              </div>
+              <div class="form-group">
+                <label>Tuning</label>
+                <select id="tuning" onchange="markChanged()">
+                  <option value="">Select Tuning</option>
+                  <option value="Standard" ${currentProject.tuning === 'Standard' ? 'selected' : ''}>Standard</option>
+                  <option value="Eb Standard" ${currentProject.tuning === 'Eb Standard' ? 'selected' : ''}>Eb Standard</option>
+                  <option value="Drop D" ${currentProject.tuning === 'Drop D' ? 'selected' : ''}>Drop D</option>
+                  <option value="Drop C" ${currentProject.tuning === 'Drop C' ? 'selected' : ''}>Drop C</option>
+                  <option value="Whole Step Down" ${currentProject.tuning === 'Whole Step Down' ? 'selected' : ''}>Whole Step Down</option>
+                  <option value="Open G" ${currentProject.tuning === 'Open G' ? 'selected' : ''}>Open G</option>
+                  <option value="Open D" ${currentProject.tuning === 'Open D' ? 'selected' : ''}>Open D</option>
+                  <option value="DADGAD" ${currentProject.tuning === 'DADGAD' ? 'selected' : ''}>DADGAD</option>
+                  <option value="Custom" ${currentProject.tuning === 'Custom' ? 'selected' : ''}>Custom</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tremolo</label>
+                <input type="text" id="tremolo" value="${escapeHtml(currentProject.tremolo || '')}" onchange="markChanged()">
+              </div>
+              <div class="form-group">
+                <label>Fretboard Radius</label>
+                <input type="number" step="0.1" id="fretboardRadius" value="${currentProject.fretboardRadius || ''}" onchange="markChanged()">
+              </div>
+              <div class="form-group full-width">
+                <label>Fretwire</label>
+                <input type="text" id="fretwire" value="${escapeHtml(currentProject.fretwire || '')}" onchange="markChanged()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('actions')">
+            <span id="actionsToggle" class="collapsible-toggle">▶</span>
+            Actions
+          </h3>
+          <div id="actionsContent" class="collapsible-content" style="display: none;">
+            <div class="checkbox-grid">
+              <div class="checkbox-item">
+                <input type="checkbox" id="adjustedHeightRadius" onchange="markChanged()" ${currentProject.actions?.adjustedHeightRadius ? 'checked' : ''}>
+                <label for="adjustedHeightRadius">Adjusted Height and Radius</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="adjustedIntonation" onchange="markChanged()" ${currentProject.actions?.adjustedIntonation ? 'checked' : ''}>
+                <label for="adjustedIntonation">Adjusted Intonation</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="adjustedPickupHeight" onchange="markChanged()" ${currentProject.actions?.adjustedPickupHeight ? 'checked' : ''}>
+                <label for="adjustedPickupHeight">Adjusted Pickup Height</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="adjustedTrussRod" onchange="markChanged()" ${currentProject.actions?.adjustedTrussRod ? 'checked' : ''}>
+                <label for="adjustedTrussRod">Adjusted Truss Rod</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="adjustedStringSlots" onchange="markChanged()" ${currentProject.actions?.adjustedStringSlots ? 'checked' : ''}>
+                <label for="adjustedStringSlots">Adjusted String Slots</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="cleanedPolished" onchange="markChanged()" ${currentProject.actions?.cleanedPolished ? 'checked' : ''}>
+                <label for="cleanedPolished">Cleaned and Polished</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="installedStretchedStrings" onchange="markChanged()" ${currentProject.actions?.installedStretchedStrings ? 'checked' : ''}>
+                <label for="installedStretchedStrings">Installed and Stretched Strings</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="lubricatedStringSlots" onchange="markChanged()" ${currentProject.actions?.lubricatedStringSlots ? 'checked' : ''}>
+                <label for="lubricatedStringSlots">Lubricated String Slots</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="oiledFretboard" onchange="markChanged()" ${currentProject.actions?.oiledFretboard ? 'checked' : ''}>
+                <label for="oiledFretboard">Oiled Fretboard</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="polishedFrets" onchange="markChanged()" ${currentProject.actions?.polishedFrets ? 'checked' : ''}>
+                <label for="polishedFrets">Polished Frets</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="testedElectronics" onchange="markChanged()" ${currentProject.actions?.testedElectronics ? 'checked' : ''}>
+                <label for="testedElectronics">Tested Electronics</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="tightenedHardware" onchange="markChanged()" ${currentProject.actions?.tightenedHardware ? 'checked' : ''}>
+                <label for="tightenedHardware">Tightened Hardware</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="adjustedTremoloTension" onchange="markChanged()" ${currentProject.actions?.adjustedTremoloTension ? 'checked' : ''}>
+                <label for="adjustedTremoloTension">Adjusted Tremolo Tension</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="adjustedNeckAngle" onchange="markChanged()" ${currentProject.actions?.adjustedNeckAngle ? 'checked' : ''}>
+                <label for="adjustedNeckAngle">Adjusted Neck Angle</label>
+              </div>
+            </div>
+            
+            <div class="form-group" style="margin-top:15px;">
+              <label>Additional Actions</label>
+              <textarea id="additionalActions" onchange="markChanged()" placeholder="Enter any additional actions performed...">${escapeHtml(currentProject.additionalActions || '')}</textarea>
+            </div>
+            
+          <div class="form-group" style="margin-top:15px;">
+          <label>Notes</label>
+            <textarea id="notes" onchange="markChanged()" placeholder="General project notes, updates, or reminders...">${escapeHtml(currentProject.notes || '')}</textarea>
+</div>
+
+</div>
+       
+        </div>
+
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('parts')">
+            <span id="partsToggle" class="collapsible-toggle">▶</span>
+            Parts
+          </h3>
+          <div id="partsContent" class="collapsible-content" style="display: none;">
+            <div class="parts-list" id="partsList">
+              ${renderPartsList()}
+            </div>
+            <button class="btn small success" onclick="addPart()">+ Add Part</button>
+            <div class="parts-total" id="partsTotal" style="margin-top:15px;">
+              <span>Parts Total:</span>
+              <span id="partsTotalAmount">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        
+
+        <div class="form-section collapsible-section">
+          <h3 onclick="toggleCollapsible('billing')">
+            <span id="billingToggle" class="collapsible-toggle">▶</span>
+            Billing
+          </h3>
+          <div id="billingContent" class="collapsible-content" style="display: none;">
+            <!-- Billing Summary (Auto-calculated) -->
+            <div class="billing-summary" id="billingSummaryDisplay">
+              <div class="billing-line subtotal">
+                <span class="billing-label">Subtotal (Labor + Parts)</span>
+                <span class="billing-value" id="billingSubtotal">$0.00</span>
+              </div>
+              <div class="billing-line">
+                <span class="billing-label">Discount (<span id="discountPercentDisplay">0</span>%)</span>
+                <span class="billing-value" id="billingDiscount">-$0.00</span>
+              </div>
+              <div class="billing-line" id="taxLine" style="display:none;">
+                <span class="billing-label">Tax (<span id="taxRateDisplay">0</span>%)</span>
+                <span class="billing-value" id="billingTax">$0.00</span>
+              </div>
+              <div class="billing-line" id="tipLine" style="display:none;">
+                <span class="billing-label">Tip</span>
+                <span class="billing-value" id="billingTip">$0.00</span>
+              </div>
+              <div class="billing-line total">
+                <span class="billing-label">TOTAL AMOUNT</span>
+                <span class="billing-value" id="billingTotalDisplay">$0.00</span>
+              </div>
+              
+              <!-- Internal Commission Calculation -->
+              <div class="billing-line internal">
+                <span class="billing-label">Commission (<span id="commissionPercentDisplay">0</span>%) - Internal Only</span>
+                <span class="billing-value" id="commissionAmountDisplay">$0.00</span>
+              </div>
+              <div class="billing-line internal">
+                <span class="billing-label">Net After Commission</span>
+                <span class="billing-value" id="netAfterCommissionDisplay">$0.00</span>
+              </div>
+            </div>
+            
+            <!-- Editable Fields -->
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Discount (%)</label>
+                <input type="number" step="1" min="0" max="100" id="discount" 
+                       value="${currentProject.discount || ''}" 
+                       onchange="markChanged(); calculateBillingTotals()" 
+                       placeholder="0">
+              </div>
+              <div class="form-group">
+                <label>Commission (%) - Internal Only</label>
+                <input type="number" step="0.1" min="0" max="100" id="commission" 
+                       value="${currentProject.commission || ''}" 
+                       onchange="markChanged(); calculateBillingTotals()" 
+                       placeholder="0">
+              </div>
+              <div class="form-group">
+                <label>Tip ($)</label>
+                <input type="number" step="0.01" min="0" id="tip" 
+                       value="${currentProject.tip || ''}" 
+                       onchange="markChanged(); calculateBillingTotals()" 
+                       placeholder="0.00">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Milestones</h3>
+          <div class="tabs">
+            <button class="tab active" onclick="switchMilestoneTab('individual')">Individual Entry</button>
+            <button class="tab" onclick="switchMilestoneTab('workflow')">Workflow Templates</button>
+            <button class="tab" onclick="switchMilestoneTab('autosplit')">Auto-Split Time</button>
+          </div>
+
+          <div class="tab-content active" id="individual-tab">
+            <div class="milestone-list" id="milestoneList">
+              ${renderMilestoneList()}
+            </div>
+            <button class="btn" onclick="addMilestone()">Add Milestone</button>
+            <button class="btn secondary" onclick="addMultipleMilestones()">Add 5 More</button>
+            ${!isNewProject && currentMilestones.some(m => m.status === 'Completed' && !m.actualHours) ? 
+              '<button class="btn success" onclick="saveAllCompletedMilestones()" style="margin-top:10px;">Save All Completed Milestones</button>' : 
+              ''}
+          </div>
+
+          <div class="tab-content" id="workflow-tab">
+            <div class="workflow-browser">
+              <div class="workflow-search-bar">
+                <input type="text" id="workflowSearch" placeholder="Search workflows..." oninput="filterWorkflows()">
+                <button class="btn small" onclick="clearWorkflowSelection()">Clear Selection</button>
+                <button class="btn success" onclick="applySelectedWorkflows()">Add Selected Workflows</button>
+              </div>
+              <div class="workflow-categories" id="workflowCategories">
+                <!-- Categories will be populated dynamically -->
+              </div>
+              <div class="workflow-selection-summary" id="workflowSelectionSummary">
+                <strong>Selected:</strong> <span id="selectedWorkflowCount">0</span> workflows
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-content" id="autosplit-tab">
+            <div class="auto-split-controls">
+              <div class="form-group">
+                <label>Total Hours</label>
+                <input type="number" id="splitTotalHours" step="0.25" min="0.25" value="4" onchange="previewAutoSplit()">
+              </div>
+              <div class="form-group">
+                <label>Number of Sessions</label>
+                <input type="number" id="splitSessions" min="2" max="10" value="4" onchange="previewAutoSplit()">
+              </div>
+              <div class="form-group">
+                <label>Base Name</label>
+                <input type="text" id="splitBaseName" value="Work Session" onchange="previewAutoSplit()">
+              </div>
+            </div>
+            <div id="autoSplitPreview"></div>
+            <button class="btn" onclick="applyAutoSplit()">Apply Auto-Split</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('editorContent').innerHTML = content;
+
+      // Make sure DnD is active on FIRST render
+      setupDragAndDrop();
+
+      // Initialize auto-split preview
+      previewAutoSplit();
+      
+      // Initialize billing calculation
+      updateBillingCalculation();
+    }
+
+    function toggleCollapsible(section) {
+      const content = document.getElementById(`${section}Content`);
+      const toggle = document.getElementById(`${section}Toggle`);
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        toggle.textContent = '▼';
+      } else {
+        content.style.display = 'none';
+        toggle.textContent = '▶';
+      }
+    }
+
+    function renderMilestoneList() {
+      if (currentMilestones.length === 0) {
+        return '<div class="empty-state">No milestones yet. Add some below.</div>';
+      }
+
+      // Group milestones by workflowGroupId
+      const grouped = {};
+      const standalone = [];
+      
+      currentMilestones.forEach((milestone, index) => {
+        milestone._originalIndex = index; // Store original index for updates
+        
+        if (milestone.workflowGroupId) {
+          if (!grouped[milestone.workflowGroupId]) {
+            grouped[milestone.workflowGroupId] = {
+              id: milestone.workflowGroupId,
+              name: milestone.workflowName || 'Workflow',
+              milestones: []
+            };
+          }
+          grouped[milestone.workflowGroupId].milestones.push(milestone);
+        } else {
+          standalone.push(milestone);
+        }
+      });
+
+      let html = '';
+      
+      // Render workflow groups
+      Object.keys(grouped).forEach(groupId => {
+        const group = grouped[groupId];
+        const totalHours = group.milestones.reduce((sum, m) => sum + (m.estimatedHours || 0), 0);
+        
+        html += `
+          <div class="workflow-group" 
+               draggable="true" 
+               data-workflow-group-id="${groupId}"
+               style="margin-bottom: 20px; border: 2px solid #e3f2fd; border-radius: 8px; padding: 10px; background: #f8fbff;">
+            <div class="workflow-group-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: #e3f2fd; border-radius: 4px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="workflow-group-drag-handle">⋮⋮</span>
+                <strong style="color: #1976d2; font-size: 14px;">📋 ${escapeHtml(group.name)}</strong>
+              </div>
+              <span style="color: #666; font-size: 12px;">${group.milestones.length} milestones • ${totalHours}h total</span>
+            </div>
+            ${group.milestones.map(milestone => renderMilestoneRow(milestone)).join('')}
+          </div>
+        `;
+      });
+      
+      // Render standalone milestones
+      if (standalone.length > 0) {
+        html += standalone.map(milestone => renderMilestoneRow(milestone)).join('');
+      }
+      
+      return html;
+    }
+    
+    function renderMilestoneRow(milestone) {
+      const index = milestone._originalIndex;
+      return `
+        <div class="milestone-row ${(milestone.status || 'Not Started').toLowerCase().replace(' ', '-')} ${milestone.urgent ? 'urgent' : ''}"
+             draggable="true"
+             data-milestone-index="${index}">
+          <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
+          <div class="milestone-order">${index + 1}</div>
+          <input type="checkbox" class="milestone-checkbox" 
+                 ${milestone.status === 'Completed' ? 'checked' : ''}
+                 onchange="toggleMilestoneCompletion(${index})"
+                 id="milestone-checkbox-${index}">
+          <div class="milestone-name">
+            <input type="text" value="${escapeHtml(milestone.name || '')}"
+                   onchange="updateMilestone(${index}, 'name', this.value)"
+                   placeholder="Milestone name">
+          </div>
+          <div class="milestone-hours">
+            <input type="number" step="0.25" min="0.25"
+                   value="${milestone.estimatedHours || 1}"
+                   onchange="updateMilestone(${index}, 'estimatedHours', this.value); calculateBillingTotals();"
+                   title="Estimated Hours"
+                   placeholder="Est">
+          </div>
+          <div class="milestone-fixed-price">
+            <input type="number" step="1" min="0"
+                   value="${milestone.fixedPrice || ''}"
+                   onchange="updateMilestone(${index}, 'fixedPrice', this.value); calculateBillingTotals();"
+                   title="Fixed Price (overrides hours × rate)"
+                   placeholder="$"
+                   style="border:1px solid #e0e0e0;border-radius:3px;">
+          </div>
+          <div class="milestone-status">
+            <select onchange="updateMilestone(${index}, 'status', this.value)">
+              <option value="Not Started" ${milestone.status === 'Not Started' ? 'selected' : ''}>Not Started</option>
+              <option value="Ready" ${milestone.status === 'Ready' ? 'selected' : ''}>Ready</option>
+              <option value="Completed" ${milestone.status === 'Completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          </div>
+          <div class="milestone-urgent">
+            <input type="checkbox" 
+                   ${milestone.urgent ? 'checked' : ''}
+                   onchange="updateMilestone(${index}, 'urgent', this.checked)"
+                   id="urgent-${index}"
+                   title="Mark as urgent - appears first in scheduler">
+            <label for="urgent-${index}">Urgent</label>
+          </div>
+          <div class="milestone-include">
+            <input type="checkbox" 
+                   ${(milestone.includeInEstimate !== false) ? 'checked' : ''}
+                   onchange="updateMilestone(${index}, 'includeInEstimate', this.checked); calculateBillingTotals();"
+                   id="include-estimate-${index}"
+                   title="Include in customer estimate">
+            <label for="include-estimate-${index}">Bill</label>
+          </div>
+          <div class="milestone-actions">
+            ${milestone.status === 'Completed' && milestone.actualHours && milestone.id ? 
+              `<button class="save-milestone-btn" onclick="saveSingleMilestone(${index})" title="Save to Notion">Save</button>` : 
+              ''
+            }
+            <button class="remove-milestone" onclick="removeMilestone(${index})" title="Remove milestone">×</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleMilestoneCompletion(index) {
+      const checkbox = document.getElementById(`milestone-checkbox-${index}`);
+      const milestone = currentMilestones[index];
+      
+      if (checkbox.checked) {
+        milestone.status = 'Completed';
+      } else {
+        milestone.status = 'Not Started';
+      }
+      
+      refreshMilestoneList();
+      markChanged();
+    }
+
+    async function saveSingleMilestone(index) {
+      const milestone = currentMilestones[index];
+      if (!milestone.actualHours || milestone.actualHours <= 0) {
+        alert('Please enter actual hours before saving.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}?action=save-progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            completedMilestones: [{
+              milestoneId: milestone.id,
+              projectId: currentProject.id,
+              actualHours: milestone.actualHours
+            }]
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to save milestone progress: ${response.statusText}`);
+        }
+
+        showMessage('Milestone progress saved successfully', 'success');
+        refreshMilestoneList();
+      } catch (error) {
+        console.error('Failed to save milestone:', error);
+        showMessage('Failed to save milestone progress: ' + (error?.message || String(error)), 'error');
+      }
+    }
+
+    async function saveAllCompletedMilestones() {
+      const completedWithHours = currentMilestones.filter(m => 
+        m.status === 'Completed' && m.actualHours && m.actualHours > 0 && m.id
+      );
+
+      if (completedWithHours.length === 0) {
+        alert('No completed milestones with actual hours found to save.');
+        return;
+      }
+
+      try {
+        const completedMilestones = completedWithHours.map(m => ({
+          milestoneId: m.id,
+          projectId: currentProject.id,
+          actualHours: m.actualHours
+        }));
+
+        const response = await fetch(`${API_URL}?action=save-progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ completedMilestones })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to save progress: ${response.statusText}`);
+        }
+
+        showMessage(`Saved progress for ${completedMilestones.length} milestones`, 'success');
+        refreshMilestoneList();
+      } catch (error) {
+        console.error('Failed to save all milestones:', error);
+        showMessage('Failed to save milestone progress: ' + (error?.message || String(error)), 'error');
+      }
+    }
+
+    function switchMilestoneTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelector(`[onclick="switchMilestoneTab('${tabName}')"]`).classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+
+      // Render workflow browser when switching to workflow tab
+      if (tabName === 'workflow') {
+        renderWorkflowBrowser();
+        updateWorkflowSelectionSummary();
+      }
+    }
+
+    function addMilestone() {
+      const newMilestone = {
+        id: null,
+        name: `New Milestone ${currentMilestones.length + 1}`,
+        estimatedHours: 1,
+        actualHours: 0,
+        order: currentMilestones.length + 1,
+        status: 'Not Started',
+        includeInEstimate: true,  // billable checkbox
+        urgent: false,
+        workflowGroupId: null  // null = standalone milestone
+      };
+      currentMilestones.push(newMilestone);
+      refreshMilestoneList();
+      markChanged();
+    }
+
+    function addMultipleMilestones() {
+      const start = currentMilestones.length;
+      for (let i = 0; i < 5; i++) {
+        currentMilestones.push({
+          id: null,
+          name: `New Milestone ${start + i + 1}`,
+          estimatedHours: 1,
+          actualHours: 0,
+          order: start + i + 1,
+          status: 'Not Started',
+          includeInEstimate: true,  // billable checkbox
+          urgent: false,
+          workflowGroupId: null  // null = standalone milestone
+        });
+      }
+      refreshMilestoneList();
+      markChanged();
+    }
+
+    // WORKFLOW GROUP DRAG AND DROP HANDLERS
+    let draggedWorkflowGroup = null;
+    let draggedMilestone = null;
+
+    function attachWorkflowGroupDragHandlers() {
+      const workflowGroups = document.querySelectorAll('.workflow-group');
+      
+      workflowGroups.forEach(group => {
+        group.addEventListener('dragstart', handleWorkflowGroupDragStart);
+        group.addEventListener('dragover', handleWorkflowGroupDragOver);
+        group.addEventListener('drop', handleWorkflowGroupDrop);
+        group.addEventListener('dragleave', handleWorkflowGroupDragLeave);
+        group.addEventListener('dragend', handleWorkflowGroupDragEnd);
+      });
+    }
+
+    function handleWorkflowGroupDragStart(event) {
+      const groupElement = event.currentTarget;
+      draggedWorkflowGroup = groupElement.dataset.workflowGroupId;
+      groupElement.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleWorkflowGroupDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      
+      const groupElement = event.currentTarget;
+      if (draggedWorkflowGroup && groupElement.dataset.workflowGroupId !== draggedWorkflowGroup) {
+        groupElement.classList.add('drag-over');
+      }
+    }
+
+    function handleWorkflowGroupDragLeave(event) {
+      const groupElement = event.currentTarget;
+      groupElement.classList.remove('drag-over');
+    }
+
+    function handleWorkflowGroupDrop(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const targetGroupElement = event.currentTarget;
+      const targetGroupId = targetGroupElement.dataset.workflowGroupId;
+      
+      if (draggedWorkflowGroup && draggedWorkflowGroup !== targetGroupId) {
+        // Reorder workflow groups
+        reorderWorkflowGroups(draggedWorkflowGroup, targetGroupId);
+      }
+      
+      // Clean up
+      document.querySelectorAll('.workflow-group').forEach(el => {
+        el.classList.remove('drag-over');
+      });
+    }
+
+    function handleWorkflowGroupDragEnd(event) {
+      event.currentTarget.classList.remove('dragging');
+      draggedWorkflowGroup = null;
+      
+      document.querySelectorAll('.workflow-group').forEach(el => {
+        el.classList.remove('drag-over');
+      });
+    }
+
+    function reorderWorkflowGroups(draggedGroupId, targetGroupId) {
+      // Find all milestones in each group
+      const draggedGroupMilestones = currentMilestones.filter(m => m.workflowGroupId === draggedGroupId);
+      const targetGroupMilestones = currentMilestones.filter(m => m.workflowGroupId === targetGroupId);
+      const otherMilestones = currentMilestones.filter(m => 
+        m.workflowGroupId !== draggedGroupId && m.workflowGroupId !== targetGroupId
+      );
+      
+      if (draggedGroupMilestones.length === 0 || targetGroupMilestones.length === 0) return;
+      
+      // Find the position of the first milestone in target group
+      const targetIndex = currentMilestones.findIndex(m => m.workflowGroupId === targetGroupId);
+      
+      // Rebuild milestone array with groups in new order
+      const newMilestones = [];
+      let draggedGroupInserted = false;
+      
+      currentMilestones.forEach(milestone => {
+        // Skip milestones from the dragged group - we'll insert them later
+        if (milestone.workflowGroupId === draggedGroupId) {
+          return;
+        }
+        
+        // When we reach the target group, insert dragged group before it
+        if (milestone.workflowGroupId === targetGroupId && !draggedGroupInserted) {
+          draggedGroupMilestones.forEach(m => newMilestones.push(m));
+          draggedGroupInserted = true;
+        }
+        
+        newMilestones.push(milestone);
+      });
+      
+      // Update order numbers
+      newMilestones.forEach((m, idx) => {
+        m.order = idx + 1;
+      });
+      
+      currentMilestones = newMilestones;
+      refreshMilestoneList();
+      markChanged();
+    }
+
+    // INDIVIDUAL MILESTONE DRAG AND DROP (within groups)
+    function attachMilestoneDragHandlers() {
+      const milestoneRows = document.querySelectorAll('.milestone-row');
+      
+      milestoneRows.forEach(row => {
+        row.addEventListener('dragstart', handleMilestoneDragStart);
+        row.addEventListener('dragover', handleMilestoneDragOver);
+        row.addEventListener('drop', handleMilestoneDrop);
+        row.addEventListener('dragend', handleMilestoneDragEnd);
+      });
+    }
+
+    function handleMilestoneDragStart(event) {
+      const row = event.currentTarget;
+      draggedMilestone = parseInt(row.dataset.milestoneIndex);
+      row.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.stopPropagation(); // Don't trigger group drag
+    }
+
+    function handleMilestoneDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      event.stopPropagation(); // Don't trigger group drag
+      
+      const row = event.currentTarget;
+      const targetIndex = parseInt(row.dataset.milestoneIndex);
+      
+      if (draggedMilestone !== null && draggedMilestone !== targetIndex) {
+        row.classList.add('over');
+      }
+    }
+
+    function handleMilestoneDrop(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const row = event.currentTarget;
+      const targetIndex = parseInt(row.dataset.milestoneIndex);
+      
+      if (draggedMilestone !== null && draggedMilestone !== targetIndex) {
+        // Reorder milestones
+        const draggedItem = currentMilestones[draggedMilestone];
+        currentMilestones.splice(draggedMilestone, 1);
+        
+        // Adjust target index if needed
+        const newIndex = draggedMilestone < targetIndex ? targetIndex - 1 : targetIndex;
+        currentMilestones.splice(newIndex, 0, draggedItem);
+        
+        // Update order numbers
+        currentMilestones.forEach((m, idx) => {
+          m.order = idx + 1;
+        });
+        
+        refreshMilestoneList();
+        markChanged();
+      }
+      
+      // Clean up
+      document.querySelectorAll('.milestone-row').forEach(el => {
+        el.classList.remove('over');
+      });
+    }
+
+    function handleMilestoneDragEnd(event) {
+      event.currentTarget.classList.remove('dragging');
+      draggedMilestone = null;
+      
+      document.querySelectorAll('.milestone-row').forEach(el => {
+        el.classList.remove('over');
+      });
+    }
+    function removeMilestone(index) {
+      currentMilestones.splice(index, 1);
+      currentMilestones.forEach((m, i) => m.order = i + 1);
+      refreshMilestoneList();
+      markChanged();
+    }
+
+    function updateMilestone(index, field, value) {
+      if (field === 'estimatedHours' || field === 'actualHours') {
+        value = parseFloat(value) || (field === 'estimatedHours' ? 1 : 0);
+      }
+      currentMilestones[index][field] = value;
+      
+      // If status changed to completed and no actual hours, set to estimated
+      if (field === 'status' && value === 'Completed' && !currentMilestones[index].actualHours) {
+        currentMilestones[index].actualHours = currentMilestones[index].estimatedHours || 1;
+      }
+      
+      refreshMilestoneList();
+      markChanged();
+    }
+
+    function refreshMilestoneList() {
+      const container = document.getElementById('milestoneList');
+      if (container) {
+        container.innerHTML = renderMilestoneList();
+        setupDragAndDrop();
+        
+        // Attach drag handlers for workflow groups and milestones
+        attachWorkflowGroupDragHandlers();
+        attachMilestoneDragHandlers();
+        
+        // Update time summary if it exists
+        const timeSummary = document.querySelector('.time-summary');
+        if (timeSummary && !isNewProject) {
+          const totalActual = calculateTotalActualHours();
+          const totalEstimated = calculateEstimatedHours();
+          const completedCount = currentMilestones.filter(m => m.status === 'Completed').length;
+          const totalCount = currentMilestones.length;
+          
+          timeSummary.querySelector('.time-stats').innerHTML = `
+            <div class="time-stat">
+              <div class="value">${totalActual.toFixed(1)}h</div>
+              <div class="label">Total Actual Time</div>
+            </div>
+            <div class="time-stat">
+              <div class="value">${totalEstimated.toFixed(1)}h</div>
+              <div class="label">Total Estimated</div>
+            </div>
+            <div class="time-stat">
+              <div class="value">${completedCount}/${totalCount}</div>
+              <div class="label">Completed Milestones</div>
+            </div>
+            <div class="time-stat">
+              <div class="value">${totalCount > 0 ? Math.round((completedCount/totalCount)*100) : 0}%</div>
+              <div class="label">Progress</div>
+            </div>
+          `;
+        }
+        
+        // Recalculate billing when milestones change
+        calculateBillingTotals();
+      }
+    }
+
+    // ========= Drag & Drop Handlers =========
+    let dragSrcIndex = null;
+
+    function handleDragStart(e) {
+      dragSrcIndex = parseInt(this.dataset.milestoneIndex, 10);
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(dragSrcIndex));
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault(); // allow drop
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDragEnter() {
+      this.classList.add('over');
+    }
+
+    function handleDragLeave() {
+      this.classList.remove('over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      this.classList.remove('over');
+
+      const from = dragSrcIndex ?? parseInt(e.dataTransfer.getData('text/plain'), 10);
+      const to = parseInt(this.dataset.milestoneIndex, 10);
+
+      if (Number.isNaN(from) || Number.isNaN(to) || from === to) return;
+
+      const [moved] = currentMilestones.splice(from, 1);
+      currentMilestones.splice(to, 0, moved);
+      currentMilestones.forEach((m, i) => (m.order = i + 1));
+
+      refreshMilestoneList();
+      markChanged();
+    }
+
+    function handleDragEnd() {
+      this.classList.remove('dragging');
+      dragSrcIndex = null;
+      document.querySelectorAll('.milestone-row').forEach(el => el.classList.remove('over'));
+    }
+
+    function setupDragAndDrop() {
+      const rows = document.querySelectorAll('.milestone-row[draggable="true"]');
+      rows.forEach(row => {
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragover', handleDragOver);
+        row.addEventListener('drop', handleDrop);
+        row.addEventListener('dragend', handleDragEnd);
+        row.addEventListener('dragenter', handleDragEnter);
+        row.addEventListener('dragleave', handleDragLeave);
+      });
+    }
+
+    // New workflow browser functions
+    let selectedWorkflowIds = new Set();
+
+    function organizeWorkflowsByCategory() {
+      // Organize workflows into categories based on naming conventions
+      // You can customize the categorization logic here
+      const categories = {
+        'Setup': [],
+        'Fretwork': [],
+        'Electronics': [],
+        'Structural': [],
+        'Finishing': [],
+        'Other': []
+      };
+
+      allWorkflows.forEach(workflow => {
+        const name = workflow.name.toLowerCase();
+        let categorized = false;
+
+        // Categorize based on keywords in workflow name
+        if (name.includes('setup') || name.includes('string') || name.includes('intonation')) {
+          categories['Setup'].push(workflow);
+          categorized = true;
+        }
+        if (name.includes('fret') || name.includes('level') || name.includes('crown')) {
+          categories['Fretwork'].push(workflow);
+          categorized = true;
+        }
+        if (name.includes('electronic') || name.includes('pickup') || name.includes('wiring') || name.includes('solder')) {
+          categories['Electronics'].push(workflow);
+          categorized = true;
+        }
+        if (name.includes('neck') || name.includes('bridge') || name.includes('nut') || name.includes('saddle')) {
+          categories['Structural'].push(workflow);
+          categorized = true;
+        }
+        if (name.includes('finish') || name.includes('polish') || name.includes('paint') || name.includes('lacquer')) {
+          categories['Finishing'].push(workflow);
+          categorized = true;
+        }
+
+        if (!categorized) {
+          categories['Other'].push(workflow);
+        }
+      });
+
+      return categories;
+    }
+
+    function renderWorkflowBrowser() {
+      const container = document.getElementById('workflowCategories');
+      if (!container) return;
+
+      const categories = organizeWorkflowsByCategory();
+      let html = '';
+
+      Object.keys(categories).forEach(categoryName => {
+        const workflows = categories[categoryName];
+        if (workflows.length === 0) return;
+
+        html += `
+          <div class="workflow-category">
+            <div class="workflow-category-header" onclick="toggleWorkflowCategory('${categoryName}')">
+              <span>${categoryName} (${workflows.length})</span>
+              <span class="workflow-category-toggle" id="toggle-${categoryName}">▶</span>
+            </div>
+            <div class="workflow-category-content" id="category-${categoryName}">
+              ${workflows.map(workflow => renderWorkflowCheckbox(workflow)).join('')}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function renderWorkflowCheckbox(workflow) {
+      try {
+        const milestones = JSON.parse(workflow.data);
+        const totalHours = milestones.reduce((sum, m) => sum + (m.hours || m.estimatedHours || 0), 0);
+        const isSelected = selectedWorkflowIds.has(workflow.id);
+
+        return `
+          <div class="workflow-checkbox-item">
+            <input type="checkbox"
+                   id="workflow-${workflow.id}"
+                   ${isSelected ? 'checked' : ''}
+                   onchange="toggleWorkflowSelection('${workflow.id}')">
+            <label class="workflow-checkbox-label" for="workflow-${workflow.id}">
+              <div class="workflow-checkbox-name">${escapeHtml(workflow.name)}</div>
+              <div class="workflow-checkbox-details">
+                ${milestones.length} milestones • ${totalHours.toFixed(1)}h total
+              </div>
+            </label>
+          </div>
+        `;
+      } catch {
+        return `
+          <div class="workflow-checkbox-item">
+            <input type="checkbox" id="workflow-${workflow.id}" disabled>
+            <label class="workflow-checkbox-label" for="workflow-${workflow.id}">
+              <div class="workflow-checkbox-name">${escapeHtml(workflow.name)}</div>
+              <div class="workflow-checkbox-details" style="color: #d32f2f;">Invalid workflow data</div>
+            </label>
+          </div>
+        `;
+      }
+    }
+
+    function toggleWorkflowCategory(categoryName) {
+      const content = document.getElementById(`category-${categoryName}`);
+      const toggle = document.getElementById(`toggle-${categoryName}`);
+
+      if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        toggle.classList.remove('expanded');
+      } else {
+        content.classList.add('expanded');
+        toggle.classList.add('expanded');
+      }
+    }
+
+    function toggleWorkflowSelection(workflowId) {
+      if (selectedWorkflowIds.has(workflowId)) {
+        selectedWorkflowIds.delete(workflowId);
+      } else {
+        selectedWorkflowIds.add(workflowId);
+      }
+      updateWorkflowSelectionSummary();
+    }
+
+    function updateWorkflowSelectionSummary() {
+      const countElement = document.getElementById('selectedWorkflowCount');
+      if (countElement) {
+        countElement.textContent = selectedWorkflowIds.size;
+      }
+    }
+
+    function clearWorkflowSelection() {
+      selectedWorkflowIds.clear();
+      renderWorkflowBrowser();
+      updateWorkflowSelectionSummary();
+    }
+
+    function filterWorkflows() {
+      const searchTerm = document.getElementById('workflowSearch').value.toLowerCase();
+      const allItems = document.querySelectorAll('.workflow-checkbox-item');
+
+      allItems.forEach(item => {
+        const label = item.querySelector('.workflow-checkbox-name').textContent.toLowerCase();
+        if (label.includes(searchTerm)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function applySelectedWorkflows() {
+      if (selectedWorkflowIds.size === 0) {
+        showMessage('No workflows selected', 'info');
+        return;
+      }
+
+      let addedCount = 0;
+      selectedWorkflowIds.forEach(workflowId => {
+        const workflow = allWorkflows.find(w => w.id === workflowId);
+        if (!workflow) return;
+
+        try {
+          const template = JSON.parse(workflow.data);
+
+          // Generate unique workflow group ID
+          const workflowGroupId = `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const workflowName = workflow.name;
+
+          // Create milestones with workflow group tracking
+          const newMilestones = template.map((ms, i) => ({
+            id: null,
+            name: ms.name,
+            estimatedHours: ms.hours || ms.estimatedHours || 1,
+            actualHours: 0,
+            order: currentMilestones.length + i + 1,
+            status: i === 0 ? 'Ready' : 'Not Started',
+            includeInEstimate: true,
+            urgent: false,
+            workflowGroupId: workflowGroupId,
+            workflowName: workflowName
+          }));
+
+          currentMilestones.push(...newMilestones);
+          addedCount++;
+        } catch (error) {
+          console.error(`Failed to apply workflow ${workflow.name}:`, error);
+        }
+      });
+
+      if (addedCount > 0) {
+        refreshMilestoneList();
+        switchMilestoneTab('individual');
+        markChanged();
+        showMessage(`Added ${addedCount} workflow(s) successfully`, 'success');
+
+        // Clear selection after applying
+        clearWorkflowSelection();
+      } else {
+        showMessage('Failed to add workflows', 'error');
+      }
+    }
+
+    function previewAutoSplit() {
+      const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
+      const sessions   = parseInt(document.getElementById('splitSessions').value) || 1;
+      const baseName   = document.getElementById('splitBaseName').value || 'Work Session';
+      const preview    = document.getElementById('autoSplitPreview');
+
+      if (totalHours === 0) { preview.innerHTML = ''; return; }
+
+      const hoursPerSession = totalHours / sessions;
+      let html = '<div class="workflow-preview"><h4>Preview:</h4>';
+
+      for (let i = 1; i <= sessions; i++) {
+        const hours = Math.round(hoursPerSession * 4) / 4;
+        html += `
+          <div class="milestone-row">
+            <div class="milestone-order">${i}</div>
+            <div class="milestone-name">${escapeHtml(baseName)} ${i}</div>
+            <div class="milestone-hours">${hours}h</div>
+          </div>
+        `;
+      }
+      html += '</div>';
+      preview.innerHTML = html;
+    }
+
+    function applyAutoSplit() {
+      const totalHours = parseFloat(document.getElementById('splitTotalHours').value) || 0;
+      const sessions   = parseInt(document.getElementById('splitSessions').value) || 1;
+      const baseName   = document.getElementById('splitBaseName').value || 'Work Session';
+      if (totalHours === 0) return;
+
+      const hoursPerSession = totalHours / sessions;
+      
+      // Generate unique workflow group ID for auto-split sessions
+      const workflowGroupId = `autosplit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const newMilestones = [];
+      for (let i = 1; i <= sessions; i++) {
+        const hours = Math.round(hoursPerSession * 4) / 4;
+        newMilestones.push({
+          id: null,
+          name: `${baseName} ${i}`,
+          estimatedHours: hours,
+          actualHours: 0,
+          order: currentMilestones.length + i,
+          status: i === 1 ? 'Ready' : 'Not Started',
+          includeInEstimate: true,  // billable by default
+          urgent: false,  // not urgent by default
+          workflowGroupId: workflowGroupId,  // unique group ID
+          workflowName: baseName  // store base name as workflow name
+        });
+      }
+      
+      // Add to existing milestones instead of replacing
+      currentMilestones.push(...newMilestones);
+      
+      refreshMilestoneList();
+      switchMilestoneTab('individual');
+      markChanged();
+    }
+
+    // Parts Management Functions
+    function renderPartsList() {
+      if (currentParts.length === 0) {
+        return '<div class="empty-state">No parts added yet. Click "Add Part" below.</div>';
+      }
+
+      return currentParts.map((part, index) => `
+        <div class="part-row">
+          <input type="text" value="${escapeHtml(part.name || '')}"
+                 onchange="updatePart(${index}, 'name', this.value)"
+                 placeholder="Part name">
+          <input type="number" step="1" min="1"
+                 value="${part.quantity || 1}"
+                 onchange="updatePart(${index}, 'quantity', this.value)"
+                 placeholder="Qty">
+          <input type="number" step="0.01" min="0"
+                 value="${part.pricePerItem || 0}"
+                 onchange="updatePart(${index}, 'pricePerItem', this.value)"
+                 placeholder="Price">
+          <input type="text" readonly value="$${((part.quantity || 0) * (part.pricePerItem || 0)).toFixed(2)}">
+          <button class="remove-part" onclick="removePart(${index})" title="Remove part">×</button>
+        </div>
+      `).join('');
+    }
+
+    function addPart() {
+      currentParts.push({
+        id: null,
+        name: '',
+        quantity: 1,
+        pricePerItem: 0,
+        order: currentParts.length + 1
+      });
+      refreshPartsList();
+      markChanged();
+    }
+
+    function removePart(index) {
+      currentParts.splice(index, 1);
+      currentParts.forEach((p, i) => p.order = i + 1);
+      refreshPartsList();
+      markChanged();
+    }
+
+    function updatePart(index, field, value) {
+      if (field === 'quantity') {
+        value = parseInt(value) || 1;
+      } else if (field === 'pricePerItem') {
+        value = parseFloat(value) || 0;
+      }
+      currentParts[index][field] = value;
+      refreshPartsList();
+      markChanged();
+    }
+
+    function refreshPartsList() {
+      const container = document.getElementById('partsList');
+      if (container) {
+        container.innerHTML = renderPartsList();
+        updatePartsTotal();
+        calculateBillingTotals(); // Recalculate billing when parts change
+      }
+    }
+
+    function updatePartsTotal() {
+      const total = currentParts.reduce((sum, part) => {
+        return sum + ((part.quantity || 0) * (part.pricePerItem || 0));
+      }, 0);
+      const totalElement = document.getElementById('partsTotalAmount');
+      if (totalElement) {
+        totalElement.textContent = '$' + total.toFixed(2);
+      }
+    }
+
+    function loadProjectParts(projectId) {
+      currentParts = allParts
+        .filter(p => p.projectId === projectId)
+        .sort((a, b) => a.order - b.order);
+    }
+
+    function handleStatusChange() {
+      const status = document.getElementById('projectStatus').value;
+      const paidDateGroup = document.getElementById('paidDateGroup');
+      const paidDateInput = document.getElementById('paidDate');
+      
+      // Show/hide paid date field based on status
+      if (status === 'Paid') {
+        paidDateGroup.style.display = 'block';
+        // Auto-populate with today's date if not already set
+        if (!paidDateInput.value) {
+          const today = new Date().toISOString().split('T')[0];
+          paidDateInput.value = today;
+        }
+      } else {
+        paidDateGroup.style.display = 'none';
+      }
+      
+      markChanged();
+    }
+
+    function markChanged() {
+      hasUnsavedChanges = true;
+      updateSaveButton();
+      
+      // Update project ID from input
+      const projectIdInput = document.getElementById('projectIdInput');
+      if (projectIdInput && currentProject) {
+        currentProject.projectId = projectIdInput.value;
+      }
+    }
+
+    function updateSaveButton() {
+      const saveBtn = document.getElementById('saveBtn');
+      if (!saveBtn) return;
+      saveBtn.disabled = !hasUnsavedChanges;
+      saveBtn.textContent = hasUnsavedChanges ? 'Save Changes *' : 'Saved';
+    }
+
+    async function saveProject() {
+      if (!currentProject) return;
+
+      try {
+        document.getElementById('saveBtn').textContent = 'Saving...';
+
+        const projectData = {
+          name: document.getElementById('projectName').value,
+          projectId: document.getElementById('projectIdInput').value,
+          status: document.getElementById('projectStatus').value,
+          paidDate: document.getElementById('paidDate').value || null,
+          instrumentMake: document.getElementById('instrumentMake').value,
+          instrumentModel: document.getElementById('instrumentModel').value,
+          complexity: parseInt(document.getElementById('complexity').value),
+          profitability: parseInt(document.getElementById('profitability').value),
+          dueDate: document.getElementById('dueDate').value || null,
+          store: document.getElementById('store').value,
+          project_type: document.getElementById('projectType').value || 'Quick Job',
+          intakeNotes: document.getElementById('intakeNotes').value,
+          estimateNotes: document.getElementById('estimateNotes').value,
+          notes: document.getElementById('notes').value,
+          
+          // Billing data - save calculated values
+          total: currentProject.calculatedTotal || null,  // Customer-facing total (includes tip, before commission)
+          subtotal: currentProject.calculatedSubtotal || null,
+          taxAmount: currentProject.calculatedTaxAmount || null,
+          commission: parseFloat(document.getElementById('commission').value) || null,  // Commission percentage
+          discount: parseInt(document.getElementById('discount').value) || null,
+          tip: parseFloat(document.getElementById('tip').value) || null,
+          // Store hourly rate with project for historical billing accuracy
+          hourlyRate: currentProject.hourlyRate || getCurrentHourlyRateFromParts(),
+          
+          // Measurement data
+          neckReliefBefore: document.getElementById('neckReliefBefore').value || null,
+          before1stString1stFret: parseFloat(document.getElementById('before1stString1stFret').value) || null,
+          before1stString12thFret: parseFloat(document.getElementById('before1stString12thFret').value) || null,
+          before6thString1stFret: parseFloat(document.getElementById('before6thString1stFret').value) || null,
+          before6thString12thFret: parseFloat(document.getElementById('before6thString12thFret').value) || null,
+          neckReliefAfter: document.getElementById('neckReliefAfter').value || null,
+          after1stString1stFret: parseFloat(document.getElementById('after1stString1stFret').value) || null,
+          after1stString12thFret: parseFloat(document.getElementById('after1stString12thFret').value) || null,
+          after6thString1stFret: parseFloat(document.getElementById('after6thString1stFret').value) || null,
+          after6thString12thFret: parseFloat(document.getElementById('after6thString12thFret').value) || null,
+          
+          // Instrument details
+          instrumentFinish: document.getElementById('instrumentFinish').value,
+          serialNumber: document.getElementById('serialNumber').value,
+          instrumentType: document.getElementById('instrumentType').value,
+          stringBrand: document.getElementById('stringBrand').value,
+          stringGauge: document.getElementById('stringGauge').value,
+          tuning: document.getElementById('tuning').value,
+          tremolo: document.getElementById('tremolo').value,
+          fretboardRadius: parseFloat(document.getElementById('fretboardRadius').value) || null,
+          fretwire: document.getElementById('fretwire').value,
+         
+          
+          
+          
+          // Actions
+          actions: {
+            adjustedHeightRadius: document.getElementById('adjustedHeightRadius').checked,
+            adjustedIntonation: document.getElementById('adjustedIntonation').checked,
+            adjustedPickupHeight: document.getElementById('adjustedPickupHeight').checked,
+            adjustedTrussRod: document.getElementById('adjustedTrussRod').checked,
+            adjustedStringSlots: document.getElementById('adjustedStringSlots').checked,
+            cleanedPolished: document.getElementById('cleanedPolished').checked,
+            installedStretchedStrings: document.getElementById('installedStretchedStrings').checked,
+            lubricatedStringSlots: document.getElementById('lubricatedStringSlots').checked,
+            oiledFretboard: document.getElementById('oiledFretboard').checked,
+            polishedFrets: document.getElementById('polishedFrets').checked,
+            testedElectronics: document.getElementById('testedElectronics').checked,
+            tightenedHardware: document.getElementById('tightenedHardware').checked,
+            adjustedTremoloTension: document.getElementById('adjustedTremoloTension').checked,
+            adjustedNeckAngle: document.getElementById('adjustedNeckAngle').checked
+          },
+          additionalActions: document.getElementById('additionalActions').value
+        };
+
+        let projectResult;
+
+        if (isNewProject) {
+          const createResponse = await fetch(`${API_URL}?action=create-project`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(projectData)
+          });
+          if (!createResponse.ok) {
+            const errorText = await createResponse.text();
+            throw new Error(`Failed to create project: ${errorText}`);
+          }
+          projectResult = await createResponse.json();
+          if (projectResult.success && projectResult.project) {
+            currentProject.id = projectResult.project.id;
+            isNewProject = false;
+            allProjects.push(projectResult.project);
+            showMessage('Project created successfully', 'success');
+          } else {
+            throw new Error('Failed to create project: Invalid response');
+          }
+        } else {
+          // For updates, we need to specify which Notion page to update using the id field
+          projectData.id = currentProject.id;
+          const updateResponse = await fetch(`${API_URL}?action=update-project`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(projectData)
+          });
+          if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            throw new Error(`Failed to update project: ${errorText}`);
+          }
+          projectResult = await updateResponse.json();
+          showMessage('Project updated successfully', 'success');
+        }
+
+        // Always call save-milestones to handle both updates AND deletions
+        // (if all milestones are deleted, we still need to archive them in Notion)
+        const milestoneResponse = await fetch(`${API_URL}?action=save-milestones`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: currentProject.id,
+            milestones: currentMilestones
+          })
+        });
+        if (!milestoneResponse.ok) {
+          const errorText = await milestoneResponse.text();
+          throw new Error(`Failed to save milestones: ${errorText}`);
+        }
+        const milestoneResult = await milestoneResponse.json();
+        console.log('Milestones saved:', milestoneResult.message);
+
+        // Save parts (including deletions) - always call API to sync with Notion
+        try {
+          const partsResponse = await fetch(`${API_URL}?action=save-parts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              projectId: currentProject.id,
+              parts: currentParts
+            })
+          });
+          
+          const partsResult = await partsResponse.json();
+          
+          if (partsResponse.ok && partsResult.success) {
+            console.log('Parts saved successfully:', partsResult.message);
+          } else {
+            console.warn('Parts not saved:', partsResult);
+            const errorMsg = partsResult.detail || partsResult.error || 'Unknown error';
+            const hint = partsResult.hint || '';
+            showMessage(`Project saved, but parts not saved: ${errorMsg}. ${hint}`, 'info');
+          }
+        } catch (partsError) {
+          console.error('Parts feature error:', partsError);
+          showMessage('Project saved, but parts feature encountered an error. Check console for details.', 'info');
+        }
+
+        hasUnsavedChanges = false;
+        updateSaveButton();
+
+        document.getElementById('saveBtn').innerHTML = 'Saved ✓ <span class="save-indicator">Changes saved</span>';
+        setTimeout(() => updateSaveButton(), 2000);
+
+        document.getElementById('editorTitle').textContent = projectData.name;
+        await refreshProjects();
+        
+        // Notify Priority Manager if status changed
+        if (projectData.status) {
+          localStorage.setItem('project_status_changed', Date.now().toString());
+        }
+
+      } catch (error) {
+        console.error('Save failed:', error);
+        showMessage('Failed to save changes: ' + (error?.message || String(error)), 'error');
+        document.getElementById('saveBtn').textContent = 'Save Changes *';
+      }
+    }
+
+    function cancelChanges() {
+      if (hasUnsavedChanges && !confirm('Discard unsaved changes?')) return;
+
+      if (isNewProject) {
+        currentProject = null;
+        currentMilestones = [];
+        isNewProject = false;
+
+        document.getElementById('editorContent').innerHTML = `
+          <div class="empty-state">
+            <h3>Select a project to edit</h3>
+            <p>Click on a project from the list to view and edit its details and milestones, or create a new project.</p>
+          </div>
+        `;
+        document.getElementById('editorTitle').textContent = 'Select a project';
+        document.getElementById('projectIdInput').style.display = 'none';
+        displayProjectsList();
+      } else if (currentProject) {
+        selectProject(currentProject.id);
+      }
+
+      hasUnsavedChanges = false;
+      updateSaveButton();
+    }
+
+    
+  function syncEditorIntoCurrentProject() {
+    if (!currentProject) return;
+    // Core fields visible in the “Project Details” section
+    const val = id => document.getElementById(id)?.value ?? '';
+
+    currentProject.name = val('projectName');
+    currentProject.status = val('projectStatus');
+    currentProject.instrumentMake = val('instrumentMake');
+    currentProject.instrumentModel = val('instrumentModel');
+    currentProject.complexity = parseInt(val('complexity') || currentProject.complexity || 3, 10);
+    currentProject.profitability = parseInt(val('profitability') || currentProject.profitability || 3, 10);
+    currentProject.dueDate = val('dueDate') || null;
+    currentProject.store = val('store') || '';
+    currentProject.intakeNotes = val('intakeNotes') || '';
+    currentProject.estimateNotes = val('estimateNotes') || '';
+
+    // Billing (if shown)
+    const totalEl = document.getElementById('total');
+    const commissionEl = document.getElementById('commission');
+    const discountEl = document.getElementById('discount');
+    const tipEl = document.getElementById('tip');
+    if (totalEl) currentProject.total = totalEl.value ? parseFloat(totalEl.value) : null;
+    if (commissionEl) currentProject.commission = commissionEl.value ? parseFloat(commissionEl.value) : null;
+    if (discountEl) currentProject.discount = discountEl.value ? parseInt(discountEl.value) : null;
+    if (tipEl) currentProject.tip = tipEl.value ? parseFloat(tipEl.value) : null;
+
+    // Measurements (only if section expanded—safe to read anyway)
+    const num = id => {
+      const v = document.getElementById(id)?.value;
+      return (v === '' || v == null) ? null : parseFloat(v);
+    };
+
+    currentProject.neckReliefBefore = val('neckReliefBefore');
+    currentProject.before1stString1stFret = num('before1stString1stFret');
+    currentProject.before1stString12thFret = num('before1stString12thFret');
+    currentProject.before6thString1stFret = num('before6thString1stFret');
+    currentProject.before6thString12thFret = num('before6thString12thFret');
+
+    currentProject.neckReliefAfter = val('neckReliefAfter');
+    currentProject.after1stString1stFret = num('after1stString1stFret');
+    currentProject.after1stString12thFret = num('after1stString12thFret');
+    currentProject.after6thString1stFret = num('after6thString1stFret');
+    currentProject.after6thString12thFret = num('after6thString12thFret');
+
+    // Instrument details
+    currentProject.instrumentFinish = val('instrumentFinish');
+    currentProject.serialNumber = val('serialNumber');
+    currentProject.instrumentType = val('instrumentType');
+    currentProject.stringBrand = val('stringBrand');
+    currentProject.stringGauge = val('stringGauge');
+    currentProject.tuning = val('tuning');
+    currentProject.tremolo = val('tremolo');
+    currentProject.fretboardRadius = (() => {
+      const r = val('fretboardRadius');
+      return r ? parseFloat(r) : null;
+    })();
+    currentProject.fretwire = val('fretwire');
+
+    // Actions (add this to syncEditorIntoCurrentProject function)
+if (!currentProject.actions) currentProject.actions = {};
+
+currentProject.actions.adjustedHeightRadius = document.getElementById('adjustedHeightRadius')?.checked || false;
+currentProject.actions.adjustedIntonation = document.getElementById('adjustedIntonation')?.checked || false;
+currentProject.actions.adjustedPickupHeight = document.getElementById('adjustedPickupHeight')?.checked || false;
+currentProject.actions.adjustedTrussRod = document.getElementById('adjustedTrussRod')?.checked || false;
+currentProject.actions.adjustedStringSlots = document.getElementById('adjustedStringSlots')?.checked || false;
+currentProject.actions.cleanedPolished = document.getElementById('cleanedPolished')?.checked || false;
+currentProject.actions.installedStretchedStrings = document.getElementById('installedStretchedStrings')?.checked || false;
+currentProject.actions.lubricatedStringSlots = document.getElementById('lubricatedStringSlots')?.checked || false;
+currentProject.actions.oiledFretboard = document.getElementById('oiledFretboard')?.checked || false;
+currentProject.actions.polishedFrets = document.getElementById('polishedFrets')?.checked || false;
+currentProject.actions.testedElectronics = document.getElementById('testedElectronics')?.checked || false;
+currentProject.actions.tightenedHardware = document.getElementById('tightenedHardware')?.checked || false;
+currentProject.actions.adjustedTremoloTension = document.getElementById('adjustedTremoloTension')?.checked || false;
+currentProject.actions.adjustedNeckAngle = document.getElementById('adjustedNeckAngle')?.checked || false;
+
+currentProject.additionalActions = document.getElementById('additionalActions')?.value || '';
+
+    // Actions (“Standard Actions”) are already mapped in your API to currentProject.actions
+    // If you later add action checkboxes in the editor UI, read them here and update currentProject.actions accordingly.
+  }
+
+  function openReportForCurrent() {
+    if (!currentProject) {
+      showMessage('Select a project first', 'error');
+      return;
+    }
+    // Pull any on-screen edits into the object:
+    syncEditorIntoCurrentProject();
+    
+    // Ensure taxAmount is synced from the latest calculation
+    // This ensures the report uses the current tax calculation based on the store selection
+    currentProject.taxAmount = currentProject.calculatedTaxAmount || 0;
+
+    // Attach milestones currently loaded for this project:
+    const payload = {
+      project: currentProject,
+      milestones: currentMilestones || [],
+      parts: currentParts || []
+    };
+
+    // Save to localStorage and pop new window with the printable report:
+    localStorage.setItem('luthierReportData', JSON.stringify(payload));
+    window.open('luthier_report_template.html', '_blank', 'noopener');
+  }
+
+  function generateEstimate() {
+    if (!currentProject) {
+      showMessage('Select a project first', 'error');
+      return;
+    }
+    // Pull any on-screen edits into the object:
+    syncEditorIntoCurrentProject();
+    
+    // Ensure taxAmount is synced from the latest calculation
+    // This ensures the estimate uses the current tax calculation based on the store selection
+    currentProject.taxAmount = currentProject.calculatedTaxAmount || 0;
+
+    // Attach milestones and parts currently loaded for this project:
+    const payload = {
+      project: currentProject,
+      milestones: currentMilestones || [],
+      parts: currentParts || []
+    };
+
+    // Save to localStorage and pop new window with the estimate:
+    localStorage.setItem('luthierEstimateData', JSON.stringify(payload));
+    window.open('estimate_template.html', '_blank', 'noopener');
+  }
+
+  </script>
+</body>
+</html>
