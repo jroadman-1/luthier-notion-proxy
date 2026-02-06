@@ -551,8 +551,11 @@
     setCheck('act_neckAngle', !!a.adjustedNeckAngle);
 
     // ====== BILLING - AUTO-POPULATE FROM ESTIMATE WITH BREAKDOWN ======
-    // Pull hourly rate from project data (stored in Notion), default to 100
-    const HOURLY_RATE = (p.hourlyRate != null && p.hourlyRate !== '') ? parseFloat(p.hourlyRate) : 100;
+    // Pull hourly rate from project data (stored in Notion) - no fallback
+    if (p.hourlyRate == null || p.hourlyRate === '') {
+      throw new Error('Hourly Rate not found in project data. Please ensure the project has a stored hourly rate.');
+    }
+    const HOURLY_RATE = parseFloat(p.hourlyRate);
     let subtotal = 0;
     const billingBreakdownEl = document.getElementById('billingBreakdown');
     
