@@ -442,14 +442,17 @@
             const quickJobs = projects.filter(p => p.project_type === 'Quick Job' && !skipped[p.id]);
             const longProjects = projects.filter(p => p.project_type === 'Long Project' && !skipped[p.id]);
             
-            // Sort by custom order, then by creation date
+            // Sort by custom order, then by bench date (FIFO based on when hit the bench)
             quickJobs.sort((a, b) => {
                 if (a.quick_job_order !== null && b.quick_job_order !== null) {
                     return a.quick_job_order - b.quick_job_order;
                 }
                 if (a.quick_job_order !== null) return -1;
                 if (b.quick_job_order !== null) return 1;
-                return new Date(a.createdTime) - new Date(b.createdTime);
+                // Use benchDate if available, fall back to createdTime
+                const dateA = new Date(a.benchDate || a.createdTime);
+                const dateB = new Date(b.benchDate || b.createdTime);
+                return dateA - dateB;
             });
             
             longProjects.sort((a, b) => {
@@ -458,7 +461,10 @@
                 }
                 if (a.multi_session_order !== null) return -1;
                 if (b.multi_session_order !== null) return 1;
-                return new Date(a.createdTime) - new Date(b.createdTime);
+                // Use benchDate if available, fall back to createdTime
+                const dateA = new Date(a.benchDate || a.createdTime);
+                const dateB = new Date(b.benchDate || b.createdTime);
+                return dateA - dateB;
             });
             
             // Render lists
@@ -476,7 +482,9 @@
             }
             
             container.innerHTML = projectsList.map(project => {
-                const createdDate = new Date(project.createdTime).toLocaleDateString('en-US', {
+                // Use bench date if available (when it hit the bench), fall back to creation date
+                const displayDate = project.benchDate || project.createdTime;
+                const formattedDate = new Date(displayDate).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'
@@ -498,7 +506,7 @@
                             <div class="project-title">${projectTitle}</div>
                         </div>
                         <div class="project-actions">
-                            <div class="creation-date">${createdDate}</div>
+                            <div class="creation-date">${formattedDate}</div>
                             <button class="skip-btn" data-project-id="${project.id}">Skip</button>
                         </div>
                     </div>
