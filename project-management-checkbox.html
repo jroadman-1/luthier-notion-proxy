@@ -469,11 +469,19 @@
       // Filter projects based on status
       let filteredProjects = allProjects.filter(project => project.status === filterValue);
 
-      // Sort Waiting projects by creation date (oldest first)
+      // Sort projects by date
       if (filterValue === 'Waiting-quick' || filterValue === 'Waiting-long') {
+        // Waiting projects: sort by creation date (oldest first)
         filteredProjects.sort((a, b) => {
           const dateA = new Date(a.dateCreated || a.createdTime || 0);
           const dateB = new Date(b.dateCreated || b.createdTime || 0);
+          return dateA - dateB; // Ascending order (oldest first)
+        });
+      } else if (filterValue === 'On The Bench') {
+        // Active projects: sort by Bench Date (oldest first for FIFO)
+        filteredProjects.sort((a, b) => {
+          const dateA = new Date(a.benchDate || a.dateCreated || a.createdTime || 0);
+          const dateB = new Date(b.benchDate || b.dateCreated || b.createdTime || 0);
           return dateA - dateB; // Ascending order (oldest first)
         });
       }
@@ -580,7 +588,9 @@
       if (hourlyRateEntry && hourlyRateEntry.pricePerItem) {
         return parseFloat(hourlyRateEntry.pricePerItem) || 0;
       }
-      return 100; // Default to $100/hour if not found
+      
+      // No fallback - throw error if not found
+      throw new Error('Hourly Rate not found in Parts database. Please add an item named "Hourly Rate" to your Parts database.');
     }
     
     function getCurrentHourlyRateFromParts() {
@@ -589,7 +599,9 @@
       if (hourlyRateEntry && hourlyRateEntry.pricePerItem) {
         return parseFloat(hourlyRateEntry.pricePerItem) || 0;
       }
-      return 100;
+      
+      // No fallback - throw error if not found
+      throw new Error('Hourly Rate not found in Parts database. Please add an item named "Hourly Rate" to your Parts database.');
     }
 
     function calculateBillingTotals() {
@@ -812,6 +824,10 @@
             <div class="form-group">
               <label>Date Created</label>
               <div class="readonly-display" style="font-size:14px;text-align:left;">${currentProject.dateCreated ? new Date(currentProject.dateCreated).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}) : (currentProject.createdTime ? new Date(currentProject.createdTime).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}) : 'Not yet created')}</div>
+            </div>
+            <div class="form-group" id="benchDateGroup" style="display: ${currentProject.benchDate ? 'block' : 'none'};">
+              <label>Bench Date</label>
+              <div class="readonly-display" style="font-size:14px;text-align:left;">${currentProject.benchDate ? new Date(currentProject.benchDate).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}) : 'Not set'}</div>
             </div>
             <div class="form-group" id="paidDateGroup" style="display: ${currentProject.status === 'Paid' ? 'block' : 'none'};">
               <label>Paid Date</label>
@@ -2175,6 +2191,7 @@
       const status = document.getElementById('projectStatus').value;
       const paidDateGroup = document.getElementById('paidDateGroup');
       const paidDateInput = document.getElementById('paidDate');
+      const benchDateGroup = document.getElementById('benchDateGroup');
       
       // Show/hide paid date field based on status
       if (status === 'Paid') {
@@ -2186,6 +2203,13 @@
         }
       } else {
         paidDateGroup.style.display = 'none';
+      }
+      
+      // Show/hide bench date field - display if project has ever been on the bench
+      if (currentProject.benchDate || status === 'On The Bench') {
+        benchDateGroup.style.display = 'block';
+      } else {
+        benchDateGroup.style.display = 'none';
       }
       
       markChanged();
