@@ -548,6 +548,12 @@ async function updateProject(res, notion, projectsDbId, data) {
         properties['paidDate'] = { date: { start: new Date().toISOString().split('T')[0] } };
         console.log('Automatically setting paidDate to today');
       }
+      
+      // Automatically set Bench Date when status changes to "On The Bench"
+      if (updates.status === 'On The Bench') {
+        properties['Bench Date'] = { date: { start: new Date().toISOString().split('T')[0] } };
+        console.log('Automatically setting Bench Date to today');
+      }
     }
     
     // Allow manual override of paidDate if provided
@@ -950,6 +956,7 @@ function mapProject(page) {
     dateCreated: props['Date Created']?.date?.start ?? null,
     createdTime: page.created_time,
     paidDate: props['paidDate']?.date?.start ?? null,
+    benchDate: props['Bench Date']?.date?.start ?? null,
 
     // Priority manager fields
     project_type: props['project_type']?.select?.name ?? null,
